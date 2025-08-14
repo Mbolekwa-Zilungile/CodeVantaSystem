@@ -31,6 +31,12 @@ namespace Code_Vanta_Systems.Data
         public DbSet<FridgeUsageLog> FridgeUsageLogs { get; set; }
         public DbSet<FridgeRequest> FridgeRequests { get; set; }
         public DbSet<InventoryItem> InventoryItems { get; set; }
+        public DbSet<RequestQuotation> RequestQuotations { get; set; }
+        public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
+        public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
+        public DbSet<AuditTrail> AuditTrails { get; set; }
+        public DbSet<WorkFlowApproval> WorkflowApprovals { get; set; }
+
 
 
 
