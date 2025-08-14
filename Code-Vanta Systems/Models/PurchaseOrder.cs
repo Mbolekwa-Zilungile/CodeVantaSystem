@@ -25,10 +25,17 @@ namespace Code_Vanta_Systems.Models
         public ApplicationUser OrderedBy { get; set; }
 
         [Required]
-        [MaxLength(20)]
+        [StringLength(20)]
         public string Status { get; set; } // Pending, Approved, Delivered, Cancelled
 
         public ICollection<PurchaseOrderItem> Items { get; set; }
+
+
+        public PurchaseOrder()
+        {
+            Items = new HashSet<PurchaseOrderItem>();
+        }
+
 
     }
 }

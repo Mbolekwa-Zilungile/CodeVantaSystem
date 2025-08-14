@@ -1,7 +1,10 @@
-﻿namespace Code_Vanta_Systems.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Code_Vanta_Systems.Models
 {
     public class FridgeAllocation
     {
+        [Key]
         public int Id { get; set; }
 
         public int FridgeId { get; set; }

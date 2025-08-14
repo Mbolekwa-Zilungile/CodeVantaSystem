@@ -25,6 +25,7 @@ namespace Code_Vanta_Systems.Models
         public int Quantity { get; set; }
 
         [Required]
+        [Column(TypeName = "decimal(10,2)")]
         public decimal UnitPrice { get; set; }
 
     }

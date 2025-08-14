@@ -5,12 +5,15 @@ namespace Code_Vanta_Systems.Models
 {
     public class Fridge
     {
+        [Key]
         public int Id { get; set; }
 
-        [Required, StringLength(100)]
+        [Required]
+        [StringLength(100)]
         public string Model { get; set; }
 
-        [Required, StringLength(100)]
+        [Required] 
+        [StringLength(100)]
         public string SerialNumber { get; set; }
 
         [Required]
@@ -18,9 +21,11 @@ namespace Code_Vanta_Systems.Models
 
         public DateTime PurchaseDate { get; set; }
 
+        [Required]
         public int SupplierId { get; set; }
         public virtual Supplier Supplier { get; set; }
 
+        [Required]
         public int LocationId { get; set; }
         public virtual Location Location { get; set; }
 

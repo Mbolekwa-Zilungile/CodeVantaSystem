@@ -102,6 +102,18 @@ namespace Code_Vanta_Systems.Data
                 .HasForeignKey(fr => fr.LocationId)
                 .OnDelete(DeleteBehavior.Restrict); // This avoids multiple cascade paths
 
+            //PurchaseOrder.Items is the collection navigation for PurchaseOrderItem.PurchaseOrder.
+            modelBuilder.Entity<PurchaseOrderItem>()
+                .HasOne(poi => poi.PurchaseOrder)
+                .WithMany(po => po.Items)
+                .HasForeignKey(poi => poi.PurchaseOrderId);
+
+            //Enforce uniqueness of each InventoryItem per PurchaseOrder
+            modelBuilder.Entity<PurchaseOrderItem>()
+                .HasOne(poi => poi.InventoryItem)
+                .WithMany(ii => ii.PurchaseOrderItems)
+                .HasForeignKey(poi => poi.InventoryItemId);
+
         }
     }
 }

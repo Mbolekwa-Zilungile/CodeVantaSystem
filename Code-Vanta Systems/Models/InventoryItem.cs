@@ -17,5 +17,13 @@ namespace Code_Vanta_Systems.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
 
+        public ICollection<PurchaseOrderItem> PurchaseOrderItems { get; set; }
+
+        public InventoryItem()
+        {
+            PurchaseOrderItems = new HashSet<PurchaseOrderItem>();
+        }
+
+
     }
 }
