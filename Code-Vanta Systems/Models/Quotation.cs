@@ -5,8 +5,10 @@ namespace Code_Vanta_Systems.Models
 {
     public class Quotation
     {
+        [Key]
         public int Id { get; set; }
 
+        [Required]
         public DateTime DateReceived { get; set; }
 
         [Required(ErrorMessage = "Unit Price is required")]
@@ -15,10 +17,16 @@ namespace Code_Vanta_Systems.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
 
+        [Required]
         public int SupplierId { get; set; }
+
+        [ForeignKey("SupplierId")]
         public virtual Supplier Supplier { get; set; }
 
+        [Required]
         public int PurchaseRequestId { get; set; }
+
+        [ForeignKey("PurchaseRequestId")]
         public virtual PurchaseRequest PurchaseRequest { get; set; }
     }
 }
