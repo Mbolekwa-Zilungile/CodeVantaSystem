@@ -6,7 +6,6 @@
     public class ApplicationUser : IdentityUser
     {
         // Full name of the user (e.g., technician, requester, admin)
-        [Required]
         [StringLength(100)]
         public string FullName { get; set; }
 

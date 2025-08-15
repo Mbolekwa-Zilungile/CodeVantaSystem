@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class createDb : Migration
+    public partial class CreateDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -229,6 +229,30 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AuditTrails",
+                columns: table => new
+                {
+                    AuditId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    EntityName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    EntityId = table.Column<int>(type: "int", nullable: false),
+                    ChangedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ChangeType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    ChangeDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ChangeDetails = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AuditTrails", x => x.AuditId);
+                    table.ForeignKey(
+                        name: "FK_AuditTrails_AspNetUsers_ChangedByUserId",
+                        column: x => x.ChangedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Documents",
                 columns: table => new
                 {
@@ -298,6 +322,51 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RequestQuotations",
+                columns: table => new
+                {
+                    RequestQuotationId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RequestDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RequestedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RequestQuotations", x => x.RequestQuotationId);
+                    table.ForeignKey(
+                        name: "FK_RequestQuotations_AspNetUsers_RequestedByUserId",
+                        column: x => x.RequestedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WorkflowApprovals",
+                columns: table => new
+                {
+                    ApprovalId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RequestType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    RequestId = table.Column<int>(type: "int", nullable: false),
+                    ApproverUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ApprovalStatus = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    ApprovalDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Comments = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkflowApprovals", x => x.ApprovalId);
+                    table.ForeignKey(
+                        name: "FK_WorkflowApprovals_AspNetUsers_ApproverUserId",
+                        column: x => x.ApproverUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Customers",
                 columns: table => new
                 {
@@ -351,6 +420,34 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PurchaseOrders",
+                columns: table => new
+                {
+                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SupplierId = table.Column<int>(type: "int", nullable: false),
+                    OrderedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PurchaseOrders", x => x.PurchaseOrderId);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrders_AspNetUsers_OrderedByUserId",
+                        column: x => x.OrderedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrders_Suppliers_SupplierId",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "DeliveryNotes",
                 columns: table => new
                 {
@@ -387,7 +484,8 @@ namespace Code_Vanta_Systems.Migrations
                     DateReceived = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
-                    PurchaseRequestId = table.Column<int>(type: "int", nullable: false)
+                    PurchaseRequestId = table.Column<int>(type: "int", nullable: false),
+                    RequestQuotationId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -398,6 +496,11 @@ namespace Code_Vanta_Systems.Migrations
                         principalTable: "PurchaseRequests",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Quotations_RequestQuotations_RequestQuotationId",
+                        column: x => x.RequestQuotationId,
+                        principalTable: "RequestQuotations",
+                        principalColumn: "RequestQuotationId");
                     table.ForeignKey(
                         name: "FK_Quotations_Suppliers_SupplierId",
                         column: x => x.SupplierId,
@@ -474,7 +577,7 @@ namespace Code_Vanta_Systems.Migrations
                     ReportedById = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     AssignedTechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     DateReported = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    FaultDescription = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FaultDescription = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     ResolutionDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -607,6 +710,34 @@ namespace Code_Vanta_Systems.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "PurchaseOrderItems",
+                columns: table => new
+                {
+                    ItemId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
+                    InventoryItemId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(10,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PurchaseOrderItems", x => x.ItemId);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrderItems_InventoryItems_InventoryItemId",
+                        column: x => x.InventoryItemId,
+                        principalTable: "InventoryItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrderItems_PurchaseOrders_PurchaseOrderId",
+                        column: x => x.PurchaseOrderId,
+                        principalTable: "PurchaseOrders",
+                        principalColumn: "PurchaseOrderId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityLogs_PerformedByUserId",
                 table: "ActivityLogs",
@@ -650,6 +781,11 @@ namespace Code_Vanta_Systems.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditTrails_ChangedByUserId",
+                table: "AuditTrails",
+                column: "ChangedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Customers_LocationId",
@@ -757,6 +893,26 @@ namespace Code_Vanta_Systems.Migrations
                 column: "RecipientUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrderItems_InventoryItemId",
+                table: "PurchaseOrderItems",
+                column: "InventoryItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrderItems_PurchaseOrderId",
+                table: "PurchaseOrderItems",
+                column: "PurchaseOrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_OrderedByUserId",
+                table: "PurchaseOrders",
+                column: "OrderedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_SupplierId",
+                table: "PurchaseOrders",
+                column: "SupplierId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PurchaseRequests_RequestedById",
                 table: "PurchaseRequests",
                 column: "RequestedById");
@@ -767,9 +923,24 @@ namespace Code_Vanta_Systems.Migrations
                 column: "PurchaseRequestId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Quotations_RequestQuotationId",
+                table: "Quotations",
+                column: "RequestQuotationId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Quotations_SupplierId",
                 table: "Quotations",
                 column: "SupplierId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RequestQuotations_RequestedByUserId",
+                table: "RequestQuotations",
+                column: "RequestedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowApprovals_ApproverUserId",
+                table: "WorkflowApprovals",
+                column: "ApproverUserId");
         }
 
         /// <inheritdoc />
@@ -792,6 +963,9 @@ namespace Code_Vanta_Systems.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "AuditTrails");
 
             migrationBuilder.DropTable(
                 name: "DeliveryNotes");
@@ -818,16 +992,19 @@ namespace Code_Vanta_Systems.Migrations
                 name: "FridgeUsageLogs");
 
             migrationBuilder.DropTable(
-                name: "InventoryItems");
-
-            migrationBuilder.DropTable(
                 name: "MaintenanceSchedules");
 
             migrationBuilder.DropTable(
                 name: "Notifications");
 
             migrationBuilder.DropTable(
+                name: "PurchaseOrderItems");
+
+            migrationBuilder.DropTable(
                 name: "Quotations");
+
+            migrationBuilder.DropTable(
+                name: "WorkflowApprovals");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -839,7 +1016,16 @@ namespace Code_Vanta_Systems.Migrations
                 name: "Fridges");
 
             migrationBuilder.DropTable(
+                name: "InventoryItems");
+
+            migrationBuilder.DropTable(
+                name: "PurchaseOrders");
+
+            migrationBuilder.DropTable(
                 name: "PurchaseRequests");
+
+            migrationBuilder.DropTable(
+                name: "RequestQuotations");
 
             migrationBuilder.DropTable(
                 name: "Locations");
