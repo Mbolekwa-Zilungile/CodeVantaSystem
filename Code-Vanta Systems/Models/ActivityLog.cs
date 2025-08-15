@@ -4,21 +4,28 @@ namespace Code_Vanta_Systems.Models
 {      
     public class ActivityLog
     {
-            public int Id { get; set; }
+        public int Id { get; set; }
 
+        // Name of the entity affected by the action (e.g "Fridge", "Fault")
+        [Required]
+        public string EntityName { get; set; }
+
+        // Type of action performed (e.g., "Create", "Update", "Delete")
+        [Required]
+        public string Action { get; set; }
+
+        // Foreign key referencing the user who performed the action
             [Required]
-            public string EntityName { get; set; } // e.g., "Fridge", "Fault"
+        public string PerformedByUserId { get; set; }
+            
+        // Navigation property for the user who performed the action
+        public ApplicationUser PerformedByUser { get; set; }
 
-            [Required]
-            public string Action { get; set; } // e.g., "Create", "Update", "Delete"
+        // Timestamp of when the action occurred (defaults to UTC now)
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
-            [Required]
-            public string PerformedByUserId { get; set; }
-            public ApplicationUser PerformedByUser { get; set; }
-
-            public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-
-            public string Details { get; set; }
+        // Optional details about the action (e.g., what changed
+        public string Details { get; set; }
         
 
     }

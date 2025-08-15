@@ -20,7 +20,7 @@ namespace Code_Vanta_Systems.Models
         public string AccessedByUserId { get; set; }
         public ApplicationUser AccessedByUser { get; set; }
 
-        // Optional notes about the access
+        // notes about the access
         public string Notes { get; set; }
 
     }
