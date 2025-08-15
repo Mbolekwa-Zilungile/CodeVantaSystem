@@ -25,7 +25,7 @@ namespace Code_Vanta_Systems.Models
 
         // Navigation property to the ApplicationUser entity
         // Represents the user who uploaded the document
-        [ForeignKey("UploadedByUser")]
+        [ForeignKey("UploadedByUserId")]
         public ApplicationUser UploadedByUser { get; set; }
 
         // Type of entity this document is related to (e.g "Quotation", "Fault")
