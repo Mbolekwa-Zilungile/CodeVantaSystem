@@ -57,6 +57,20 @@ namespace Code_Vanta_Systems.Services
                     logger.LogInformation("Admin user already exists.");
                 }
 
+            }
+
+        public static async Task SeedRoles(RoleManager<IdentityRole> roleManager)
+        {
+            string[] roles = { "Admin", "Technician", "Customer Liaison" };
+
+            foreach (var role in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(role));
+                }
+            }
         }
+
     }
 }

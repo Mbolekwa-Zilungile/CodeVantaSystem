@@ -1,48 +1,127 @@
-﻿<!DOCTYPE html>
+﻿@*
+    Layout.cshtml - Professionalized version
+    Uses Bootstrap 5, custom branding colors, modern nav + footer
+*@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Code_Vanta_Systems</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - CodeVanta Systems</title>
+
+    <!-- Bootstrap & Custom CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Code_Vanta_Systems.styles.css" asp-append-version="true" />
+
+    <style>
+        /* Brand Colors */
+        :root {
+            --brand-primary: #0d6efd;
+            --brand-dark: #1b1f24;
+            --brand-light: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--brand-light);
+        }
+
+        /* Navbar */
+        .navbar {
+            background: var(--brand-dark);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: #fff !important;
+            letter-spacing: 1px;
+        }
+
+        .nav-link {
+            color: #ddd !important;
+            transition: color 0.3s;
+        }
+
+            .nav-link:hover {
+                color: var(--brand-primary) !important;
+            }
+
+        /* Footer */
+        footer {
+            background: var(--brand-dark);
+            color: #bbb;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+        }
+
+            footer a {
+                color: var(--brand-primary);
+                text-decoration: none;
+            }
+
+                footer a:hover {
+                    text-decoration: underline;
+                }
+    </style>
 </head>
 <body>
+    <!-- NAVBAR -->
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-lg shadow-sm">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Code_Vanta_Systems</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <img src="~/images/logo.jpg" alt="Logo" width="32" height="32" class="me-2" />
+                    Code_Vanta_Systems
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#mainNavbar" aria-controls="mainNavbar"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="About">About</a>
                         </li>
-                        <partial name="_LoginPartial" />
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Services">Services</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                        <li class="nav-item">
+                            <partial name="_LoginPartial" />
+                        </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
+
+    <!-- MAIN CONTENT -->
+    <div class="container my-4">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - Code_Vanta_Systems - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <!-- FOOTER -->
+    <footer>
+        <div class="container text-center">
+            <p class="mb-1">&copy; 2025 - Code_Vanta_Systems</p>
+            <p class="mb-0">
+                <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy Policy</a> |
+                <a asp-area="" asp-controller="Home" asp-action="Contact">Contact</a>
+            </p>
         </div>
     </footer>
+
+    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

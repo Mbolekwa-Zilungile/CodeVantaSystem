@@ -20,3 +20,149 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* ================================
+   CodeVanta Systems - Theme Styles
+   ================================ */
+
+/* BRAND COLORS */
+:root {
+    --brand-primary: #0d6efd; /* Blue accent */
+    --brand-dark: #1b1f24; /* Dark navbar/footer */
+    --brand-light: #f8f9fa; /* Background */
+    --brand-accent: #20c997; /* Secondary teal */
+}
+
+/* GLOBAL */
+body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--brand-light);
+    color: #333;
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5 {
+    font-weight: 600;
+    color: var(--brand-dark);
+    margin-bottom: .75rem;
+}
+
+a {
+    color: var(--brand-primary);
+    text-decoration: none;
+    transition: color .2s;
+}
+
+    a:hover {
+        color: var(--brand-accent);
+    }
+
+/* BUTTONS */
+.btn-primary {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    font-weight: 500;
+    padding: .5rem 1.25rem;
+    border-radius: .5rem;
+    transition: background-color .2s;
+}
+
+    .btn-primary:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+    }
+
+.btn-accent {
+    background-color: var(--brand-accent);
+    border-color: var(--brand-accent);
+    color: #fff;
+    font-weight: 500;
+    padding: .5rem 1.25rem;
+    border-radius: .5rem;
+}
+
+    .btn-accent:hover {
+        background-color: #198754;
+        border-color: #157347;
+    }
+
+/* NAVBAR (override bootstrap defaults) */
+.navbar {
+    background-color: var(--brand-dark) !important;
+}
+
+.navbar-brand {
+    color: #fff !important;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.nav-link {
+    color: #ddd !important;
+}
+
+    .nav-link:hover {
+        color: var(--brand-primary) !important;
+    }
+
+/* CARDS */
+.card {
+    border: none;
+    border-radius: .75rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,.05);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background: var(--brand-primary);
+    color: #fff;
+    font-weight: 600;
+    border-radius: .75rem .75rem 0 0;
+}
+
+.card-footer {
+    background: var(--brand-light);
+}
+
+/* FORMS */
+.form-control {
+    border-radius: .5rem;
+    border: 1px solid #ccc;
+    padding: .6rem;
+    transition: border-color .2s;
+}
+
+    .form-control:focus {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 0.15rem rgba(13,110,253,.25);
+    }
+
+/* TABLES */
+.table {
+    border-radius: .5rem;
+    overflow: hidden;
+}
+
+    .table thead {
+        background-color: var(--brand-dark);
+        color: #fff;
+    }
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f2f6fa;
+}
+
+/* FOOTER */
+footer {
+    background-color: var(--brand-dark);
+    color: #bbb;
+    padding: 1.5rem 0;
+}
+
+    footer a {
+        color: var(--brand-primary);
+    }
+
+        footer a:hover {
+            text-decoration: underline;
+        }

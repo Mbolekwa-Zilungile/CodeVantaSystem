@@ -28,7 +28,16 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 
 var app = builder.Build();
 
-await SeedService.SeedDatabase(app.Services);    
+await SeedService.SeedDatabase(app.Services);
+
+
+// Seed roles,,,,,,,,,,
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    await SeedService.SeedRoles(roleManager);
+}
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
