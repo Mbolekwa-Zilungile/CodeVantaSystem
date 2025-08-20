@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Code_Vanta_Systems.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Code_Vanta_Systems.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
 
@@ -17,6 +19,10 @@ namespace Code_Vanta_Systems.Controllers
             roleManager = roleManager;
         }
 
+        public IActionResult Index()
+        {
+            return View();
+        }
         public IActionResult ManageRoles()
         {
             var users = userManager.Users.ToList();
@@ -35,5 +41,7 @@ namespace Code_Vanta_Systems.Controllers
 
             return RedirectToAction("ManageRoles");
         }
+        
+       
     }
 }

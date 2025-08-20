@@ -1,5 +1,4 @@
-﻿@using Code_Vanta_Systems.ViewModels
-@model RegisterViewModels
+﻿@model Code_Vanta_Systems.ViewModels.RegisterViewModels
 
 @{
     ViewData["Title"] = "Register";
@@ -44,44 +43,56 @@
     }
 </style>
 
+<script>
+    function togglePassword(button) {
+      const input = document.getElementById("confirmpasswordInput");
+
+      if (input.type === "password") {
+        input.type = "text";
+        button.textContent = "🙈";
+      } else {
+        input.type = "password";
+        button.textContent = "👁";
+      }
+    }
+    
+</script>
+
 <div class="account-container d-flex justify-content-center align-items-center vh-100 bg-light">
     <div class="account-box card shadow-lg p-4" style="max-width: 420px; width: 100%; border-radius: 1rem;">
         <h2 class="text-center fw-bold mb-4 text-primary">Create an Account</h2>
 
-        <form asp-action="Register" method="post">
+        <form asp-controller="Account" asp-action="Register" method="post">
             @Html.AntiForgeryToken()
-
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger small" role="alert"></div>
-
-            <!-- Name -->
+            <div asp-validation-summary="All" class="text-danger"></div>
             <div class="mb-3">
-                <label asp-for="Name" class="form-label fw-semibold"></label>
-                <input asp-for="Name" class="form-control form-control-lg" placeholder="Enter your full name" />
-                <span asp-validation-for="Name" class="text-danger small"></span>
+                <label asp-for="Name"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
             </div>
-
-            <!-- Email -->
+            
             <div class="mb-3">
-                <label asp-for="Email" class="form-label fw-semibold"></label>
-                <input asp-for="Email" class="form-control form-control-lg" placeholder="you@example.com" />
-                <span asp-validation-for="Email" class="text-danger small"></span>
+                <label asp-for="Email"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
             </div>
-
-            <!-- Password -->
             <div class="mb-3">
-                <label asp-for="Password" class="form-label fw-semibold"></label>
-                <input asp-for="Password" class="form-control form-control-lg" placeholder="••••••••" />
-                <span asp-validation-for="Password" class="text-danger small"></span>
+                <label asp-for="Password"></label>
+                    <input asp-for="Password" type="password" class="form-control" id="passwordInput" />
+                <span asp-validation-for="Password" class="text-danger"></span>
             </div>
-
-            <!-- Role -->
             <div class="mb-3">
-                <label asp-for="Role" class="form-label"></label>
-                <select asp-for="Role" class="form-control" asp-items="ViewBag.Roles"></select>
-                <span asp-validation-for="Role" class="text-danger"></span>
+                <label asp-for="ConfirmPassword"></label>
+                <div style="position: relative;">
+                    <input asp-for="ConfirmPassword" type="password" class="form-control" id="confirmpasswordInput" />
+                    <button type="button" onclick="togglePassword()" tabindex="-1"
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: none;">
+                        👁
+                    </button>
+                </div>
+               
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
             </div>
-
-            <!-- Submit -->
             <div class="d-grid mb-3">
                 <button type="submit" class="btn btn-primary btn-lg rounded-pill">Register</button>
             </div>

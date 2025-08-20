@@ -35,62 +35,73 @@ namespace Code_Vanta_Systems.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            var result = await signInManager.PasswordSignInAsync(
-                model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+            var user = await userManager.FindByEmailAsync(model.Email);
+
+            if (user == null)
+            {
+                ModelState.AddModelError(string.Empty, "User with this email does not exist. Please register first.");
+                return View(model);
+            }
+
+            var result = await signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, false);
 
             if (result.Succeeded)
-                return RedirectToAction("Index", "Home");
-
-            ModelState.AddModelError("", "Invalid login attempt.");
+            {
+                if (await userManager.IsInRoleAsync(user, "Admin"))
+                {
+                    return RedirectToAction("Index", "Admin"); //action, controller
+                }
+                else if (await userManager.IsInRoleAsync(user, "Customer"))
+                {
+                    return RedirectToAction("Index", "Customer");
+                }
+                else if (await userManager.IsInRoleAsync(user, "Customer Liaison"))
+                {
+                    return RedirectToAction("Index", "Customer Liaison");
+                }
+            }
+            ModelState.AddModelError(string.Empty, "Invalid login attempt");
             return View(model);
         }
 
         [HttpGet]
-        public IActionResult Register()
+        public ActionResult Register()
         {
-            ViewBag.Roles = roleManager.Roles
-                .Select(r => new SelectListItem { Value = r.Name, Text = r.Name })
-                .ToList();
-
             return View();
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModels model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return View(model);
+
+            var user = new ApplicationUser
             {
-                var user = new ApplicationUser
-                {
-                    UserName = model.Email,
-                    Email = model.Email,
-                    FullName = model.Name
-                };
+                UserName = model.Email,
+                Email = model.Email,
+                FullName = model.Name
+            };
 
-                var result = await userManager.CreateAsync(user, model.Password);
-
-                if (result.Succeeded)
-                {
-                    // Assign the chosen role
-                    await userManager.AddToRoleAsync(user, model.Role);
-
-                    await signInManager.SignInAsync(user, isPersistent: false);
-                    return RedirectToAction("Index", "Home");
-                }
-
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
+            var result = await userManager.CreateAsync(user, model.Password);
+            if (result.Succeeded)
+            {
+                //assign default role
+                await userManager.AddToRoleAsync(user, "Customer");
+                await signInManager.SignInAsync(user, isPersistent: false);
+                TempData["SuccessMessage"] = "Registration successful! Welcome.";
+                return RedirectToAction("Login", "Account");
             }
-
-            // Repopulate roles if model validation fails
-            ViewBag.Roles = roleManager.Roles
-                .Select(r => new SelectListItem { Value = r.Name, Text = r.Name })
-                .ToList();
-
+            foreach (var err in result.Errors)
+            {
+                ModelState.AddModelError("", err.Description);
+            }
             return View(model);
+        }
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            await signInManager.SignOutAsync();
+            return RedirectToAction("Login", "Account");
         }
     }
 

@@ -16,7 +16,7 @@ namespace Code_Vanta_Systems.Services
                 string[] roles = {
             "Admin", "Customer Liaison", "Inventory Liaison",
             "Service Technician", "Fault Technician",
-            "Maintenance Technician", "Purchasing Manager"
+            "Maintenance Technician", "Purchasing Manager","Customer"
         };
 
                 foreach (var role in roles)

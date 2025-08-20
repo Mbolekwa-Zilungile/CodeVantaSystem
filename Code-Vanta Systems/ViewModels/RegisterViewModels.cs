@@ -22,8 +22,8 @@ namespace Code_Vanta_Systems.ViewModels
         [Display(Name = "Confirm Password")]
         public string ConfirmPassword { get; set; }
 
-        [Required(ErrorMessage = "Role is required.")]
-        [Display(Name = "Select Role")]
-        public string Role { get; set; }
+        //[Required(ErrorMessage = "Role is required.")]
+        //[Display(Name = "Select Role")]
+       // public string Role { get; set; }
     }
 }
