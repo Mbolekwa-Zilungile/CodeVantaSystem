@@ -57,8 +57,29 @@ namespace Code_Vanta_Systems.Controllers
                 }
                 else if (await userManager.IsInRoleAsync(user, "Customer Liaison"))
                 {
-                    return RedirectToAction("Index", "Customer Liaison");
+                    return RedirectToAction("Index", "CustomerLiaison");
                 }
+                else if (await userManager.IsInRoleAsync(user, "Inventory Liaison"))
+                {
+                    return RedirectToAction("Index", "InventoryLiaison");
+                }
+                else if (await userManager.IsInRoleAsync(user, "Service Technician"))
+                {
+                    return RedirectToAction("Index", "ServiceTechnician");
+                }
+                else if (await userManager.IsInRoleAsync(user, "Fault Technician"))
+                {
+                    return RedirectToAction("Index", "FaultTechnician");
+                }
+                else if (await userManager.IsInRoleAsync(user, "Maintenance Technician"))
+                {
+                    return RedirectToAction("Index", "MaintenanceTechnician");
+                }
+                else if (await userManager.IsInRoleAsync(user, "Purchasing Manager"))
+                {
+                    return RedirectToAction("Index", "PurchasingManager");
+                }
+
             }
             ModelState.AddModelError(string.Empty, "Invalid login attempt");
             return View(model);
