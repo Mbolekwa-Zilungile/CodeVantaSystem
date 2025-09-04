@@ -28,5 +28,11 @@ namespace Code_Vanta_Systems.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+
+        public IActionResult Services()
+        {
+            return View(); // This will render Views/Home/Services.cshtml
+        }
     }
 }
