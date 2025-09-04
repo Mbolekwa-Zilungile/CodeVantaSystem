@@ -17,5 +17,8 @@
 
         // Navigation property for purchase requests created by this user
         public virtual ICollection<PurchaseRequest> PurchaseRequest { get; set; }
+
+        public virtual Employee EmployeeProfile { get; set; }
+
     }
 }

@@ -37,6 +37,8 @@ namespace Code_Vanta_Systems.Data
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; } // Items within a purchase order
         public DbSet<AuditTrail> AuditTrails { get; set; } // Tracks changes for auditing
         public DbSet<WorkFlowApproval> WorkflowApprovals { get; set; } // Workflow-based approval records
+        public DbSet<Employee> Employees { get; set; }
+
 
 
 
@@ -116,6 +118,13 @@ namespace Code_Vanta_Systems.Data
                 .HasOne(poi => poi.InventoryItem)
                 .WithMany(ii => ii.PurchaseOrderItems)
                 .HasForeignKey(poi => poi.InventoryItemId);
+
+            // Configure Employee relationship 
+            modelBuilder.Entity<ApplicationUser>()
+                    .HasOne(a => a.EmployeeProfile)
+                    .WithOne(e => e.User)
+                    .HasForeignKey<Employee>(e => e.ApplicationUserId);
+
 
 
         }

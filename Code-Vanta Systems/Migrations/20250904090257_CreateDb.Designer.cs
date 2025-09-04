@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Code_Vanta_Systems.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250815114529_MakeFullNameNullable")]
-    partial class MakeFullNameNullable
+    [Migration("20250904090257_CreateDb")]
+    partial class CreateDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -272,6 +272,40 @@ namespace Code_Vanta_Systems.Migrations
                     b.HasIndex("UploadedByUserId");
 
                     b.ToTable("Documents");
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.Employee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApplicationUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("LocationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId")
+                        .IsUnique();
+
+                    b.HasIndex("LocationId");
+
+                    b.ToTable("Employees");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Fridge", b =>
@@ -1061,6 +1095,23 @@ namespace Code_Vanta_Systems.Migrations
                     b.Navigation("UploadedByUser");
                 });
 
+            modelBuilder.Entity("Code_Vanta_Systems.Models.Employee", b =>
+                {
+                    b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "User")
+                        .WithOne("EmployeeProfile")
+                        .HasForeignKey("Code_Vanta_Systems.Models.Employee", "ApplicationUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Code_Vanta_Systems.Models.Location", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationId");
+
+                    b.Navigation("Location");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Code_Vanta_Systems.Models.Fridge", b =>
                 {
                     b.HasOne("Code_Vanta_Systems.Models.Location", "Location")
@@ -1372,6 +1423,9 @@ namespace Code_Vanta_Systems.Migrations
                     b.Navigation("AssignedFaults");
 
                     b.Navigation("AssignedMaintenances");
+
+                    b.Navigation("EmployeeProfile")
+                        .IsRequired();
 
                     b.Navigation("PurchaseRequest");
                 });

@@ -390,6 +390,34 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Employees",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ApplicationUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Role = table.Column<int>(type: "int", nullable: false),
+                    LocationId = table.Column<int>(type: "int", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Employees", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Employees_AspNetUsers_ApplicationUserId",
+                        column: x => x.ApplicationUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Employees_Locations_LocationId",
+                        column: x => x.LocationId,
+                        principalTable: "Locations",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Fridges",
                 columns: table => new
                 {
@@ -808,6 +836,17 @@ namespace Code_Vanta_Systems.Migrations
                 column: "UploadedByUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Employees_ApplicationUserId",
+                table: "Employees",
+                column: "ApplicationUserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Employees_LocationId",
+                table: "Employees",
+                column: "LocationId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FridgeAllocations_CustomerId",
                 table: "FridgeAllocations",
                 column: "CustomerId");
@@ -972,6 +1011,9 @@ namespace Code_Vanta_Systems.Migrations
 
             migrationBuilder.DropTable(
                 name: "Documents");
+
+            migrationBuilder.DropTable(
+                name: "Employees");
 
             migrationBuilder.DropTable(
                 name: "FridgeAllocations");

@@ -1,130 +1,138 @@
-﻿@*
-    Layout.cshtml - Professionalized version
-    Uses Bootstrap 5, custom branding colors, modern nav + footer
-*@
+﻿@using Code_Vanta_Systems.Models
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - CodeVanta Systems</title>
-
-    <!-- Bootstrap & Custom CSS -->
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Code_Vanta_Systems.styles.css" asp-append-version="true" />
-
-    <style>
-        /* Brand Colors */
-        :root {
-            --brand-primary: #0d6efd;
-            --brand-dark: #1b1f24;
-            --brand-light: #f8f9fa;
-        }
-
-        body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--brand-light);
-        }
-
-        /* Navbar */
-        .navbar {
-            background: var(--brand-dark);
-        }
-
-        .navbar-brand {
-            font-weight: 700;
-            color: #fff !important;
-            letter-spacing: 1px;
-        }
-
-        .nav-link {
-            color: #ddd !important;
-            transition: color 0.3s;
-        }
-
-            .nav-link:hover {
-                color: var(--brand-primary) !important;
-            }
-
-        /* Footer */
-        footer {
-            background: var(--brand-dark);
-            color: #bbb;
-            padding: 1.5rem 0;
-            margin-top: 2rem;
-        }
-
-            footer a {
-                color: var(--brand-primary);
-                text-decoration: none;
-            }
-
-                footer a:hover {
-                    text-decoration: underline;
-                }
-    </style>
+    <link href="~/css/site.css" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <!-- NAVBAR -->
-    <header>
-        <nav class="navbar navbar-expand-lg shadow-sm">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    <img src="~/images/logo.jpg" alt="Logo" width="32" height="32" class="me-2" />
-                    Code_Vanta_Systems
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#mainNavbar" aria-controls="mainNavbar"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+<body class="flex flex-col min-h-screen bg-gray-50">
 
-                <div class="collapse navbar-collapse" id="mainNavbar">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="About">About</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Services">Services</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        <li class="nav-item">
-                            <partial name="_LoginPartial" />
-                        </li>
-                    </ul>
-                </div>
+    <!-- ✅ Navbar -->
+    <header class="bg-white shadow-md fixed w-full z-50">
+        <nav class="container mx-auto flex justify-between items-center py-3 px-6">
+            <!-- Logo -->
+            <a href="/" class="flex items-center space-x-2">
+                <img src="~/images/logo.jpg" alt="CodeVanta Logo" class="h-10 w-10 object-cover rounded-full shadow-md" />
+                <span class="text-xl font-bold text-blue-700">CodeVanta</span>
+            </a>
+
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="/" class="hover:text-blue-600">Home</a>
+                <a href="/Home/Services" class="hover:text-blue-600">Services</a>
+                <a href="/Home/About" class="hover:text-blue-600">About</a>
+                <a href="/Home/Contact" class="hover:text-blue-600">Contact</a>
+
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <a href="/Dashboard" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
+                    <form method="post" asp-controller="Account" asp-action="Logout" class="inline">
+                        <button type="submit" class="ml-2 text-red-500 hover:underline">Logout</button>
+                    </form>
+                }
+                else
+                {
+                    <a href="/Account/Login" class="text-blue-600 hover:underline">Login</a>
+                    <a href="/Account/Register" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Register</a>
+                }
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <div class="md:hidden">
+                <button id="menu-btn" class="text-gray-700 focus:outline-none">
+                    ☰
+                </button>
             </div>
         </nav>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-md border-t">
+            <div class="flex flex-col px-6 py-4 space-y-3">
+                <a href="/" class="hover:text-blue-600">Home</a>
+                <a href="/Home/Services" class="hover:text-blue-600">Services</a>
+                <a href="/Home/About" class="hover:text-blue-600">About</a>
+                <a href="/Home/Contact" class="hover:text-blue-600">Contact</a>
+
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <a href="/Dashboard" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-center">Dashboard</a>
+                    <form method="post" asp-controller="Account" asp-action="Logout">
+                        <button type="submit" class="text-red-500 hover:underline w-full text-left">Logout</button>
+                    </form>
+                }
+                else
+                {
+                    <a href="/Account/Login" class="text-blue-600 hover:underline">Login</a>
+                    <a href="/Account/Register" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-center">Register</a>
+                }
+            </div>
+        </div>
     </header>
 
-    <!-- MAIN CONTENT -->
-    <div class="container my-4">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    <!-- ✅ Hero Section -->
+    <section class="relative bg-gray-100 pt-24">
+        <img src="~/images/Repair.jpg" alt="Fridge Repair Service"
+             class="w-full h-96 object-cover opacity-80" />
+        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="text-center text-white space-y-4">
+                <h1 class="text-4xl md:text-5xl font-bold">Reliable Fridge Repair Services</h1>
+                <p class="text-lg md:text-xl">Fast, affordable, and trusted by households & businesses.</p>
+                <a href="/Home/Services"
+                   class="bg-blue-600 px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition">Explore Services</a>
+            </div>
+        </div>
+    </section>
 
-    <!-- FOOTER -->
-    <footer>
-        <div class="container text-center">
-            <p class="mb-1">&copy; 2025 - Code_Vanta_Systems</p>
-            <p class="mb-0">
-                <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy Policy</a> |
-                <a asp-area="" asp-controller="Home" asp-action="Contact">Contact</a>
-            </p>
+    <!-- ✅ Main Content -->
+    <main class="flex-grow container mx-auto px-6 py-10">
+        @RenderBody()
+    </main>
+
+    <!-- ✅ Footer -->
+    <footer class="bg-gray-900 text-gray-300 py-10">
+        <div class="container mx-auto grid md:grid-cols-3 gap-8 px-6">
+            <div>
+                <h3 class="text-white font-bold text-xl mb-4">CodeVanta Systems</h3>
+                <p>Your trusted partner in fridge management & repair solutions.</p>
+            </div>
+            <div>
+                <h3 class="text-white font-bold text-xl mb-4">Quick Links</h3>
+                <ul class="space-y-2">
+                    <li><a href="/" class="hover:text-white">Home</a></li>
+                    <li><a href="/Home/Services" class="hover:text-white">Services</a></li>
+                    <li><a href="/Home/About" class="hover:text-white">About</a></li>
+                    <li><a href="/Home/Contact" class="hover:text-white">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-white font-bold text-xl mb-4">Contact</h3>
+                <p>Email: support@codevanta.com</p>
+                <p>Phone: +27 12 345 6789</p>
+                <p>Address: Johannesburg, South Africa</p>
+            </div>
+        </div>
+        <div class="text-center text-gray-500 mt-6">
+            © @DateTime.Now.Year CodeVanta Systems. All Rights Reserved.
         </div>
     </footer>
 
-    <!-- Scripts -->
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    <!-- ✅ Mobile Menu Script -->
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+    </script>
+
+    @RenderSection("Scripts", required: false)
 </body>
 </html>
