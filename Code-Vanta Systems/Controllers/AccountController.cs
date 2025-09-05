@@ -1,8 +1,11 @@
-﻿using Code_Vanta_Systems.Models;
+﻿using Code_Vanta_Systems.Data;
+using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Identity.Client;
+using Code_Vanta_Systems.Models.Enums;
 
 namespace Code_Vanta_Systems.Controllers
 {
@@ -11,15 +14,18 @@ namespace Code_Vanta_Systems.Controllers
         private readonly SignInManager<ApplicationUser> signInManager;
         private readonly UserManager<ApplicationUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
+        private readonly ApplicationDbContext context;
 
         public AccountController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+            RoleManager<IdentityRole> roleManager,
+            ApplicationDbContext context)
         {
             this.signInManager = signInManager;
             this.userManager = userManager;
             this.roleManager = roleManager;
+            this.context = context; // 👈 Assign context in constructor
         }
 
         [HttpGet]
@@ -79,22 +85,50 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     return RedirectToAction("Index", "PurchasingManager");
                 }
-
+                // Fallback for any other roles or new roles
+                return RedirectToAction("Index", "Home");
             }
             ModelState.AddModelError(string.Empty, "Invalid login attempt");
             return View(model);
         }
 
         [HttpGet]
-        public ActionResult Register()
+        public IActionResult Register()
         {
-            return View();
+            var model = new RegisterViewModel
+            {
+                RegionOptions = Enum.GetValues(typeof(Region))
+                    .Cast<Region>()
+                    .Select(r => new SelectListItem
+                    {
+                        Value = r.ToString(),
+                        Text = r.ToString()
+                    })
+                    .ToList()
+            };
+
+            return View(model);
         }
+
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModels model)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid)
+            {
+                model.RegionOptions = Enum.GetValues(typeof(Region))
+                    .Cast<Region>()
+                    .Select(r => new SelectListItem
+                    {
+                        Value = r.ToString(),
+                        Text = r.ToString()
+                    })
+                    .ToList();
+
+                return View(model);
+            }
 
             var user = new ApplicationUser
             {
@@ -104,26 +138,54 @@ namespace Code_Vanta_Systems.Controllers
             };
 
             var result = await userManager.CreateAsync(user, model.Password);
-            if (result.Succeeded)
+
+            if (!result.Succeeded)
             {
-                //assign default role
-                await userManager.AddToRoleAsync(user, "Customer");
-                await signInManager.SignInAsync(user, isPersistent: false);
-                TempData["SuccessMessage"] = "Registration successful! Welcome.";
-                return RedirectToAction("Login", "Account");
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError("", error.Description);
+
+                model.RegionOptions = Enum.GetValues(typeof(Region))
+                    .Cast<Region>()
+                    .Select(r => new SelectListItem
+                    {
+                        Value = r.ToString(),
+                        Text = r.ToString()
+                    })
+                    .ToList();
+
+                return View(model);
             }
-            foreach (var err in result.Errors)
+
+            await userManager.AddToRoleAsync(user, "Customer");
+
+            var customer = new Customer
             {
-                ModelState.AddModelError("", err.Description);
-            }
-            return View(model);
+                BusinessName = model.BusinessName,
+                ContactName = model.Name,
+                Phone = model.Phone,
+                Email = model.Email,
+                LocationId = (int)model.SelectedRegion, // Or map to a Location table if needed
+                UserId = user.Id
+            };
+
+            context.Customers.Add(customer);
+            await context.SaveChangesAsync();
+
+            await signInManager.SignInAsync(user, isPersistent: false);
+            TempData["SuccessMessage"] = "Registration successful! Welcome.";
+
+            return RedirectToAction("Login", "Account");
         }
+
+
+
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await signInManager.SignOutAsync();
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Index", "Home");
         }
-    }
 
+    }
 }

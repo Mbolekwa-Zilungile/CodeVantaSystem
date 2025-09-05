@@ -11,7 +11,17 @@ builder.Services.AddControllersWithViews();
 
 // Configure Entity Framework and SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5, // Number of retries before failing
+                maxRetryDelay: TimeSpan.FromSeconds(10), // Delay between retries
+                errorNumbersToAdd: null // SQL error codes to treat as transient (null = use defaults)
+            );
+        }));
+
 
 // Configure Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -58,6 +68,6 @@ app.UseAuthorization();
 // Correct default route
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}");
+    pattern: "{controller=Home}/{action=index}/{id?}");
 
 app.Run();

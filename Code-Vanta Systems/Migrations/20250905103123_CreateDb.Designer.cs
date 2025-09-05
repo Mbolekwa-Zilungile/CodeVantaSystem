@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Code_Vanta_Systems.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250904090257_CreateDb")]
+    [Migration("20250905103123_CreateDb")]
     partial class CreateDb
     {
         /// <inheritdoc />
@@ -199,9 +199,15 @@ namespace Code_Vanta_Systems.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LocationId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Customers");
                 });
@@ -1062,7 +1068,15 @@ namespace Code_Vanta_Systems.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Location");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.DeliveryNote", b =>

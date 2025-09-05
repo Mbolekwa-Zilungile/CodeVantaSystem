@@ -376,11 +376,18 @@ namespace Code_Vanta_Systems.Migrations
                     ContactName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Phone = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    LocationId = table.Column<int>(type: "int", nullable: false)
+                    LocationId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Customers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Customers_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Customers_Locations_LocationId",
                         column: x => x.LocationId,
@@ -819,6 +826,11 @@ namespace Code_Vanta_Systems.Migrations
                 name: "IX_Customers_LocationId",
                 table: "Customers",
                 column: "LocationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Customers_UserId",
+                table: "Customers",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DeliveryNotes_PurchaseRequestId",

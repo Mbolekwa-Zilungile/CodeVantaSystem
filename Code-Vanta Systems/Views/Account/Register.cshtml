@@ -1,106 +1,77 @@
-﻿@model Code_Vanta_Systems.ViewModels.RegisterViewModels
+﻿@model Code_Vanta_Systems.ViewModels.RegisterViewModel
 
 @{
     ViewData["Title"] = "Register";
     Layout = "~/Views/Shared/_AccountLayout.cshtml";
 }
 
-<style>
-    /* Full-page background image */
-    body, html {
-        height: 100%;
-        margin: 0;
-    }
-
-    .account-container {
-        position: relative;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        background-image: url('/images/Latar.jpg'); /* Replace with your image path */
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-    }
-
-        /* Optional overlay for readability */
-        .account-container::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.6); /* semi-transparent white */
-            z-index: 0;
-        }
-
-    /* Keep the login card above the overlay */
-    .account-box {
-        position: relative;
-        z-index: 1;
-    }
-</style>
-
-<script>
-    function togglePassword(button) {
-      const input = document.getElementById("confirmpasswordInput");
-
-      if (input.type === "password") {
-        input.type = "text";
-        button.textContent = "🙈";
-      } else {
-        input.type = "password";
-        button.textContent = "👁";
-      }
-    }
-    
-</script>
-
-<div class="account-container d-flex justify-content-center align-items-center vh-100 bg-light">
-    <div class="account-box card shadow-lg p-4" style="max-width: 420px; width: 100%; border-radius: 1rem;">
-        <h2 class="text-center fw-bold mb-4 text-primary">Create an Account</h2>
+<div class="account-container d-flex justify-content-center align-items-center vh-100">
+    <div class="account-box card shadow-lg p-4" style="max-width: 450px; width: 100%; border-radius: 1rem; background-color: rgba(255,255,255,0.95);">
+        <h2 class="text-center fw-bold mb-4 text-primary">Create Your Account</h2>
 
         <form asp-controller="Account" asp-action="Register" method="post">
             @Html.AntiForgeryToken()
-            <div asp-validation-summary="All" class="text-danger"></div>
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+            <!-- Full Name -->
             <div class="mb-3">
                 <label asp-for="Name"></label>
-                <input asp-for="Name" class="form-control" />
+                <input asp-for="Name" class="form-control" placeholder="Enter your full name" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
-            
+
+            <!-- Business Name -->
+            <div class="mb-3">
+                <label asp-for="BusinessName"></label>
+                <input asp-for="BusinessName" class="form-control" placeholder="Enter your business name" />
+                <span asp-validation-for="BusinessName" class="text-danger"></span>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="mb-3">
+                <label asp-for="Phone"></label>
+                <input asp-for="Phone" class="form-control" placeholder="Enter your phone number" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+
+            <!-- Email -->
             <div class="mb-3">
                 <label asp-for="Email"></label>
-                <input asp-for="Email" class="form-control" />
+                <input asp-for="Email" class="form-control" placeholder="Enter your email address" />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
+
+            <!-- Region Dropdown -->
+            <div class="mb-3">
+                <label asp-for="SelectedRegion"></label>
+                <select asp-for="SelectedRegion" asp-items="Model.RegionOptions" class="form-control">
+                    <option value="">-- Select your region --</option>
+                </select>
+                <span asp-validation-for="SelectedRegion" class="text-danger"></span>
+            </div>
+
+            <!-- Password -->
             <div class="mb-3">
                 <label asp-for="Password"></label>
-                    <input asp-for="Password" type="password" class="form-control" id="passwordInput" />
+                <input asp-for="Password" type="password" class="form-control" placeholder="Choose a secure password" />
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
+
+            <!-- Confirm Password -->
             <div class="mb-3">
                 <label asp-for="ConfirmPassword"></label>
-                <div style="position: relative;">
-                    <input asp-for="ConfirmPassword" type="password" class="form-control" id="confirmpasswordInput" />
-                    <button type="button" onclick="togglePassword()" tabindex="-1"
-                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: none;">
-                        👁
-                    </button>
-                </div>
-               
+                <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm your password" />
                 <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
             </div>
+
+            <!-- Submit Button -->
             <div class="d-grid mb-3">
                 <button type="submit" class="btn btn-primary btn-lg rounded-pill">Register</button>
             </div>
 
             <!-- Links -->
             <p class="text-center mt-3">
-                Already have an account?
-                <a asp-controller="Account" asp-action="Login" class="fw-semibold text-decoration-none text-primary">Login</a>
+                Already have an account? <a asp-controller="Account" asp-action="Login" class="fw-semibold text-decoration-none text-primary">Login here</a>
             </p>
             <p class="text-center mt-2">
                 <a asp-controller="Home" asp-action="Index" class="text-muted text-decoration-none">← Back to Home</a>
@@ -110,7 +81,5 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial.cshtml");
-    }
+    @await Html.PartialAsync("_ValidationScriptsPartial.cshtml")
 }

@@ -1,29 +1,41 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using System.ComponentModel.DataAnnotations;
+using Code_Vanta_Systems.Models;
+using Code_Vanta_Systems.Models.Enums;
 
 namespace Code_Vanta_Systems.ViewModels
 {
-    public class RegisterViewModels
+    public class RegisterViewModel
     {
-        [Required(ErrorMessage = "Name is required.")]
+        [Required(ErrorMessage = "Full name is required.")]
         public string Name { get; set; }
 
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress]
         public string Email { get; set; }
 
-        [Required(ErrorMessage = "Password is required")]
-        [StringLength(40, MinimumLength = 8, ErrorMessage = "The {0} must be at least {2} characters and max {1}.")]
+        [Required(ErrorMessage = "Password is required.")]
+        [StringLength(40, MinimumLength = 8)]
         [DataType(DataType.Password)]
         public string Password { get; set; }
 
-        [Required(ErrorMessage = "Confirm Password is required")]
+        [Required(ErrorMessage = "Confirm Password is required.")]
         [DataType(DataType.Password)]
         [Compare("Password", ErrorMessage = "Passwords do not match.")]
-        [Display(Name = "Confirm Password")]
         public string ConfirmPassword { get; set; }
 
-        //[Required(ErrorMessage = "Role is required.")]
-        //[Display(Name = "Select Role")]
-       // public string Role { get; set; }
+        [Required(ErrorMessage = "Business name is required.")]
+        public string BusinessName { get; set; }
+
+        [Required(ErrorMessage = "Phone number is required.")]
+        [Phone]
+        public string Phone { get; set; }
+
+        [Required(ErrorMessage = "Region is required.")]
+        [Display(Name = "Region")]
+        public Region SelectedRegion { get; set; }
+
+        // For dropdown
+        public List<SelectListItem> RegionOptions { get; set; }
     }
 }
