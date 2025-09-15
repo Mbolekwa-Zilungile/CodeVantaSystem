@@ -48,13 +48,16 @@ namespace Code_Vanta_Systems.Data
         {
             base.OnModelCreating(modelBuilder);
 
-
-            // Configure decimal precision for unit prices in quotations
+            // Configure decimal precision
             modelBuilder.Entity<Quotation>()
                 .Property(q => q.UnitPrice)
                 .HasColumnType("decimal(18,2)");
 
-            // Configure fridge relationships to avoid multiple cascade paths
+            modelBuilder.Entity<PurchaseOrderItem>()
+                .Property(poi => poi.UnitPrice)
+                .HasColumnType("decimal(18,2)");
+
+            // Fridge relationships
             modelBuilder.Entity<Fridge>()
                 .HasOne(f => f.Location)
                 .WithMany(l => l.Fridges)
@@ -67,7 +70,7 @@ namespace Code_Vanta_Systems.Data
                 .HasForeignKey(f => f.SupplierId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure fridge allocation relationships
+            // Fridge allocation
             modelBuilder.Entity<FridgeAllocation>()
                 .HasOne(fa => fa.Fridge)
                 .WithMany(f => f.Allocations)
@@ -80,53 +83,78 @@ namespace Code_Vanta_Systems.Data
                 .HasForeignKey(fa => fa.CustomerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure technician assignment for fridge faults
+            // Fault technician assignment
             modelBuilder.Entity<FridgeFault>()
                 .HasOne(ff => ff.AssignedTechnician)
                 .WithMany(u => u.AssignedFaults)
                 .HasForeignKey(ff => ff.AssignedTechnicianId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure technician assignment for fridge maintenance
+            // Maintenance technician assignment
             modelBuilder.Entity<FridgeMaintenance>()
                 .HasOne(fm => fm.Technician)
                 .WithMany(u => u.AssignedMaintenances)
                 .HasForeignKey(fm => fm.TechnicianId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure fridge request relationships
+            // Service history
+            modelBuilder.Entity<FridgeServiceHistory>()
+                .HasOne(fsh => fsh.Fridge)
+                .WithMany(f => f.ServiceHistories)
+                .HasForeignKey(fsh => fsh.FridgeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Usage logs
+            modelBuilder.Entity<FridgeUsageLog>()
+                .HasOne(fu => fu.Fridge)
+                .WithMany(f => f.UsageLogs)
+                .HasForeignKey(fu => fu.FridgeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Maintenance schedule
+            modelBuilder.Entity<MaintenanceSchedule>()
+                .HasOne(ms => ms.Fridge)
+                .WithMany(f => f.MaintenanceSchedules)
+                .HasForeignKey(ms => ms.FridgeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Fridge requests
             modelBuilder.Entity<FridgeRequest>()
                 .HasOne(fr => fr.Customer)
                 .WithMany(c => c.FridgeRequests)
                 .HasForeignKey(fr => fr.CustomerId)
-                .OnDelete(DeleteBehavior.Cascade); // Allows cascade delete
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<FridgeRequest>()
                 .HasOne(fr => fr.Location)
                 .WithMany(l => l.FridgeRequests)
                 .HasForeignKey(fr => fr.LocationId)
-                .OnDelete(DeleteBehavior.Restrict); // Prevents multiple cascade paths
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Configure purchase order item relationships
+            // Purchase order items
             modelBuilder.Entity<PurchaseOrderItem>()
                 .HasOne(poi => poi.PurchaseOrder)
                 .WithMany(po => po.Items)
                 .HasForeignKey(poi => poi.PurchaseOrderId);
 
-            // Enforce uniqueness of inventory items per purchase order
             modelBuilder.Entity<PurchaseOrderItem>()
                 .HasOne(poi => poi.InventoryItem)
                 .WithMany(ii => ii.PurchaseOrderItems)
                 .HasForeignKey(poi => poi.InventoryItemId);
 
-            // Configure Employee relationship 
+            // Employee ↔ User
             modelBuilder.Entity<ApplicationUser>()
-                    .HasOne(a => a.EmployeeProfile)
-                    .WithOne(e => e.User)
-                    .HasForeignKey<Employee>(e => e.ApplicationUserId);
+                .HasOne(a => a.EmployeeProfile)
+                .WithOne(e => e.User)
+                .HasForeignKey<Employee>(e => e.ApplicationUserId);
 
-
-
+            // Purchase request ↔ User
+            modelBuilder.Entity<PurchaseRequest>()
+                .HasOne(pr => pr.RequestedBy)
+                .WithMany(u => u.PurchaseRequests)
+                .HasForeignKey(pr => pr.RequestedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
+}
 }

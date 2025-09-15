@@ -1,12 +1,11 @@
-﻿namespace Code_Vanta_Systems.Models.Enums
+﻿namespace Code_Vanta_Systems.Models
 {
     public enum EmployeeRole
     {
-        CustomerLiaison,
-        InventoryLiaison,
-        ServiceTechnician,
-        MaintenanceTechnician,
-        FaultTechnician,
-        PurchasingManager
+        Admin = 1,
+        CustomerLiaison = 2,
+        InventoryLiaison = 3,
+        Technician = 4,
+        PurchasingManager = 5
     }
 }

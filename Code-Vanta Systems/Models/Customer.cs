@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Code_Vanta_Systems.Models
 {
@@ -13,23 +15,25 @@ namespace Code_Vanta_Systems.Models
         [Required, StringLength(100)]
         public string ContactName { get; set; }
 
-        [Required, StringLength(100), Phone]
+        [Required, Phone, StringLength(20)]
         public string Phone { get; set; }
 
-        [Required, StringLength(100), EmailAddress]
+        [Required, EmailAddress, StringLength(100)]
         public string Email { get; set; }
 
         [Required]
         public int LocationId { get; set; }
         public virtual Location Location { get; set; }
 
-        public virtual ICollection<FridgeAllocation> Allocations { get; set; }
-        public ICollection<FridgeRequest> FridgeRequests { get; set; }
-
-        // 🔑 Foreign key to Identity User
         [Required]
         public string UserId { get; set; }
-        public ApplicationUser User { get; set; }
+
+        [ForeignKey("UserId")]
+        public virtual ApplicationUser User { get; set; }
+
+        // Navigation collections
+        public virtual ICollection<FridgeAllocation> Allocations { get; set; }
+        public virtual ICollection<FridgeRequest> FridgeRequests { get; set; }
 
         public Customer()
         {
