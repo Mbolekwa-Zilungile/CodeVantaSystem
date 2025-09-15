@@ -17,7 +17,7 @@
         public virtual ICollection<FridgeMaintenance> AssignedMaintenances {  get; set; }
 
         // Navigation property for purchase requests created by this user
-        public virtual ICollection<PurchaseRequest> PurchaseRequest { get; set; }
+        public virtual ICollection<PurchaseRequest> PurchaseRequests { get; set; }
 
         public virtual Employee EmployeeProfile { get; set; }
 

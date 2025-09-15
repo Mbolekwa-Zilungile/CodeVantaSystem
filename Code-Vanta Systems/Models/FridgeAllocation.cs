@@ -1,28 +1,21 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Code_Vanta_Systems.Models;
+using System.ComponentModel.DataAnnotations;
 
-namespace Code_Vanta_Systems.Models
+public class FridgeAllocation
 {
-    public class FridgeAllocation
-    {
-        [Key]
-        public int Id { get; set; }
+    [Key]
+    public int Id { get; set; }
 
-        // Foreign key referencing the allocated fridge
-        public int FridgeId { get; set; }
+    [Required]
+    public int FridgeId { get; set; }
+    public virtual Fridge Fridge { get; set; }
 
-        // Navigation property for the fridge
-        public virtual Fridge Fridge { get; set; }
+    [Required]
+    public int CustomerId { get; set; }
+    public virtual Customer Customer { get; set; }
 
-        // Foreign key referencing the customer receiving the fridge
-        public int CustomerId { get; set; }
+    [Required]
+    public DateTime AllocationDate { get; set; }
 
-        // Navigation property for the customer
-        public virtual Customer Customer { get; set; }
-
-        // Date when the fridge was allocated to the customer
-        public DateTime AllocationDate { get; set; }
-
-        // Optional date when the fridge was deallocated or returned
-        public DateTime? DeallocationDate { get; set; }
-    }
+    public DateTime? DeallocationDate { get; set; }
 }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class createDb : Migration
+    public partial class CreateDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -305,8 +305,7 @@ namespace Code_Vanta_Systems.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     RequestDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RequestedByUserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RequestedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    RequestedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ModelRequested = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false)
@@ -315,10 +314,11 @@ namespace Code_Vanta_Systems.Migrations
                 {
                     table.PrimaryKey("PK_PurchaseRequests", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PurchaseRequests_AspNetUsers_RequestedById",
-                        column: x => x.RequestedById,
+                        name: "FK_PurchaseRequests_AspNetUsers_RequestedByUserId",
+                        column: x => x.RequestedByUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -374,7 +374,7 @@ namespace Code_Vanta_Systems.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     BusinessName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     ContactName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Phone = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     LocationId = table.Column<int>(type: "int", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
@@ -432,7 +432,7 @@ namespace Code_Vanta_Systems.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     SerialNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PurchaseDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
                     LocationId = table.Column<int>(type: "int", nullable: false)
@@ -564,7 +564,7 @@ namespace Code_Vanta_Systems.Migrations
                         column: x => x.CustomerId,
                         principalTable: "Customers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_FridgeRequests_Locations_LocationId",
                         column: x => x.LocationId,
@@ -610,10 +610,10 @@ namespace Code_Vanta_Systems.Migrations
                     FridgeId = table.Column<int>(type: "int", nullable: false),
                     ReportedByUserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ReportedById = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    AssignedTechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    AssignedTechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DateReported = table.Column<DateTime>(type: "datetime2", nullable: false),
                     FaultDescription = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ResolutionDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
@@ -649,7 +649,7 @@ namespace Code_Vanta_Systems.Migrations
                     TechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     MaintenanceDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     MaintenanceDescription = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false)
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -693,7 +693,7 @@ namespace Code_Vanta_Systems.Migrations
                         column: x => x.FridgeId,
                         principalTable: "Fridges",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -721,7 +721,7 @@ namespace Code_Vanta_Systems.Migrations
                         column: x => x.FridgeId,
                         principalTable: "Fridges",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -742,7 +742,7 @@ namespace Code_Vanta_Systems.Migrations
                         column: x => x.FridgeId,
                         principalTable: "Fridges",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -754,7 +754,7 @@ namespace Code_Vanta_Systems.Migrations
                     PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
                     InventoryItemId = table.Column<int>(type: "int", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(10,2)", nullable: false)
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -964,9 +964,9 @@ namespace Code_Vanta_Systems.Migrations
                 column: "SupplierId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PurchaseRequests_RequestedById",
+                name: "IX_PurchaseRequests_RequestedByUserId",
                 table: "PurchaseRequests",
-                column: "RequestedById");
+                column: "RequestedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Quotations_PurchaseRequestId",

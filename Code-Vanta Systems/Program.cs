@@ -16,12 +16,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         sqlOptions =>
         {
             sqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 5, // Number of retries before failing
-                maxRetryDelay: TimeSpan.FromSeconds(10), // Delay between retries
-                errorNumbersToAdd: null // SQL error codes to treat as transient (null = use defaults)
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorNumbersToAdd: null
             );
         }));
-
 
 // Configure Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -43,10 +42,6 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    await SeedService.SeedRoles(roleManager);
-
     await SeedService.SeedDatabase(services);
 }
 
@@ -65,9 +60,9 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Correct default route
+// Default route
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

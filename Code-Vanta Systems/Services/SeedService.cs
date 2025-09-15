@@ -2,6 +2,8 @@
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -9,6 +11,18 @@ using System.Threading.Tasks;
 
 namespace Code_Vanta_Systems.Services
 {
+    public static class Roles
+    {
+        public const string Admin = "Admin";
+        public const string CustomerLiaison = "Customer Liaison";
+        public const string InventoryLiaison = "Inventory Liaison";
+        public const string ServiceTechnician = "Service Technician";
+        public const string FaultTechnician = "Fault Technician";
+        public const string MaintenanceTechnician = "Maintenance Technician";
+        public const string PurchasingManager = "Purchasing Manager";
+        public const string Customer = "Customer";
+    }
+
     public class SeedService
     {
         public static async Task SeedDatabase(IServiceProvider serviceProvider)
@@ -19,26 +33,30 @@ namespace Code_Vanta_Systems.Services
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<SeedService>>();
+            var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-            // Define roles
             string[] roles = {
-                "Admin", "Customer Liaison", "Inventory Liaison",
-                "Service Technician", "Fault Technician",
-                "Maintenance Technician", "Purchasing Manager", "Customer"
+                Roles.Admin, Roles.CustomerLiaison, Roles.InventoryLiaison,
+                Roles.ServiceTechnician, Roles.FaultTechnician,
+                Roles.MaintenanceTechnician, Roles.PurchasingManager, Roles.Customer
             };
 
-            // Create roles if they don't exist
+            // Create roles
             foreach (var role in roles)
             {
                 if (!await roleManager.RoleExistsAsync(role))
                 {
-                    await roleManager.CreateAsync(new IdentityRole(role));
-                    logger.LogInformation($"Role '{role}' created.");
+                    var result = await roleManager.CreateAsync(new IdentityRole(role));
+                    if (result.Succeeded)
+                        logger.LogInformation($"Role '{role}' created.");
+                    else
+                        logger.LogError($"Failed to create role '{role}': {string.Join(", ", result.Errors)}");
                 }
             }
 
             // Create admin user
             var adminEmail = "admin@fridge.com";
+            var adminPassword = config["Seed:AdminPassword"] ?? "Admin@123";
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
             if (adminUser == null)
@@ -51,41 +69,54 @@ namespace Code_Vanta_Systems.Services
                     EmailConfirmed = true
                 };
 
-                var result = await userManager.CreateAsync(newAdmin, "Admin@123");
+                var result = await userManager.CreateAsync(newAdmin, adminPassword);
 
                 if (result.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(newAdmin, "Admin");
+                    await userManager.AddToRoleAsync(newAdmin, Roles.Admin);
                     logger.LogInformation("Admin user created and assigned to 'Admin' role.");
 
-                    // Create Employee profile for admin
-                    var adminEmployee = new Employee
-                    {
-                        ApplicationUserId = newAdmin.Id,
-                        Role = EmployeeRole.PurchasingManager, // Adjust if needed
-                        IsActive = true,
-                        CreatedAt = DateTime.Now
-                    };
+                    var existingEmployee = await dbContext.Employees
+                        .FirstOrDefaultAsync(e => e.ApplicationUserId == newAdmin.Id);
 
-                    dbContext.Employees.Add(adminEmployee);
-                    await dbContext.SaveChangesAsync();
-                    logger.LogInformation("Admin employee profile created.");
+                    if (existingEmployee == null)
+                    {
+                        var adminEmployee = new Employee
+                        {
+                            ApplicationUserId = newAdmin.Id,
+                            Role = EmployeeRole.PurchasingManager, // Adjust if needed
+                            IsActive = true,
+                            CreatedAt = DateTime.Now
+                        };
+
+                        dbContext.Employees.Add(adminEmployee);
+                        await dbContext.SaveChangesAsync();
+                        logger.LogInformation("Admin employee profile created.");
+                    }
                 }
                 else
                 {
-                    logger.LogError("Failed to create admin user.");
+                    foreach (var error in result.Errors)
+                    {
+                        logger.LogError($"Error creating admin user: {error.Description}");
+                    }
                 }
             }
             else
             {
                 logger.LogInformation("Admin user already exists.");
             }
+
+            logger.LogInformation("Seeding completed successfully.");
         }
 
-        // Optional: Separate method to seed roles only
         public static async Task SeedRoles(RoleManager<IdentityRole> roleManager)
         {
-            string[] roles = { "Admin", "Technician", "Customer Liaison" };
+            string[] roles = {
+                Roles.Admin, Roles.CustomerLiaison, Roles.InventoryLiaison,
+                Roles.ServiceTechnician, Roles.FaultTechnician,
+                Roles.MaintenanceTechnician, Roles.PurchasingManager, Roles.Customer
+            };
 
             foreach (var role in roles)
             {
