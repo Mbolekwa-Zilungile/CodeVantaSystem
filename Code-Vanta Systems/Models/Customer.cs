@@ -21,15 +21,16 @@ namespace Code_Vanta_Systems.Models
         [Required, EmailAddress, StringLength(100)]
         public string Email { get; set; }
 
+        // Location where customer is based
         [Required]
         public int LocationId { get; set; }
         public virtual Location Location { get; set; }
 
-        [Required]
-        public string UserId { get; set; }
+        // Optional link to an ApplicationUser (for customer portal logins)
+        public string? UserId { get; set; }
 
         [ForeignKey("UserId")]
-        public virtual ApplicationUser User { get; set; }
+        public virtual ApplicationUser? User { get; set; }
 
         // Navigation collections
         public virtual ICollection<FridgeAllocation> Allocations { get; set; }

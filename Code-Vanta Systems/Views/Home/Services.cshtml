@@ -4,46 +4,46 @@
 
 <section class="bg-gray-100 py-16">
     <div class="container mx-auto px-6">
-        <h2 class="text-4xl font-bold text-center text-gray-800 mb-12">Our Fridge Repair Services</h2>
+        <h2 class="text-4xl font-bold text-center text-gray-800 mb-12">Our Fridge Management Services</h2>
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
 
-            <!-- Card 1 -->
+            <!-- Fault Diagnosis -->
             <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition">
                 <img src="~/images/two.jpg" alt="Fault Diagnosis" class="w-full h-48 object-cover">
                 <div class="p-6">
                     <h3 class="text-xl font-semibold mb-2">Fault Diagnosis</h3>
-                    <p class="text-gray-600 mb-4">Quick and accurate identification of fridge issues to get your appliance running smoothly.</p>
-                    <a href="#" class="text-blue-600 font-semibold hover:underline">Learn More →</a>
+                    <p class="text-gray-600 mb-4">Quick and accurate identification of fridge issues.</p>
+                    <a asp-controller="FridgeFault" asp-action="Create" class="text-blue-600 font-semibold hover:underline">Report Fault →</a>
                 </div>
             </div>
 
-            <!-- Card 2 -->
+            <!-- Maintenance -->
             <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition">
                 <img src="~/images/Combined island freezer.jpg" alt="Fridge Maintenance" class="w-full h-48 object-cover">
                 <div class="p-6">
                     <h3 class="text-xl font-semibold mb-2">Regular Maintenance</h3>
-                    <p class="text-gray-600 mb-4">Keep your fridge in top condition with scheduled maintenance visits.</p>
-                    <a href="#" class="text-blue-600 font-semibold hover:underline">Learn More →</a>
+                    <p class="text-gray-600 mb-4">Keep your fridge in top condition with scheduled visits.</p>
+                    <a asp-controller="FridgeMaintenance" asp-action="Index" class="text-blue-600 font-semibold hover:underline">View Schedule →</a>
                 </div>
             </div>
 
-            <!-- Card 3 -->
+            <!-- Parts Replacement -->
             <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition">
                 <img src="~/images/repair.jpg" alt="Parts Replacement" class="w-full h-48 object-cover">
                 <div class="p-6">
                     <h3 class="text-xl font-semibold mb-2">Parts Replacement</h3>
-                    <p class="text-gray-600 mb-4">We replace faulty parts with genuine components for lasting performance.</p>
-                    <a href="#" class="text-blue-600 font-semibold hover:underline">Learn More →</a>
+                    <p class="text-gray-600 mb-4">Replace faulty parts with genuine inventory items.</p>
+                    <a asp-controller="InventoryItem" asp-action="Index" class="text-blue-600 font-semibold hover:underline">Browse Inventory →</a>
                 </div>
             </div>
 
-            <!-- Card 4 -->
+            <!-- Emergency Repairs -->
             <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition">
                 <img src="~/images/three.jpg" alt="Emergency Repairs" class="w-full h-48 object-cover">
                 <div class="p-6">
                     <h3 class="text-xl font-semibold mb-2">Emergency Repairs</h3>
-                    <p class="text-gray-600 mb-4">Fast response to urgent fridge breakdowns to minimize downtime.</p>
-                    <a href="#" class="text-blue-600 font-semibold hover:underline">Learn More →</a>
+                    <p class="text-gray-600 mb-4">Fast response to urgent fridge breakdowns.</p>
+                    <a asp-controller="FridgeFault" asp-action="Index" class="text-blue-600 font-semibold hover:underline">Track Repairs →</a>
                 </div>
             </div>
 

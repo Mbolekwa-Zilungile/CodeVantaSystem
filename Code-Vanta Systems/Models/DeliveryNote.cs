@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Code_Vanta_Systems.Models;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Code_Vanta_Systems.Models
@@ -8,27 +9,29 @@ namespace Code_Vanta_Systems.Models
         [Key]
         public int Id { get; set; }
 
-        // Date when the delivery was made
         [Required]
-        public DateTime DeliveryDate { get; set; }
+        [DataType(DataType.Date)]
+        public DateTime DeliveryDate { get; set; } = DateTime.Now;
 
-        // Foreign key referencing the supplier who made the delivery
+        //Foreign key: Supplier
         [Required]
         public int SupplierId { get; set; }
-
-        // Navigation property for the supplier
-        [ForeignKey("SupplierId")]
         public virtual Supplier Supplier { get; set; }
 
-        // Foreign key referencing the related purchase request
+        //Foreign key: PurchaseOrder
         [Required]
-        public int PurchaseRequestId { get; set; }
+        public int PurchaseOrderId { get; set; }
+        public virtual PurchaseOrder PurchaseOrder { get; set; }
 
-        // Navigation property for the associated purchase request
-        [ForeignKey("PurchaseRequestId")]
-        public virtual PurchaseRequest PurchaseRequest { get; set; }
+        //Foreign key: ApplicationUser (Receiver)
+        // If receiving user might sometimes be unknown → make it nullable: string?
+        [Required]
+        public string ReceivedById { get; set; }
 
-        // Optional notes related to the delivery (e.g., condition, remarks)
+        [ForeignKey("ReceivedById")]
+        public virtual ApplicationUser ReceivedBy { get; set; }
+
+        //Optional notes
         [StringLength(500)]
         public string Notes { get; set; }
     }

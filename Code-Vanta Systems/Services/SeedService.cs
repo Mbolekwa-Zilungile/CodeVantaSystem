@@ -1,12 +1,13 @@
-﻿using Code_Vanta_Systems.Data;
-using Code_Vanta_Systems.Models;
-using Code_Vanta_Systems.Models.Enums;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Code_Vanta_Systems.Data;
+using Code_Vanta_Systems.Models;
+using Code_Vanta_Systems.Models.Enums;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Code_Vanta_Systems.Services
@@ -56,7 +57,7 @@ namespace Code_Vanta_Systems.Services
 
             // Create admin user
             var adminEmail = "admin@fridge.com";
-            var adminPassword = config["Seed:AdminPassword"] ?? "Admin@123";
+            var adminPassword = config["Seed:AdminPassword"] ?? "Admin@123!";
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
             if (adminUser == null)
@@ -84,7 +85,7 @@ namespace Code_Vanta_Systems.Services
                         var adminEmployee = new Employee
                         {
                             ApplicationUserId = newAdmin.Id,
-                            Role = EmployeeRole.PurchasingManager, // Adjust if needed
+                            Role = EmployeeRole.Admin,
                             IsActive = true,
                             CreatedAt = DateTime.Now
                         };
@@ -105,6 +106,50 @@ namespace Code_Vanta_Systems.Services
             else
             {
                 logger.LogInformation("Admin user already exists.");
+            }
+
+            // Seed valid locations
+            if (!await dbContext.Locations.AnyAsync())
+            {
+                var locations = new List<Location>
+                {
+                    new Location
+                    {
+                        Description = "George Branch",
+                        Address = "123 Main Street",
+                        City = "George",
+                        Province = Region.WesternCape
+                    },
+                    new Location
+                    {
+                        Description = "Cape Town HQ",
+                        Address = "456 Long Street",
+                        City = "Cape Town",
+                        Province = Region.WesternCape
+                    },
+                    new Location
+                    {
+                        Description = "Johannesburg Office",
+                        Address = "789 Market Road",
+                        City = "Johannesburg",
+                        Province = Region.Gauteng
+                    },
+                    new Location
+                    {
+                        Description = "Durban Depot",
+                        Address = "321 Beach Avenue",
+                        City = "Durban",
+                        Province = Region.KwaZuluNatal
+                    }
+                };
+
+                dbContext.Locations.AddRange(locations);
+                await dbContext.SaveChangesAsync();
+                logger.LogInformation("Default locations seeded.");
+            }
+            else
+            {
+                logger.LogInformation("Locations already exist. Skipping location seeding.");
             }
 
             logger.LogInformation("Seeding completed successfully.");

@@ -36,6 +36,9 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+// Register dropdown service BEFORE building app
+builder.Services.AddScoped<IDropdownService, DropdownService>();
+
 var app = builder.Build();
 
 // Seed roles and admin user

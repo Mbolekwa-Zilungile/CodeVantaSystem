@@ -5,28 +5,25 @@ namespace Code_Vanta_Systems.Models
 {
     public class RequestQuotation
     {
-
         [Key]
         public int RequestQuotationId { get; set; }
 
-        // Date when the quotation request was made
         [Required]
-        public DateTime RequestDate { get; set; }
+        [DataType(DataType.Date)]
+        public DateTime RequestDate { get; set; } = DateTime.Now;
 
-        // Foreign key referencing the user who made the request
         [Required]
         public string RequestedByUserId { get; set; }
-
-        // Navigation property for the requesting user
         [ForeignKey("RequestedByUserId")]
         public ApplicationUser RequestedBy { get; set; }
 
-        // Optional notes/remarks about the quotation request
+        [Required]
+        public int SupplierId { get; set; }
+        public Supplier Supplier { get; set; }
+
         [MaxLength(500)]
         public string Notes { get; set; }
 
-        // Collection of quotations linked to this request
-        public ICollection<Quotation> Quotations { get; set; }
-
+        public ICollection<Quotation> Quotations { get; set; } = new HashSet<Quotation>();
     }
 }

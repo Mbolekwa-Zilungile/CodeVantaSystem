@@ -8,29 +8,23 @@ namespace Code_Vanta_Systems.Models
         [Key]
         public int Id { get; set; }
 
-        // Date when the request was made
-        public DateTime RequestDate { get; set; }
+        [Required]
+        [DataType(DataType.Date)]
+        public DateTime RequestDate { get; set; } = DateTime.Now;
 
-        // Foreign key referencing the user who made the request
-        // Navigation property for the requesting user
         [Required]
         public string RequestedByUserId { get; set; }
         public virtual ApplicationUser RequestedBy { get; set; }
 
-        // Model of the fridge or item being requested
-        [Required] 
-        [StringLength(100)]
+        [Required, StringLength(100)]
         public string ModelRequested { get; set; }
 
-        // Quantity of items requested
         [Range(1, int.MaxValue)]
         public int Quantity { get; set; }
 
-        // Status of the request (e.g., Pending, Approved, Rejected)
         [Required]
         public RequestStatus Status { get; set; } = RequestStatus.Pending;
 
-        // Collection of quotations linked to this request
-        public virtual ICollection<Quotation> Quotations { get; set; }
+        public virtual ICollection<Quotation> Quotations { get; set; } = new HashSet<Quotation>();
     }
 }

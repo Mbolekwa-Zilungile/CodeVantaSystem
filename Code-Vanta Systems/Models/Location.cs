@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Code_Vanta_Systems.Models.Enums;
 
 namespace Code_Vanta_Systems.Models
 {
@@ -18,9 +20,9 @@ namespace Code_Vanta_Systems.Models
         [Required, StringLength(200)]
         public string City { get; set; }
 
-        // Region or province of the location
-        [Required, StringLength(200)]
-        public string Region { get; set; }
+        // Province (formerly Region) of the location
+        [Required]
+        public Region Province { get; set; }
 
         // Navigation property for customers associated with this location
         public virtual ICollection<Customer> Customers { get; set; }
@@ -29,7 +31,13 @@ namespace Code_Vanta_Systems.Models
         public virtual ICollection<Fridge> Fridges { get; set; }
 
         // Navigation property for fridge requests made from this location
-        public ICollection<FridgeRequest> FridgeRequests { get; set; }
+        public virtual ICollection<FridgeRequest> FridgeRequests { get; set; }
 
+        public Location()
+        {
+            Customers = new HashSet<Customer>();
+            Fridges = new HashSet<Fridge>();
+            FridgeRequests = new HashSet<FridgeRequest>();
+        }
     }
 }

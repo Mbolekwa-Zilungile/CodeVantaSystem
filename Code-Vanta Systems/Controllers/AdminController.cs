@@ -1,33 +1,46 @@
 ﻿using Code_Vanta_Systems.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Code_Vanta_Systems.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
-
         private readonly UserManager<ApplicationUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
 
         public AdminController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
-            userManager = userManager;
-            roleManager = roleManager;
+            this.userManager = userManager;
+            this.roleManager = roleManager;
         }
 
         public IActionResult Index()
         {
-            return View();
+            return RedirectToAction("ManageRoles");
         }
+
         public IActionResult ManageRoles()
         {
             var users = userManager.Users.ToList();
             var roles = roleManager.Roles.ToList();
-            return View(new RoleManagementViewModel { Users = users, Roles = roles });
+            var userRoles = new Dictionary<string, IList<string>>();
+
+            foreach (var user in users)
+            {
+                var rolesForUser = userManager.GetRolesAsync(user).Result;
+                userRoles[user.Id] = rolesForUser;
+            }
+
+            return View(new RoleManagementViewModel
+            {
+                Users = users,
+                Roles = roles,
+                UserRoles = userRoles
+            });
         }
 
         [HttpPost]
@@ -39,9 +52,19 @@ namespace Code_Vanta_Systems.Controllers
                 await userManager.AddToRoleAsync(user, role);
             }
 
-            return RedirectToAction("ManageRoles");
+            return RedirectToAction(nameof(ManageRoles));
         }
-        
-       
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveRole(string userId, string role)
+        {
+            var user = await userManager.FindByIdAsync(userId);
+            if (user != null && await userManager.IsInRoleAsync(user, role))
+            {
+                await userManager.RemoveFromRoleAsync(user, role);
+            }
+
+            return RedirectToAction(nameof(ManageRoles));
+        }
     }
 }

@@ -4,7 +4,6 @@ namespace Code_Vanta_Systems.Models
 {
     public class Supplier
     {
-
         [Key]
         public int Id { get; set; }
 
@@ -13,13 +12,11 @@ namespace Code_Vanta_Systems.Models
         public string Name { get; set; }
 
         // Contact email address of the supplier
-        [Required]
-        [EmailAddress]
+        [Required, EmailAddress]
         public string ContactEmail { get; set; }
 
         // Contact phone number of the supplier
-        [Required]
-        [Phone]
+        [Required, Phone]
         public string Phone { get; set; }
 
         // Physical or mailing address of the supplier
@@ -32,14 +29,15 @@ namespace Code_Vanta_Systems.Models
         // Navigation property for quotations provided by this supplier
         public virtual ICollection<Quotation> Quotations { get; set; }
 
+        // New: Navigation property for delivery notes
+        public virtual ICollection<DeliveryNote> DeliveryNotes { get; set; }
 
         // Constructor to initialize collections
         public Supplier()
         {
             Fridges = new HashSet<Fridge>();
             Quotations = new HashSet<Quotation>();
-
-
+            DeliveryNotes = new HashSet<DeliveryNote>();
         }
     }
 }

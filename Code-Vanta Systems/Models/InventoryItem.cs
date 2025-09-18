@@ -1,37 +1,33 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Code_Vanta_Systems.Models
 {
     public class InventoryItem
     {
+        [Key]
         public int Id { get; set; }
 
-        // Name of the inventory item
-        [Required]
+        [Required, StringLength(100)]
         public string Name { get; set; }
 
-        // Optional description of the item
+        [StringLength(500)]
         public string Description { get; set; }
 
-        // Quantity currently available in stock
+        [Range(0, int.MaxValue, ErrorMessage = "Quantity cannot be negative")]
         public int QuantityAvailable { get; set; }
 
-
-        // Unit price of the item with decimal precision
-
+        [Required]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0.01, 999999.99, ErrorMessage = "Price must be greater than 0")]
         public decimal UnitPrice { get; set; }
 
-        // Navigation property for purchase order items that include this inventory item
-        public ICollection<PurchaseOrderItem> PurchaseOrderItems { get; set; }
+        // Optional: Track which supplier provided the item
+        public int? SupplierId { get; set; }
+        public Supplier Supplier { get; set; }
 
-        // Constructor to initialize the collection
-        public InventoryItem()
-        {
-            PurchaseOrderItems = new HashSet<PurchaseOrderItem>();
-        }
-
-
+        // Navigation property for purchase order items
+        public ICollection<PurchaseOrderItem> PurchaseOrderItems { get; set; } = new HashSet<PurchaseOrderItem>();
     }
 }

@@ -1,0 +1,60 @@
+﻿@using Code_Vanta_Systems.ViewModels;
+@{
+    ViewData["Title"] = "Manage Roles";
+}
+
+<h2>Manage Roles</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Current Roles</th>
+            <th>Assign Role</th>
+            <th>Remove Role</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model.Users)
+        {
+            <tr>
+                <td>@user.FullName</td>
+                <td>@user.Email</td>
+                <td>
+                    @if (Model.UserRoles.ContainsKey(user.Id))
+                    {
+                        foreach (var role in Model.UserRoles[user.Id])
+                        {
+                            <span class="badge bg-secondary">@role</span>
+                        }
+                    }
+                </td>
+                <td>
+                    <form asp-action="AssignRole" method="post">
+                        <input type="hidden" name="userId" value="@user.Id" />
+                        <select name="role" class="form-control">
+                            @foreach (var role in Model.Roles)
+                            {
+                                <option value="@role.Name">@role.Name</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary mt-1">Assign</button>
+                    </form>
+                </td>
+                <td>
+                    <form asp-action="RemoveRole" method="post">
+                        <input type="hidden" name="userId" value="@user.Id" />
+                        <select name="role" class="form-control">
+                            @foreach (var role in Model.UserRoles[user.Id])
+                            {
+                                <option value="@role">@role</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-danger mt-1">Remove</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

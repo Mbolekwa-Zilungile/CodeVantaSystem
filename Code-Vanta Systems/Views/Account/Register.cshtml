@@ -1,4 +1,5 @@
-﻿@model Code_Vanta_Systems.ViewModels.RegisterViewModel
+﻿@using Code_Vanta_Systems.ViewModels
+@model RegisterViewModel
 
 @{
     ViewData["Title"] = "Register";
@@ -15,36 +16,36 @@
 
             <!-- Full Name -->
             <div class="mb-3">
-                <label asp-for="Name"></label>
+                <label asp-for="Name" class="form-label"></label>
                 <input asp-for="Name" class="form-control" placeholder="Enter your full name" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
 
             <!-- Business Name -->
             <div class="mb-3">
-                <label asp-for="BusinessName"></label>
-                <input asp-for="BusinessName" class="form-control" placeholder="Enter your business name" />
+                <label asp-for="BusinessName" class="form-label"></label>
+                <input asp-for="BusinessName" class="form-control" placeholder="Enter your business/shop name" />
                 <span asp-validation-for="BusinessName" class="text-danger"></span>
             </div>
 
             <!-- Phone Number -->
             <div class="mb-3">
-                <label asp-for="Phone"></label>
+                <label asp-for="Phone" class="form-label"></label>
                 <input asp-for="Phone" class="form-control" placeholder="Enter your phone number" />
                 <span asp-validation-for="Phone" class="text-danger"></span>
             </div>
 
             <!-- Email -->
             <div class="mb-3">
-                <label asp-for="Email"></label>
+                <label asp-for="Email" class="form-label"></label>
                 <input asp-for="Email" class="form-control" placeholder="Enter your email address" />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
 
             <!-- Region Dropdown -->
             <div class="mb-3">
-                <label asp-for="SelectedRegion"></label>
-                <select asp-for="SelectedRegion" asp-items="Model.RegionOptions" class="form-control">
+                <label asp-for="SelectedRegion" class="form-label"></label>
+                <select asp-for="SelectedRegion" class="form-control" asp-items="Model.RegionOptions">
                     <option value="">-- Select your region --</option>
                 </select>
                 <span asp-validation-for="SelectedRegion" class="text-danger"></span>
@@ -52,15 +53,15 @@
 
             <!-- Password -->
             <div class="mb-3">
-                <label asp-for="Password"></label>
-                <input asp-for="Password" type="password" class="form-control" placeholder="Choose a secure password" />
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control" placeholder="Choose a secure password" />
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
 
             <!-- Confirm Password -->
             <div class="mb-3">
-                <label asp-for="ConfirmPassword"></label>
-                <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm your password" />
+                <label asp-for="ConfirmPassword" class="form-label"></label>
+                <input asp-for="ConfirmPassword" class="form-control" placeholder="Confirm your password" />
                 <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
             </div>
 
@@ -81,5 +82,5 @@
 </div>
 
 @section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial.cshtml")
+    @await Html.PartialAsync("_ValidationScriptsPartial")
 }

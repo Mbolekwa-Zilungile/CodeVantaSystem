@@ -1,9 +1,38 @@
-﻿@{
-    ViewData["Title"] = "Welcome";
+﻿@model IEnumerable<Code_Vanta_Systems.Models.Customer>
+
+@{
+    ViewData["Title"] = "Customers";
 }
-<h1>Customer</h1>
-<h1>👋 Welcome to Your Fridge Management System!</h1>
 
-<p>Track what’s in your fridge, get expiry reminders, and reduce food waste.</p>
+<h2>Customers</h2>
 
-<p>Use the menu to start managing your fridge items.</p>
+<a asp-action="Create" class="btn btn-primary">Add New Customer</a>
+
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Business Name</th>
+            <th>Contact Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Location</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var customer in Model)
+        {
+            <tr>
+                <td>@customer.BusinessName</td>
+                <td>@customer.ContactName</td>
+                <td>@customer.Phone</td>
+                <td>@customer.Email</td>
+                <td>@customer.Location?.Description</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@customer.Id" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@customer.Id" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

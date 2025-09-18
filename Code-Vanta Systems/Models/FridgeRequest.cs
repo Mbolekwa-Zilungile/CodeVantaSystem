@@ -1,36 +1,35 @@
 ﻿using Code_Vanta_Systems.Models.Enums;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Code_Vanta_Systems.Models
 {
     public class FridgeRequest
     {
-
+        [Key]
         public int Id { get; set; }
 
-        // Foreign key referencing the customer making the request
         [Required]
         public int CustomerId { get; set; }
+        public virtual Customer Customer { get; set; }
 
-        // Navigation property for the customer
-        public Customer Customer { get; set; }
-
-        // Foreign key referencing the location of the request
         [Required]
         public int LocationId { get; set; }
+        public virtual Location Location { get; set; }
 
-        // Navigation property for the location
-        public Location Location { get; set; }
+        // Who submitted the request (Customer or Liaison)
+        [Required]
+        public string RequestedByUserId { get; set; }
+        public virtual ApplicationUser RequestedBy { get; set; }
 
-
-        // Timestamp when the request was made
+        [Required]
+        [DataType(DataType.DateTime)]
         public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
 
-        // Optional notes or remarks about the request
+        [StringLength(500)]
         public string Notes { get; set; }
 
-        // Status of the request (e.g., Pending, Approved, Rejected)
-        public RequestStatus Status { get; set; }
-
+        [Required]
+        public RequestStatus Status { get; set; } = RequestStatus.Pending;
     }
 }
