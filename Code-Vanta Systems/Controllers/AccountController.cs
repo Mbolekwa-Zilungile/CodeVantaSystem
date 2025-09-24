@@ -56,7 +56,7 @@ namespace Code_Vanta_Systems.Controllers
             if (result.Succeeded)
             {
                 if (await _userManager.IsInRoleAsync(user, Roles.Admin))
-                    return RedirectToAction("Index", "Admin");
+                    return RedirectToAction("Employees", "Admin");
 
                 if (await _userManager.IsInRoleAsync(user, Roles.Customer))
                     return RedirectToAction("Index", "Customer");

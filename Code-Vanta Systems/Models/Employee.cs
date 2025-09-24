@@ -21,7 +21,8 @@ namespace Code_Vanta_Systems.Models
 
         public int? LocationId { get; set; }
         public virtual Location Location { get; set; }
-
+        public string Position { get; set; }
+        public string PhoneNumber {  get; set; }
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }

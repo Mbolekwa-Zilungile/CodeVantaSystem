@@ -39,7 +39,7 @@ namespace Code_Vanta_Systems.Services
             string[] roles = {
                 Roles.Admin, Roles.CustomerLiaison, Roles.InventoryLiaison,
                 Roles.ServiceTechnician, Roles.FaultTechnician,
-                Roles.MaintenanceTechnician, Roles.PurchasingManager, Roles.Customer
+                Roles.MaintenanceTechnician, Roles.PurchasingManager, Roles.Customer 
             };
 
             // Create roles

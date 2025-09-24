@@ -6,6 +6,13 @@
     Layout = "~/Views/Shared/_AccountLayout.cshtml";
 }
 
+@{
+    ViewData["Title"] = "Login";
+    Layout = "~/Views/Shared/_AccountLayout.cshtml";
+}
+
+
+
 <div class="account-container d-flex justify-content-center align-items-center vh-100">
     <div class="account-box card shadow-lg p-4" style="max-width: 450px; width: 100%; border-radius: 1rem; background-color: rgba(255,255,255,0.95);">
         <h2 class="text-center fw-bold mb-4 text-primary">Create Your Account</h2>
@@ -13,7 +20,7 @@
         <form asp-controller="Account" asp-action="Register" method="post">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="All" class="text-danger mb-3"></div>
-
+            
             <!-- Full Name -->
             <div class="mb-3">
                 <label asp-for="Name" class="form-label"></label>
