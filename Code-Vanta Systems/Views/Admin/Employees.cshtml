@@ -1,16 +1,24 @@
-﻿@model IEnumerable<Employee>
+﻿@model IEnumerable<Code_Vanta_Systems.Models.Employee>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 
 <div class="container-fluid py-4">
 
-    <!-- WELCOME SECTION -->
     <div class="row mb-4">
         <div class="col">
-            <h1 class="alert alert-success">Welcome back, @User.Identity.Name</h1>
-            <p class="text-muted">You have full access to manage employees customers,view reports and oversee system operations.</p>
+            <h1 class="alert alert-success">Welcome back, @User.Identity?.Name</h1>
+            <p class="text-muted">
+                You have full access to manage employees, customers, view reports and oversee system operations.
+            </p>
         </div>
     </div>
 
-    <!-- STAT CARDS -->
     <div class="row g-4 mb-4">
         <div class="col-md-3">
             <div class="card text-center shadow-sm border-0">
@@ -26,7 +34,7 @@
             <div class="card text-center shadow-sm border-0">
                 <div class="card-body">
                     <i class="bi bi-kanban-fill fs-2 text-warning mb-2"></i>
-                    <h2 class="fw-bold text-primary">@ViewBag.EmployeeCount</h2>
+                    <h2 class="fw-bold text-warning">@ViewBag.CustomerCount</h2>
                     <p class="mb-0 text-muted">Customers</p>
                 </div>
             </div>
@@ -53,18 +61,20 @@
         </div>
     </div>
 </div>
+
 <h2>Employees</h2>
 
 <p>
-    <a asp-action="Create">Create a employee </a>
+    <a asp-action="Create" class="btn btn-success">Create a New Employee</a>
 </p>
+
 <table class="table table-bordered table-striped">
     <thead class="table-dark">
         <tr>
-            <th>FullName</th>
+            <th>Full Name</th>
             <th>Email</th>
             <th>Phone number</th>
-            <th>Position</th>
+            <th>Role</th>
             <th>Hired Date</th>
             <th>Actions</th>
         </tr>
@@ -73,17 +83,23 @@
         @foreach (var emp in Model)
         {
             <tr>
-                <td>@emp.User.FullName</td>
-                <td>@emp.User.Email</td>
+                <td>@emp.User?.FullName</td>
+                <td>@emp.User?.Email</td>
                 <td>@emp.PhoneNumber</td>
+
+                @* 🚨 FIX: The controller sets employee.Position = model.SelectedRole, so we display Position. *@
                 <td>@emp.Position</td>
+
                 <td>@emp.CreatedAt.ToString("yyyy-MMM-dd")</td>
                 <td>
-                    <a asp-controller="Admin" asp-action="Edit" asp-route-id="@emp.Id" class="btn btn-outline-primary btn-sm">Edit</a>
-                    <a asp-action="Delete" asp-route-id="@emp.Id" class="btn btn-outline-danger btn-sm">Delete</a>
+                    <a asp-controller="Admin" asp-action="Edit" asp-route-id="@emp.Id"
+                       class="btn btn-outline-primary btn-sm">Edit</a>
+                    <a asp-controller="Admin" asp-action="Delete" asp-route-id="@emp.Id"
+                       class="btn btn-outline-danger btn-sm">Delete</a>
                 </td>
             </tr>
         }
     </tbody>
 </table>
 
+@* 🚨 WARNING: The rest of the Create View code must be moved to Create.cshtml! *@

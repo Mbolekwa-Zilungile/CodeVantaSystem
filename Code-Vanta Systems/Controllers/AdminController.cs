@@ -1,5 +1,7 @@
 ﻿using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
+using Code_Vanta_Systems.ViewModels;
+using Code_Vanta_Systems.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,18 +17,23 @@ namespace Code_Vanta_Systems.Controllers
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly ApplicationDbContext context;
 
-        public AdminController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context)
+        public AdminController(
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            ApplicationDbContext context)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
             this.context = context;
         }
 
+        //ManageRoles
         public IActionResult Index()
         {
             return RedirectToAction("ManageRoles");
         }
 
+        //Manage Roles
         public IActionResult ManageRoles()
         {
             var users = userManager.Users.ToList();
@@ -47,6 +54,7 @@ namespace Code_Vanta_Systems.Controllers
             });
         }
 
+        // Assign Role
         [HttpPost]
         public async Task<IActionResult> AssignRole(string userId, string role)
         {
@@ -59,6 +67,7 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction(nameof(ManageRoles));
         }
 
+        // Remove Role
         [HttpPost]
         public async Task<IActionResult> RemoveRole(string userId, string role)
         {
@@ -71,6 +80,8 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction(nameof(ManageRoles));
         }
 
+        // GET: Create
+        [HttpGet]
         public IActionResult Create()
         {
             var model = new RegisterEmployeeViewModel
@@ -80,22 +91,21 @@ namespace Code_Vanta_Systems.Controllers
             return View(model);
         }
 
+        // POST: Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(RegisterEmployeeViewModel model)
         {
-            Console.WriteLine("➡️ Create POST called"); // 👈 step 1
-
             if (!ModelState.IsValid)
             {
-                var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return Content("❌ ModelState invalid: " + errors);
+                model.Roles = GetAvailableRoles();
+                return View(model);
             }
 
             var existingUser = await userManager.FindByEmailAsync(model.Email);
             if (existingUser != null)
             {
-                Console.WriteLine("❌ User already exists with this email");
+                ModelState.AddModelError("Email", "An account with this email already exists.");
                 model.Roles = GetAvailableRoles();
                 return View(model);
             }
@@ -105,57 +115,137 @@ namespace Code_Vanta_Systems.Controllers
                 UserName = model.Email,
                 Email = model.Email,
                 FullName = model.FullName,
+                PhoneNumber = model.PhoneNumber,
+                EmailConfirmed = true // important
             };
 
             var result = await userManager.CreateAsync(user, model.Password);
-
-            if (result.Succeeded)
+            if (!result.Succeeded)
             {
-                Console.WriteLine("✅ User created successfully");
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError("", error.Description);
 
-                await userManager.AddToRoleAsync(user, model.SelectedRole);
-                Console.WriteLine($"✅ Role {model.SelectedRole} assigned");
-
-                var employee = new Employee
-                {
-                    ApplicationUserId = user.Id,
-                    Position = model.SelectedRole,
-                    PhoneNumber = model.PhoneNumber,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    Role = Enum.TryParse<EmployeeRole>(model.SelectedRole, out var role)
-               ? role
-               : EmployeeRole.Technician // default if parsing fails
-                };
-
-                context.Employees.Add(employee);
-                await context.SaveChangesAsync();
-                Console.WriteLine("✅ Employee saved to database");
-
-                return RedirectToAction("Employees");
+                model.Roles = GetAvailableRoles();
+                return View(model);
             }
 
-            foreach (var error in result.Errors)
+            await userManager.AddToRoleAsync(user, model.SelectedRole);
+
+            var employee = new Employee
             {
-                Console.WriteLine($"❌ Identity error: {error.Description}");
-                ModelState.AddModelError("", error.Description);
+                ApplicationUserId = user.Id,
+                Position = model.SelectedRole,
+                PhoneNumber = model.PhoneNumber,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                Role = Enum.TryParse<EmployeeRole>(model.SelectedRole, out var parsedRole)
+                    ? parsedRole
+                    : EmployeeRole.Technician
+            };
+
+            context.Employees.Add(employee);
+            await context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Employee added successfully";
+            return RedirectToAction("Employees");
+        }
+
+        // GET: Edit
+        public async Task<IActionResult> Edit(int id)
+        {
+            var employee = await context.Employees
+                .Include(x => x.User)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (employee == null) return NotFound();
+
+            var currentRole = await userManager.GetRolesAsync(employee.User);
+
+            var viewModel = new RegisterEmployeeViewModel
+            {
+                Id = employee.Id,
+                FullName = employee.User.FullName,
+                Email = employee.User.Email,
+                PhoneNumber = employee.PhoneNumber,
+                SelectedRole = currentRole.FirstOrDefault(),
+                Roles = GetAvailableRoles()
+            };
+
+            return View(viewModel);
+        }
+
+
+        // POST: Edit
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(RegisterEmployeeViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                model.Roles = GetAvailableRoles();
+                return View(model);
             }
 
-            model.Roles = GetAvailableRoles();
-            return View(model);
+            var employee = await context.Employees
+                .Include(e => e.User)
+                .FirstOrDefaultAsync(e => e.Id == model.Id);
+
+            if (employee == null) return NotFound();
+
+            // update ApplicationUser info
+            employee.User.FullName = model.FullName;
+
+            if (!string.Equals(employee.User.Email, model.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                await userManager.SetEmailAsync(employee.User, model.Email);
+                await userManager.SetUserNameAsync(employee.User, model.Email);
+            }
+
+            if (!string.Equals(employee.User.PhoneNumber, model.PhoneNumber, StringComparison.OrdinalIgnoreCase))
+            {
+                await userManager.SetPhoneNumberAsync(employee.User, model.PhoneNumber);
+            }
+
+            // update roles
+            var currentRoles = await userManager.GetRolesAsync(employee.User);
+            if (currentRoles.Any())
+            {
+                await userManager.RemoveFromRolesAsync(employee.User, currentRoles);
+            }
+
+            if (!string.IsNullOrEmpty(model.SelectedRole))
+            {
+                await userManager.AddToRoleAsync(employee.User, model.SelectedRole);
+
+                employee.Position = model.SelectedRole;
+                employee.Role = Enum.TryParse<EmployeeRole>(model.SelectedRole, out var parsedRole)
+                    ? parsedRole
+                    : employee.Role;
+            }
+
+            employee.PhoneNumber = model.PhoneNumber;
+
+            context.Employees.Update(employee);
+            await context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Employee details updated successfully";
+            return RedirectToAction("Employees");
         }
 
         private List<SelectListItem> GetAvailableRoles()
         {
-            return roleManager.Roles
-                .Where(r => r.Name != "Customer" && r.Name != "Admin")
-                .Select(r => new SelectListItem
-                {
-                    Value = r.Name,
-                    Text = r.Name
-                }).ToList();
+            return new List<SelectListItem>
+            {
+                new SelectListItem { Value = Roles.CustomerLiaison, Text = "Customer Liaison" },
+                new SelectListItem { Value = Roles.InventoryLiaison, Text = "Inventory Liaison" },
+                new SelectListItem { Value = Roles.ServiceTechnician, Text = "Service Technician" },
+                new SelectListItem { Value = Roles.FaultTechnician, Text = "Fault Technician" },
+                new SelectListItem { Value = Roles.MaintenanceTechnician, Text = "Maintenance Technician" },
+                new SelectListItem { Value = Roles.PurchasingManager, Text = "Purchasing Manager" },
+            };
         }
 
+        // Employees
         public async Task<IActionResult> Employees()
         {
             var employees = await context.Employees
@@ -177,6 +267,7 @@ namespace Code_Vanta_Systems.Controllers
             return View(filteredEmployees);
         }
 
+        // Customers
         public async Task<IActionResult> Customers()
         {
             // Load all employees including ApplicationUser
@@ -196,65 +287,6 @@ namespace Code_Vanta_Systems.Controllers
 
             ViewBag.CustomerCount = customers.Count;
             return View(customers);
-        }
-
-       public async Task<IActionResult>Edit(int id)
-        {
-            var employee = await context.Employees.Include(x => x.User).FirstOrDefaultAsync(x => x.Id == id);
-            if (employee == null)
-            {
-                return NotFound();
-            }
-            var roles = await roleManager.Roles.Where(r => r.Name != "Customer").ToListAsync();
-            var currentRole = await userManager.GetRolesAsync(employee.User);
-            var viewModel = new RegisterEmployeeViewModel
-            {
-                Id = employee.Id,
-                FullName = employee.User.FullName,
-                Email = employee.User.Email,
-                Role = currentRole.FirstOrDefault(),
-                PhoneNumber = employee.PhoneNumber
-            };
-
-            ViewBag.Roles = roles;
-            return View(viewModel);
-        }
-
-        // POST: Edit
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-       public async Task<IActionResult>Edit(RegisterEmployeeViewModel model)
-        {
-            if(!ModelState.IsValid)
-            {
-                ViewBag.Roles = await roleManager.Roles.ToListAsync();
-                return View(model);
-            }
-            var employee = await context.Employees.Include(e => e.User).FirstOrDefaultAsync(e => e.Id == model.Id);
-
-            if(employee == null) return NotFound();
-
-            //update ApplicationUser info
-            employee.User.FullName = model.FullName;
-            employee.User.Email = model.Email;
-            employee.User.UserName = model.Email;
-
-            //update role
-            var currentRole = await userManager.GetRolesAsync(employee.User);
-
-            if (currentRole.Any())
-            {
-                await userManager.RemoveFromRoleAsync(employee.User, currentRole.First() );
-            }
-                await userManager.AddToRoleAsync(employee.User,model.Role);
-
-                context.Employees.Update(employee);
-                await context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = "Employee details updated successfully";
-            return RedirectToAction("Employees");
-            
-
         }
     }
 }

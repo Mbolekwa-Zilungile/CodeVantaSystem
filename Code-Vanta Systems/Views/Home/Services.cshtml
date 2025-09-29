@@ -1,52 +1,98 @@
-﻿@{
+﻿@* @{
     ViewData["Title"] = "Services";
-}
+} *@
 
-<section class="bg-gray-100 py-16">
+<div class="container mx-auto px-6 py-8 text-center">
+    <h2 id="toggleServicesBtn"
+        class="text-4xl font-bold text-center text-gray-800 mb-12 cursor-pointer inline-block
+               hover:text-blue-700 transition duration-150 relative group">
+        Explore Our Fridge Management Services
+
+        <span class="block h-1 bg-blue-600 absolute bottom-0 left-0 w-full transform scale-x-0
+                     group-hover:scale-x-100 transition-transform duration-300 origin-center"></span>
+
+        <i id="toggleIcon" class="bi bi-chevron-down ml-3 text-2xl align-middle"></i>
+    </h2>
+</div>
+
+<section id="servicesSection" class="bg-gray-100 py-16 hidden">
     <div class="container mx-auto px-6">
-        <h2 class="text-4xl font-bold text-center text-gray-800 mb-12">Our Fridge Management Services</h2>
+
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
 
-            <!-- Fault Diagnosis -->
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition">
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition transform hover:-translate-y-1">
                 <img src="~/images/two.jpg" alt="Fault Diagnosis" class="w-full h-48 object-cover">
                 <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-2">Fault Diagnosis</h3>
-                    <p class="text-gray-600 mb-4">Quick and accurate identification of fridge issues.</p>
+                    <h3 class="text-xl font-semibold mb-2 text-blue-700">Fault Reporting & Diagnosis</h3>
+                    <p class="text-gray-600 mb-4">Customers report faults, track status, and Technicians prioritize and schedule repairs.</p>
                     <a asp-controller="FridgeFault" asp-action="Create" class="text-blue-600 font-semibold hover:underline">Report Fault →</a>
                 </div>
             </div>
 
-            <!-- Maintenance -->
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition">
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition transform hover:-translate-y-1">
                 <img src="~/images/Combined island freezer.jpg" alt="Fridge Maintenance" class="w-full h-48 object-cover">
                 <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-2">Regular Maintenance</h3>
-                    <p class="text-gray-600 mb-4">Keep your fridge in top condition with scheduled visits.</p>
+                    <h3 class="text-xl font-semibold mb-2 text-green-700">Regular Maintenance</h3>
+                    <p class="text-gray-600 mb-4">Maintenance Technicians schedule visits, service fridges, and customers view history.</p>
                     <a asp-controller="FridgeMaintenance" asp-action="Index" class="text-blue-600 font-semibold hover:underline">View Schedule →</a>
                 </div>
             </div>
 
-            <!-- Parts Replacement -->
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition">
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition transform hover:-translate-y-1">
                 <img src="~/images/repair.jpg" alt="Parts Replacement" class="w-full h-48 object-cover">
                 <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-2">Parts Replacement</h3>
-                    <p class="text-gray-600 mb-4">Replace faulty parts with genuine inventory items.</p>
-                    <a asp-controller="InventoryItem" asp-action="Index" class="text-blue-600 font-semibold hover:underline">Browse Inventory →</a>
+                    <h3 class="text-xl font-semibold mb-2 text-yellow-700">Inventory Control & Parts</h3>
+                    <p class="text-gray-600 mb-4">Inventory Liaison manages fridge stock and adjusts levels when new or "scrapped" fridges are processed.</p>
+                    <a asp-controller="InventoryItem" asp-action="Index" class="text-blue-600 font-semibold hover:underline">Manage Inventory →</a>
                 </div>
             </div>
 
-            <!-- Emergency Repairs -->
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition">
-                <img src="~/images/three.jpg" alt="Emergency Repairs" class="w-full h-48 object-cover">
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition transform hover:-translate-y-1">
+                <img src="~/images/three.jpg" alt="Customer Management" class="w-full h-48 object-cover">
                 <div class="p-6">
-                    <h3 class="text-xl font-semibold mb-2">Emergency Repairs</h3>
-                    <p class="text-gray-600 mb-4">Fast response to urgent fridge breakdowns.</p>
-                    <a asp-controller="FridgeFault" asp-action="Index" class="text-blue-600 font-semibold hover:underline">Track Repairs →</a>
+                    <h3 class="text-xl font-semibold mb-2 text-red-700">Customer & Allocation Mgmt</h3>
+                    <p class="text-gray-600 mb-4">Customer Liaison manages customer data and creates/manages allocations of fridges to customers.</p>
+                    <a asp-controller="Customer" asp-action="Index" class="text-blue-600 font-semibold hover:underline">Manage Customers →</a>
                 </div>
             </div>
 
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleBtn = document.getElementById('toggleServicesBtn');
+            const toggleIcon = document.getElementById('toggleIcon');
+            const servicesSection = document.getElementById('servicesSection');
+
+            // Function to handle the toggle logic and update the icon
+            function toggleServices() {
+                // Check if the section currently has the 'hidden' class
+                const isHidden = servicesSection.classList.contains('hidden');
+
+                if (isHidden) {
+                    // Show the section
+                    servicesSection.classList.remove('hidden');
+                    // Update icon to point UP
+                    toggleIcon.classList.remove('bi-chevron-down');
+                    toggleIcon.classList.add('bi-chevron-up');
+                    // Optional: Scroll down to the services
+                    servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    // Hide the section
+                    servicesSection.classList.add('hidden');
+                    // Update icon to point DOWN
+                    toggleIcon.classList.remove('bi-chevron-up');
+                    toggleIcon.classList.add('bi-chevron-down');
+                }
+            }
+
+            // Attach the click event listener to the Heading (toggleBtn)
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', toggleServices);
+            }
+        });
+    </script>
+}

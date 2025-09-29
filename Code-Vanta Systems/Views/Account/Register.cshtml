@@ -3,86 +3,96 @@
 
 @{
     ViewData["Title"] = "Register";
+    // Using a more standard layout name for clarity, assuming it contains common structure
     Layout = "~/Views/Shared/_AccountLayout.cshtml";
 }
 
-@{
-    ViewData["Title"] = "Login";
-    Layout = "~/Views/Shared/_AccountLayout.cshtml";
-}
-
-
-
-<div class="account-container d-flex justify-content-center align-items-center vh-100">
-    <div class="account-box card shadow-lg p-4" style="max-width: 450px; width: 100%; border-radius: 1rem; background-color: rgba(255,255,255,0.95);">
-        <h2 class="text-center fw-bold mb-4 text-primary">Create Your Account</h2>
-
+<div class="account-container d-flex justify-content-center align-items-center min-vh-100 p-3 p-md-5">
+    <div class="account-box card shadow-lg p-4 p-md-5" style="max-width: 500px; width: 100%; border-radius: 1rem; background-color: rgba(255,255,255,0.95);">
+        <h2 class="text-center fw-bold mb-4 text-primary fs-3">Create Your Account</h2>
         <form asp-controller="Account" asp-action="Register" method="post">
             @Html.AntiForgeryToken()
+
             <div asp-validation-summary="All" class="text-danger mb-3"></div>
-            
-            <!-- Full Name -->
+
             <div class="mb-3">
                 <label asp-for="Name" class="form-label"></label>
                 <input asp-for="Name" class="form-control" placeholder="Enter your full name" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
 
-            <!-- Business Name -->
             <div class="mb-3">
                 <label asp-for="BusinessName" class="form-label"></label>
                 <input asp-for="BusinessName" class="form-control" placeholder="Enter your business/shop name" />
                 <span asp-validation-for="BusinessName" class="text-danger"></span>
             </div>
 
-            <!-- Phone Number -->
+            <div class="mb-3">
+                <label asp-for="BusinessType" class="form-label"></label>
+                <select asp-for="BusinessType" class="form-select">
+                    <option value="">-- Select business type --</option>
+                    <option value="Spaza Shop">Spaza Shop</option>
+                    <option value="Shebeen">Shebeen</option>
+                    <option value="Other">Other</option>
+                </select>
+                <span asp-validation-for="BusinessType" class="text-danger"></span>
+            </div>
+
             <div class="mb-3">
                 <label asp-for="Phone" class="form-label"></label>
-                <input asp-for="Phone" class="form-control" placeholder="Enter your phone number" />
+                <input asp-for="Phone" type="tel" class="form-control" placeholder="Enter your phone number" />
                 <span asp-validation-for="Phone" class="text-danger"></span>
             </div>
 
-            <!-- Email -->
             <div class="mb-3">
                 <label asp-for="Email" class="form-label"></label>
-                <input asp-for="Email" class="form-control" placeholder="Enter your email address" />
+                <input asp-for="Email" type="email" class="form-control" placeholder="Enter your email address" />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
 
-            <!-- Region Dropdown -->
             <div class="mb-3">
                 <label asp-for="SelectedRegion" class="form-label"></label>
-                <select asp-for="SelectedRegion" class="form-control" asp-items="Model.RegionOptions">
-                    <option value="">-- Select your region --</option>
+                <select asp-for="SelectedRegion" class="form-select" asp-items="Model.RegionOptions" id="regionDropdown">
                 </select>
                 <span asp-validation-for="SelectedRegion" class="text-danger"></span>
             </div>
 
-            <!-- Password -->
+            <div class="mb-3">
+                <label asp-for="SelectedLocationId" class="form-label"></label>
+                <select asp-for="SelectedLocationId" class="form-select" id="locationDropdown">
+                    <option value="">-- Select location --</option>
+                </select>
+                <span asp-validation-for="SelectedLocationId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="PhysicalAddress" class="form-label"></label>
+                <textarea asp-for="PhysicalAddress" class="form-control" rows="3" placeholder="Enter your shop address"></textarea>
+                <span asp-validation-for="PhysicalAddress" class="text-danger"></span>
+            </div>
+
             <div class="mb-3">
                 <label asp-for="Password" class="form-label"></label>
-                <input asp-for="Password" class="form-control" placeholder="Choose a secure password" />
+                <input asp-for="Password" type="password" class="form-control" placeholder="Choose a secure password" />
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
 
-            <!-- Confirm Password -->
             <div class="mb-3">
                 <label asp-for="ConfirmPassword" class="form-label"></label>
-                <input asp-for="ConfirmPassword" class="form-control" placeholder="Confirm your password" />
+                <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm your password" />
                 <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
             </div>
 
-            <!-- Submit Button -->
             <div class="d-grid mb-3">
                 <button type="submit" class="btn btn-primary btn-lg rounded-pill">Register</button>
             </div>
 
-            <!-- Links -->
-            <p class="text-center mt-3">
-                Already have an account? <a asp-controller="Account" asp-action="Login" class="fw-semibold text-decoration-none text-primary">Login here</a>
+            <p class="text-center mt-3 small">
+                Already have an account?
+                <a asp-controller="Account" asp-action="Login">Login here</a>
             </p>
-            <p class="text-center mt-2">
-                <a asp-controller="Home" asp-action="Index" class="text-muted text-decoration-none">← Back to Home</a>
+            <p class="text-center mt-2 small">
+                <a asp-controller="Home" asp-action="Index">← Back to Home</a>
             </p>
         </form>
     </div>
@@ -90,4 +100,29 @@
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        document.getElementById("regionDropdown").addEventListener("change", function () {
+            const region = this.value; // This is the integer value of the enum (e.g., "1")
+            const locationDropdown = document.getElementById("locationDropdown");
+
+            // Clear and reset the location dropdown
+            locationDropdown.innerHTML = '<option value="">-- Select location --</option>';
+
+            if (region) {
+                // Fetch is a modern, responsive way to handle AJAX
+                fetch(`/Account/GetLocationsByRegion?region=${region}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        data.forEach(loc => {
+                            const option = document.createElement("option");
+                            option.value = loc.value;
+                            option.text = loc.text;
+                            locationDropdown.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching locations:', error)); // Added error handling
+            }
+        });
+    </script>
 }

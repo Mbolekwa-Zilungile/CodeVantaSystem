@@ -112,35 +112,46 @@ namespace Code_Vanta_Systems.Services
             if (!await dbContext.Locations.AnyAsync())
             {
                 var locations = new List<Location>
-                {
-                    new Location
-                    {
-                        Description = "George Branch",
-                        Address = "123 Main Street",
-                        City = "George",
-                        Province = Region.WesternCape
-                    },
-                    new Location
-                    {
-                        Description = "Cape Town HQ",
-                        Address = "456 Long Street",
-                        City = "Cape Town",
-                        Province = Region.WesternCape
-                    },
-                    new Location
-                    {
-                        Description = "Johannesburg Office",
-                        Address = "789 Market Road",
-                        City = "Johannesburg",
-                        Province = Region.Gauteng
-                    },
-                    new Location
-                    {
-                        Description = "Durban Depot",
-                        Address = "321 Beach Avenue",
-                        City = "Durban",
-                        Province = Region.KwaZuluNatal
-                    }
+                {           
+                    // Gauteng (Region ID = 1)
+                    new Location { Description = "Johannesburg Office", Address = "Market Street", City = "Johannesburg", Province = Region.Gauteng }, // ID = 1
+                    new Location { Description = "Pretoria Depot", Address = "Church Street", City = "Pretoria", Province = Region.Gauteng },          // ID = 1
+                    new Location { Description = "Midrand Distribution", Address = "Old Pretoria Road", City = "Midrand", Province = Region.Gauteng }, // ID = 1
+
+                    // KwaZulu-Natal (Region ID = 2)
+                    new Location { Description = "Durban Depot", Address = "Beach Avenue", City = "Durban", Province = Region.KwaZuluNatal }, // ID = 2
+                    new Location { Description = "Pietermaritzburg Branch", Address = "Chief Albert Luthuli Street", City = "Pietermaritzburg", Province = Region.KwaZuluNatal }, // ID = 2
+                    new Location { Description = "Richards Bay Hub", Address = "Bayview Road", City = "Richards Bay", Province = Region.KwaZuluNatal }, // ID = 2
+        
+                    // Western Cape (Region ID = 3)
+                    new Location { Description = "Cape Town HQ", Address = "Long Street", City = "Cape Town", Province = Region.WesternCape },       // ID = 3
+                    new Location { Description = "George Branch", Address = "York Street", City = "George", Province = Region.WesternCape },         // ID = 3
+                    new Location { Description = "Stellenbosch Depot", Address = "Dorp Street", City = "Stellenbosch", Province = Region.WesternCape }, // ID = 3
+
+                    // Eastern Cape (Region ID = 4)
+                    new Location { Description = "Gqeberha Depot", Address = "Njoli Street", City = "Gqeberha", Province = Region.EasternCape }, // ID = 4
+                    new Location { Description = "East London Branch", Address = "Oxford Street", City = "East London", Province = Region.EasternCape }, // ID = 4
+                    new Location { Description = "Mthatha Hub", Address = "Nelson Mandela Drive", City = "Mthatha", Province = Region.EasternCape }, // ID = 4
+
+                    // Free State (Region ID = 5)
+                    new Location { Description = "Bloemfontein HQ", Address = "President Brand Street", City = "Bloemfontein", Province = Region.FreeState }, // ID = 5
+                    new Location { Description = "Welkom Branch", Address = "Stateway", City = "Welkom", Province = Region.FreeState },             // ID = 5
+
+                    // Limpopo (Region ID = 6)
+                    new Location { Description = "Polokwane Depot", Address = "Landros Mare Street", City = "Polokwane", Province = Region.Limpopo }, // ID = 6
+                    new Location { Description = "Thohoyandou Branch", Address = "University Road", City = "Thohoyandou", Province = Region.Limpopo }, // ID = 6
+
+                    // Mpumalanga (Region ID = 7)
+                    new Location { Description = "Mbombela Office", Address = "Riverside Park", City = "Mbombela", Province = Region.Mpumalanga }, // ID = 7
+                    new Location { Description = "Witbank Depot", Address = "Mandela Drive", City = "Witbank", Province = Region.Mpumalanga },  // ID = 7
+
+                    // North West (Region ID = 8)
+                    new Location { Description = "Rustenburg Branch", Address = "Nelson Mandela Street", City = "Rustenburg", Province = Region.NorthWest }, // ID = 8
+                    new Location { Description = "Mahikeng Depot", Address = "Main Road", City = "Mahikeng", Province = Region.NorthWest },      // ID = 8
+
+                    // Northern Cape (Region ID = 9)
+                    new Location { Description = "Kimberley Depot", Address = "Du Toitspan Road", City = "Kimberley", Province = Region.NorthernCape }, // ID = 9
+                    new Location { Description = "Upington Branch", Address = "Schröder Street", City = "Upington", Province = Region.NorthernCape } // ID = 9
                 };
 
                 dbContext.Locations.AddRange(locations);

@@ -1,0 +1,124 @@
+﻿@model Code_Vanta_Systems.Models.Customer
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4 text-primary">Welcome, @Model.ContactName!</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 col-md-12 mb-4">
+        @* Card for Contact Information *@
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-user-circle"></i> Business Profile
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Business Name</dt>
+                    <dd class="col-sm-7">@Model.BusinessName</dd>
+
+                    <dt class="col-sm-5">Business Type</dt>
+                    <dd class="col-sm-7">@Model.BusinessType</dd>
+
+                    <dt class="col-sm-5">Contact Name</dt>
+                    <dd class="col-sm-7">@Model.ContactName</dd>
+
+                    <dt class="col-sm-5">Phone</dt>
+                    <dd class="col-sm-7">@Model.Phone</dd>
+
+                    <dt class="col-sm-5">Email</dt>
+                    <dd class="col-sm-7">@Model.Email</dd>
+
+                    <dt class="col-sm-5">Address</dt>
+                    <dd class="col-sm-7">@Model.PhysicalAddress</dd>
+
+                    <dt class="col-sm-5">Location/Depot</dt>
+                    @* Assuming Location is eagerly loaded or included in the query *@
+                    <dd class="col-sm-7">@Model.Location?.Description</dd>
+                </dl>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <a asp-controller="CustomerDashboard" asp-action="EditProfile" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </a>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8 col-md-12">
+        @* Card for System Interactions (History, Actions) *@
+        <div class="card shadow-sm h-100">
+            <div class="card-header p-0">
+                @* Navigation Tabs based on system requirements **@
+                <ul class="nav nav-tabs" id="customerTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="faults-tab" data-bs-toggle="tab" href="#faults" role="tab" aria-controls="faults" aria-selected="true">
+                            <i class="fas fa-wrench"></i> Faults & Requests
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="maintenance-tab" data-bs-toggle="tab" href="#maintenance" role="tab" aria-controls="maintenance" aria-selected="false">
+                            <i class="fas fa-calendar-check"></i> Maintenance
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="history-tab" data-bs-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="false">
+                            <i class="fas fa-history"></i> Service History
+                        </a>
+                    </li>
+                    <li class="nav-item ms-auto">
+                        <a asp-controller="FridgeFault" asp-action="ReportFault" class="btn btn-success btn-sm m-1">
+                            <i class="fas fa-bug"></i> Report New Fault / Request Fridge
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="customerTabsContent">
+
+                    [cite_start]@* Tab 1: Faults & Requests (Report fault and track status) [cite: 43] *@
+                    <div class="tab-pane fade show active" id="faults" role="tabpanel" aria-labelledby="faults-tab">
+                        <h5>Fault Reporting and Status</h5>
+                        [cite_start]<p class="text-muted">Customers can report faults and track their fault status, as well as request new fridges here[cite: 43].</p>
+                        @* TODO: Render a list of the customer's faults/requests with status tracking *@
+                        <p class="alert alert-info">List of reported faults and their current status will appear here.</p>
+                    </div>
+
+                    @* Tab 2: Fridge Maintenance (View upcoming maintenance visits)  *@
+                    <div class="tab-pane fade" id="maintenance" role="tabpanel" aria-labelledby="maintenance-tab">
+                        <h5>Upcoming Maintenance Visits</h5>
+                        <p class="text-muted">View upcoming maintenance visits scheduled by Maintenance Technicians.</p>
+                        @* TODO: Render a list of upcoming maintenance visits *@
+                        <p class="alert alert-warning">Details of scheduled maintenance visits will appear here.</p>
+                    </div>
+
+                    @* Tab 3: Service History (Access detailed fridge history)  *@
+                    <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
+                        <h5>Detailed Fridge History</h5>
+                        <p class="text-muted">Access detailed fridge history, including maintenance and service records.</p>
+                        @* TODO: Render a list of all fridges allocated to the customer and their history *@
+                        <p class="alert alert-success">Comprehensive history of fridge maintenance, service, and repair records will appear here.</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Optional: Script to make the first tab active on page load if needed,
+        // but Bootstrap handles this via 'show active' classes.
+    </script>
+}

@@ -1,131 +1,127 @@
 ﻿@{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "FMS Admin Dashboard";
 }
 
 <div class="container-fluid py-4">
 
-    <!-- WELCOME SECTION -->
-    <h3>Administrator</h3>
+    <h3 class="text-secondary">Administration Subsystem</h3>
     <div class="row mb-4">
         <div class="col">
-            <h1 class="fw-bold">Welcome, @User.Identity.Name</h1>
-            <p class="text-muted">Your central hub for managing data, users, and projects.</p>
+            <h1 class="fw-bold text-primary">Welcome, @User.Identity.Name!</h1>
+            <p class="text-muted">Central oversight for FMS operations, user management, and core data.</p>
         </div>
     </div>
 
-    <!-- STAT CARDS -->
     <div class="row g-4 mb-4">
+
         <div class="col-md-3">
-            <div class="card text-center shadow-sm border-0">
+            <div class="card text-center shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <i class="bi bi-people-fill fs-2 text-primary mb-2"></i>
+                    <i class="bi bi-shop fs-2 text-primary mb-2"></i>
+                    @* TODO: Replace with Model.TotalCustomers *@
                     <h2 class="fw-bold text-primary">128</h2>
-                    <p class="mb-0 text-muted">Active Users</p>
+                    <p class="mb-0 text-muted">Registered Customers</p>
                 </div>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card text-center shadow-sm border-0">
+            <div class="card text-center shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <i class="bi bi-kanban-fill fs-2 text-warning mb-2"></i>
-                    <h2 class="fw-bold text-warning">12</h2>
-                    <p class="mb-0 text-muted">Ongoing Projects</p>
+                    <i class="bi bi-box-seam fs-2 text-info mb-2"></i>
+                    @* TODO: Replace with Model.TotalFridges *@
+                    <h2 class="fw-bold text-info">350</h2>
+                    <p class="mb-0 text-muted">Fridges in Inventory</p>
                 </div>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card text-center shadow-sm border-0">
+            <div class="card text-center shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <i class="bi bi-list-task fs-2 text-success mb-2"></i>
-                    <h2 class="fw-bold text-success">76</h2>
-                    <p class="mb-0 text-muted">Pending Tasks</p>
+                    <i class="bi bi-wrench-adjustable-circle-fill fs-2 text-danger mb-2"></i>
+                    @* TODO: Replace with Model.OpenFaultsCount *@
+                    <h2 class="fw-bold text-danger">15</h2>
+                    <p class="mb-0 text-muted">Open Fault Reports</p>
                 </div>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card text-center shadow-sm border-0">
+            <div class="card text-center shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <i class="bi bi-currency-dollar fs-2 text-danger mb-2"></i>
-                    <h2 class="fw-bold text-danger">$45K</h2>
-                    <p class="mb-0 text-muted">Revenue This Month</p>
+                    <i class="bi bi-calendar-check fs-2 text-success mb-2"></i>
+                    @* TODO: Replace with Model.PendingMaintenanceCount *@
+                    <h2 class="fw-bold text-success">24</h2>
+                    <p class="mb-0 text-muted">Pending Maintenance</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div class="row mb-4">
 
-        <!-- RECENT ACTIVITY -->
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-light fw-bold">Recent Activity</div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light fw-bold text-dark">
+                    <i class="bi bi-database"></i> Core FMS Data Management
+                </div>
                 <div class="card-body">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">New user <strong>John Doe</strong> registered</li>
-                        <li class="list-group-item">Project <strong>Inventory System</strong> updated</li>
-                        <li class="list-group-item">Task <strong>Database Migration</strong> completed</li>
-                        <li class="list-group-item">New payment of <strong>$500</strong> received</li>
-                    </ul>
+                    <p class="card-text text-muted">Manage the foundational data entities of the system.</p>
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <a asp-controller="Admin" asp-action="ManageLocations" class="btn btn-outline-primary w-100"><i class="bi bi-geo-alt"></i> Manage Physical Locations</a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a asp-controller="Admin" asp-action="ManageCustomers" class="btn btn-outline-primary w-100"><i class="bi bi-person-lines-fill"></i> Manage Customers</a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a asp-controller="Admin" asp-action="ManageFridges" class="btn btn-outline-primary w-100"><i class="bi bi-snow"></i> Manage Fridges</a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a asp-controller="Admin" asp-action="ManageSuppliers" class="btn btn-outline-primary w-100"><i class="bi bi-truck"></i> Manage Suppliers</a>
+                        </div>
+                        <div class="col-12 mt-3">
+                            <a asp-controller="Admin" asp-action="ManageEmployees" class="btn btn-danger w-100"><i class="bi bi-people-fill"></i> Manage Employees & User Access</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- QUICK ACTIONS (ROLE-BASED) -->
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-light fw-bold">Quick Actions</div>
-                <div class="card-body d-grid gap-2">
-                    @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
-                    {
-                        <a asp-controller="Users" asp-action="Index" class="btn btn-primary">Manage Users</a>
-                        <a asp-controller="Projects" asp-action="Index" class="btn btn-warning">Manage Projects</a>
-                    }
-                    <a asp-controller="Reports" asp-action="Index" class="btn btn-outline-dark">View Reports</a>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-light fw-bold text-dark">
+                    <i class="bi bi-activity"></i> Recent System Activity
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-3">Latest FMS Events</h6>
+                    <ul class="list-group list-group-flush small">
+                        @* TODO: Replace with dynamic data from an audit/activity log table *@
+                        <li class="list-group-item"><span class="badge bg-success me-2">NEW</span> Customer <strong>Spaza Corner</strong> registered (EC)</li>
+                        <li class="list-group-item"><span class="badge bg-danger me-2">FAULT</span> Fault reported for Fridge **FMS-1045**</li>
+                        <li class="list-group-item"><span class="badge bg-info me-2">ALLOCATION</span> Fridge **FMS-0200** allocated to **Shebeen Plus**</li>
+                        <li class="list-group-item"><span class="badge bg-warning me-2">ORDER</span> Purchasing Manager approved **PO #0012**</li>
+                        <li class="list-group-item"><span class="badge bg-primary me-2">SERVICE</span> Technician **Mpho D.** completed service on **FMS-0122**</li>
+                    </ul>
+                    <div class="d-grid mt-3">
+                        <a asp-controller="Admin" asp-action="ViewReports" class="btn btn-outline-secondary">View Detailed System Reports</a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- RECENT USERS TABLE -->
     <div class="row">
-        <div class="col">
+        <div class="col-12">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-light fw-bold">Recent Users</div>
-                <div class="card-body p-0">
-                    <table class="table table-striped table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Status</th>
-                                <th>Registered</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Alice Smith</td>
-                                <td>alice@example.com</td>
-                                <td><span class="badge bg-success">Active</span></td>
-                                <td>Aug 1, 2025</td>
-                            </tr>
-                            <tr>
-                                <td>Bob Johnson</td>
-                                <td>bob@example.com</td>
-                                <td><span class="badge bg-warning text-dark">Pending</span></td>
-                                <td>Jul 28, 2025</td>
-                            </tr>
-                            <tr>
-                                <td>Charlie Brown</td>
-                                <td>charlie@example.com</td>
-                                <td><span class="badge bg-danger">Suspended</span></td>
-                                <td>Jul 20, 2025</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="card-header bg-light fw-bold">Quick Access to Subsystems</div>
+                <div class="card-body d-flex flex-wrap gap-2">
+                    <a asp-controller="CustomerLiaison" asp-action="Index" class="btn btn-outline-primary"><i class="bi bi-person-badge"></i> Customer Liaison</a>
+                    <a asp-controller="InventoryLiaison" asp-action="Index" class="btn btn-outline-info"><i class="bi bi-archive"></i> Inventory Control</a>
+                    <a asp-controller="FaultTechnician" asp-action="Index" class="btn btn-outline-danger"><i class="bi bi-bug"></i> Fault Technician</a>
+                    <a asp-controller="MaintenanceTechnician" asp-action="Index" class="btn btn-outline-success"><i class="bi bi-tools"></i> Maintenance Technician</a>
+                    <a asp-controller="PurchasingManager" asp-action="Index" class="btn btn-outline-warning"><i class="bi bi-cart"></i> Purchasing Manager</a>
                 </div>
             </div>
         </div>

@@ -19,14 +19,14 @@ namespace Code_Vanta_Systems.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context;
-        private readonly IDropdownService _dropdownService;
+        private readonly DropdownService _dropdownService;
 
         public AccountController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             ApplicationDbContext context,
-            IDropdownService dropdownService)
+            DropdownService dropdownService)
         {
             _signInManager = signInManager;
             _userManager = userManager;
@@ -52,6 +52,9 @@ namespace Code_Vanta_Systems.Controllers
                 return View(model);
             }
 
+            var roles = await _userManager.GetRolesAsync(user);
+            Console.WriteLine($"🔍 Roles for {user.Email}: {string.Join(", ", roles)}");
+
             var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, false);
             if (result.Succeeded)
             {
@@ -59,7 +62,7 @@ namespace Code_Vanta_Systems.Controllers
                     return RedirectToAction("Employees", "Admin");
 
                 if (await _userManager.IsInRoleAsync(user, Roles.Customer))
-                    return RedirectToAction("Index", "Customer");
+                    return RedirectToAction("Index", "CustomerDashboard"); // ✅ Fixed
 
                 if (await _userManager.IsInRoleAsync(user, Roles.CustomerLiaison))
                     return RedirectToAction("Index", "CustomerLiaison");
@@ -86,37 +89,29 @@ namespace Code_Vanta_Systems.Controllers
             return View(model);
         }
 
-        private List<SelectListItem> GetRegionOptions()
-        {
-            return Enum.GetValues(typeof(Region))
-                .Cast<Region>()
-                .Select(r => new SelectListItem
-                {
-                    Value = ((int)r).ToString(), // keep as int so model binding works
-                    Text = r.GetDisplayName()    // use your extension method
-                })
-                .ToList();
-        }
-
-
         [HttpGet]
+
         public IActionResult Register()
         {
             var model = new RegisterViewModel
             {
-                RegionOptions = _dropdownService.GetRegionOptions()
+                RegionOptions = _dropdownService.GetRegionOptions(),
+                LocationOptions = new List<SelectListItem>()
             };
 
             return View(model);
         }
 
+
         [HttpPost]
+
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
             {
                 model.RegionOptions = _dropdownService.GetRegionOptions();
+                model.LocationOptions = new List<SelectListItem>();
                 return View(model);
             }
 
@@ -133,13 +128,18 @@ namespace Code_Vanta_Systems.Controllers
             {
                 await _userManager.AddToRoleAsync(user, Roles.Customer);
 
+                // ✅ Convert SelectedRegion (int) to Region enum
+                var regionEnum = (Region)model.SelectedRegion;
+
+                // ✅ Validate selected location belongs to selected region
                 var location = await _context.Locations
-                    .FirstOrDefaultAsync(l => l.Province == model.SelectedRegion);
+                    .FirstOrDefaultAsync(l => l.Id == model.SelectedLocationId && l.Province == regionEnum);
 
                 if (location == null)
                 {
-                    ModelState.AddModelError("", "Selected region is invalid.");
-                    model.RegionOptions = GetRegionOptions();
+                    ModelState.AddModelError("", "Selected location is invalid.");
+                    model.RegionOptions = _dropdownService.GetRegionOptions();
+                    model.LocationOptions = new List<SelectListItem>();
                     return View(model);
                 }
 
@@ -147,8 +147,10 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     ContactName = model.Name,
                     BusinessName = model.BusinessName,
+                    BusinessType = model.BusinessType,
                     Phone = model.Phone,
                     Email = model.Email,
+                    PhysicalAddress = model.PhysicalAddress,
                     LocationId = location.Id,
                     UserId = user.Id
                 };
@@ -157,7 +159,7 @@ namespace Code_Vanta_Systems.Controllers
                 await _context.SaveChangesAsync();
 
                 await _signInManager.SignInAsync(user, isPersistent: false);
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "CustomerDashboard");
             }
 
             foreach (var error in result.Errors)
@@ -165,8 +167,26 @@ namespace Code_Vanta_Systems.Controllers
                 ModelState.AddModelError("", error.Description);
             }
 
-            model.RegionOptions = GetRegionOptions();
+            model.RegionOptions = _dropdownService.GetRegionOptions();
+            model.LocationOptions = new List<SelectListItem>();
             return View(model);
+        }
+
+        [HttpGet]
+        public JsonResult GetLocationsByRegion(int region)
+        {
+            var regionEnum = (Region)region; // Correctly casts the integer (e.g., 1) to the Region enum
+
+            var locations = _context.Locations
+                .Where(l => l.Province == regionEnum) // Correctly filters by the enum value
+                .Select(l => new SelectListItem
+                {
+                    Value = l.Id.ToString(),
+                    Text = l.Description
+                })
+                .ToList();
+
+            return Json(locations);
         }
 
         [HttpPost]

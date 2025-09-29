@@ -37,7 +37,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 // Register dropdown service BEFORE building app
-builder.Services.AddScoped<IDropdownService, DropdownService>();
+builder.Services.AddScoped<DropdownService>();
 
 var app = builder.Build();
 

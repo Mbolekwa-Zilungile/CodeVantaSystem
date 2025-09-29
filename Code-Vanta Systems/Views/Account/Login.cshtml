@@ -7,9 +7,8 @@
     Layout = "~/Views/Shared/_AccountLayout.cshtml";
 }
 
-
 <style>
-    /* Full-page background image */
+    /* Full-page background image setup */
     body, html {
         height: 100%;
         margin: 0;
@@ -21,11 +20,15 @@
         justify-content: center;
         align-items: center;
         min-height: 100vh;
-       
+        /* Ensures padding on mobile doesn't interfere with min-height */
+        padding: 1rem; /* Added padding for mobile screen edges */
+
         background-image: url('/images/Vector.jpg'); /* Replace with your image path */
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
+        /* Optional: Add a subtle scroll/fixed behavior for better mobile scrolling feel */
+        background-attachment: fixed;
     }
 
         /* Optional overlay for readability */
@@ -36,7 +39,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.6); /* semi-transparent white */
+            /* Adjusted opacity for better text readability over complex backgrounds */
+            background-color: rgba(255, 255, 255, 0.7);
             z-index: 0;
         }
 
@@ -44,54 +48,52 @@
     .account-box {
         position: relative;
         z-index: 1;
+        /* Ensure the box background is solid white for contrast */
+        background-color: #ffffff;
     }
 </style>
 
 <div class="account-container">
-    <div class="account-box card shadow-lg p-4" style="max-width: 420px; width: 100%; border-radius: 1rem;">
-        <h2 class="text-center fw-bold mb-4 text-success">Login</h2>
+    <div class="account-box card shadow-lg p-4 p-md-5" style="max-width: 420px; width: 100%; border-radius: 1rem;">
+
+        <h2 class="text-center fw-bold mb-4 text-primary fs-3">Login</h2>
 
         <form asp-action="Login" method="post">
             @Html.AntiForgeryToken()
 
             <div asp-validation-summary="ModelOnly" class="alert alert-danger small" role="alert"></div>
 
-            <!-- Email -->
             <div class="mb-3">
                 <label asp-for="Email" class="form-label fw-semibold"></label>
-                <input asp-for="Email" class="form-control form-control-lg" placeholder="you@example.com" />
+                <input asp-for="Email" type="email" class="form-control form-control-lg" placeholder="you@example.com" />
                 <span asp-validation-for="Email" class="text-danger small"></span>
             </div>
 
-            <!-- Password -->
             <div class="mb-3">
                 <label asp-for="Password" class="form-label fw-semibold"></label>
-                <input asp-for="Password" class="form-control form-control-lg" placeholder="••••••••" />
+                <input asp-for="Password" type="password" class="form-control form-control-lg" placeholder="••••••••" />
                 <span asp-validation-for="Password" class="text-danger small"></span>
             </div>
 
-            <!-- Remember Me & Forgot Password -->
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-4">
                 <div class="form-check">
                     <input asp-for="RememberMe" class="form-check-input" />
-                    <label asp-for="RememberMe" class="form-check-label fw-semibold"></label>
+                    <label asp-for="RememberMe" class="form-check-label fw-semibold small"></label>
                 </div>
                 <a asp-controller="Account" asp-action="VerifyEmail" class="text-decoration-none small text-primary">
                     Forgot Password?
                 </a>
             </div>
 
-            <!-- Submit -->
             <div class="d-grid mb-3">
-                <button type="submit" class="btn btn-success btn-lg rounded-pill">Login</button>
+                <button type="submit" class="btn btn-primary btn-lg rounded-pill">Login</button>
             </div>
 
-            <!-- Links -->
-            <p class="text-center mt-3">
+            <p class="text-center mt-4 small">
                 Don't have an account?
-                <a asp-controller="Account" asp-action="Register" class="fw-semibold text-decoration-none text-success">Register</a>
+                <a asp-controller="Account" asp-action="Register" class="fw-bold text-decoration-none text-primary">Register</a>
             </p>
-            <p class="text-center mt-2">
+            <p class="text-center mt-2 small">
                 <a asp-controller="Home" asp-action="Index" class="text-muted text-decoration-none">← Back to Home</a>
             </p>
         </form>

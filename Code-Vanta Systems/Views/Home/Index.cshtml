@@ -9,64 +9,143 @@
 
 <div class="flex flex-col min-h-screen">
 
-    <!-- HERO -->
-    <section class="relative bg-gradient-to-r from-blue-900 to-blue-700 text-white py-24">
-        <div class="container mx-auto px-6 text-center">
-            <h1 class="text-5xl font-extrabold mb-4 animate-fade-in-down">
-                Reliable Fridge Repairs & Maintenance
-            </h1>
-            <p class="text-lg max-w-2xl mx-auto mb-6 animate-fade-in-up">
-                Fast, professional, and trusted fridge management services for households and businesses.
-            </p>
-            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <a asp-controller="FridgeFault" asp-action="Create"
-                   class="px-6 py-3 rounded-2xl bg-white text-blue-700 font-semibold shadow-lg hover:shadow-2xl hover:bg-blue-100 transition animate-fade-in-up">
-                    Report a Fault
-                </a>
-                <a asp-controller="FridgeMaintenance" asp-action="Schedule"
-                   class="px-6 py-3 rounded-2xl bg-blue-600 text-white font-semibold shadow-lg hover:shadow-2xl hover:bg-blue-500 transition animate-fade-in-up">
-                    Schedule Maintenance
-                </a>
+    <header class="bg-white shadow-md sticky top-0 z-10 hidden sm:block">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="bi bi-snow text-3xl text-blue-700"></i> <span class="text-2xl font-black text-gray-800">
+                    FRIDGE MANAGEMENT SYSTEM
+                </span>
             </div>
+            <span class="text-sm font-semibold text-blue-600 border border-blue-600 px-3 py-1 rounded-full">
+                CODEVANTA SYSTEMS
+            </span>
+        </div>
+    </header>
+
+    <section class="relative bg-gradient-to-br from-blue-800 to-indigo-600 text-white py-28 md:py-36 shadow-xl">
+        <div class="container mx-auto px-6 text-center">
+            <h1 class="text-5xl md:text-6xl font-extrabold mb-5 leading-tight animate-fade-in-down">
+                Keep Your Cool. Always.
+            </h1>
+
+            <p class="text-xl max-w-3xl mx-auto mb-8 animate-fade-in-up opacity-90">
+                The all-in-one system for managing customer fridges, inventory, repairs, and maintenance visits efficiently.
+            </p>
+
+            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                <a asp-controller="FridgeFault" asp-action="Create"
+                   class="w-full sm:w-auto px-8 py-4 rounded-full bg-yellow-400 text-blue-900 font-bold text-lg shadow-2xl hover:bg-yellow-300 hover:shadow-3xl transform hover:scale-105 transition duration-300 animate-fade-in-up">
+                    Report a Fault Now
+                    <i class="bi bi-lightning-fill ml-2"></i>
+                </a>
+
+                @if (!SignInManager.IsSignedIn(User))
+                {
+                    <a asp-controller="Account" asp-action="Login"
+                       class="w-full sm:w-auto px-8 py-4 rounded-full border-2 border-white text-white font-semibold text-lg shadow-lg hover:bg-white hover:text-blue-700 transition duration-300 animate-fade-in-up">
+                        Access Your Dashboard
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Home" asp-action="Dashboard"
+                       class="w-full sm:w-auto px-8 py-4 rounded-full border-2 border-white text-white font-semibold text-lg shadow-lg hover:bg-white hover:text-blue-700 transition duration-300 animate-fade-in-up">
+                        Go to Dashboard
+                    </a>
+                }
+            </div>
+
+            <p class="mt-12 text-sm opacity-75">
+                Serving Spaza Shops, Shebeens, and valued business partners.
+            </p>
         </div>
     </section>
 
-    <!-- CORE SERVICES -->
-    <section class="py-20 bg-gray-50">
+    ---
+
+    <section class="py-20 bg-white">
         <div class="container mx-auto px-6">
-            <h2 class="text-3xl font-bold text-center mb-12">Our Core Services</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div class="p-6 shadow-lg rounded-2xl bg-white text-center hover:scale-105 transition">
-                    <i class="bi bi-people text-blue-600 text-5xl mb-4"></i>
-                    <h3 class="font-bold text-xl mb-2">Customer Management</h3>
-                    <p class="text-gray-600">Manage customers and fridge allocations with ease.</p>
-                    <a asp-controller="Customer" asp-action="Index" class="text-blue-600 font-semibold">View</a>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-center mb-16 text-gray-800">
+                Integrated Management Solutions
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+
+                <div class="group p-8 shadow-xl rounded-3xl border-t-4 border-blue-600 bg-gray-50 text-center transform hover:shadow-2xl hover:bg-blue-50 transition duration-300">
+                    <i class="bi bi-people-fill text-blue-600 text-6xl mb-4 group-hover:text-blue-700 transition"></i>
+                    <h3 class="font-bold text-xl mb-3 text-gray-900">Customer & Asset Allocation</h3>
+                    <p class="text-gray-600 mb-4">
+                        Seamlessly manage customer data and **track fridge distribution** and monitoring.
+                    </p>
+                    <a asp-controller="Customer" asp-action="Index" class="text-blue-600 font-bold hover:text-blue-800 flex items-center justify-center">
+                        View Customers <i class="bi bi-arrow-right ml-2 text-sm"></i>
+                    </a>
                 </div>
 
-                <div class="p-6 shadow-lg rounded-2xl bg-white text-center hover:scale-105 transition">
-                    <i class="bi bi-tools text-green-600 text-5xl mb-4"></i>
-                    <h3 class="font-bold text-xl mb-2">Fault Reporting</h3>
-                    <p class="text-gray-600">Log faults and track repair progress seamlessly.</p>
-                    <a asp-controller="FridgeFault" asp-action="Index" class="text-blue-600 font-semibold">Track</a>
+                <div class="group p-8 shadow-xl rounded-3xl border-t-4 border-red-600 bg-gray-50 text-center transform hover:shadow-2xl hover:bg-red-50 transition duration-300">
+                    <i class="bi bi-exclamation-octagon-fill text-red-600 text-6xl mb-4 group-hover:text-red-700 transition"></i>
+                    <h3 class="font-bold text-xl mb-3 text-gray-900">Fault Reporting & Diagnosis</h3>
+                    <p class="text-gray-600 mb-4">
+                        Customers report faults, track status, and Fault Technicians **prioritize and schedule repairs**.
+                    </p>
+                    <a asp-controller="FridgeFault" asp-action="Index" class="text-blue-600 font-bold hover:text-blue-800 flex items-center justify-center">
+                        Track Faults <i class="bi bi-arrow-right ml-2 text-sm"></i>
+                    </a>
                 </div>
 
-                <div class="p-6 shadow-lg rounded-2xl bg-white text-center hover:scale-105 transition">
-                    <i class="bi bi-gear-wide-connected text-yellow-600 text-5xl mb-4"></i>
-                    <h3 class="font-bold text-xl mb-2">Maintenance</h3>
-                    <p class="text-gray-600">Schedule and track preventive maintenance.</p>
-                    <a asp-controller="FridgeMaintenance" asp-action="Index" class="text-blue-600 font-semibold">Manage</a>
+                <div class="group p-8 shadow-xl rounded-3xl border-t-4 border-green-600 bg-gray-50 text-center transform hover:shadow-2xl hover:bg-green-50 transition duration-300">
+                    <i class="bi bi-tools text-green-600 text-6xl mb-4 group-hover:text-green-700 transition"></i>
+                    <h3 class="font-bold text-xl mb-3 text-gray-900">Scheduled Maintenance</h3>
+                    <p class="text-gray-600 mb-4">
+                        View service history, schedule visits, and ensure **optimal fridge performance** with transparent records.
+                    </p>
+                    <a asp-controller="FridgeMaintenance" asp-action="Index" class="text-blue-600 font-bold hover:text-blue-800 flex items-center justify-center">
+                        Manage Maintenance <i class="bi bi-arrow-right ml-2 text-sm"></i>
+                    </a>
                 </div>
 
                 @if (User.IsInRole(Roles.PurchasingManager))
                 {
-                    <div class="p-6 shadow-lg rounded-2xl bg-white text-center hover:scale-105 transition">
-                        <i class="bi bi-cart-check text-red-600 text-5xl mb-4"></i>
-                        <h3 class="font-bold text-xl mb-2">Purchasing</h3>
-                        <p class="text-gray-600">Order fridges, spare parts, and manage suppliers.</p>
-                        <a asp-controller="PurchaseOrder" asp-action="Index" class="text-blue-600 font-semibold">Orders</a>
+                    <div class="group p-8 shadow-xl rounded-3xl border-t-4 border-yellow-600 bg-gray-50 text-center transform hover:shadow-2xl hover:bg-yellow-50 transition duration-300">
+                        <i class="bi bi-bag-check-fill text-yellow-600 text-6xl mb-4 group-hover:text-yellow-700 transition"></i>
+                        <h3 class="font-bold text-xl mb-3 text-gray-900">Procurement & Suppliers</h3>
+                        <p class="text-gray-600 mb-4">
+                            Manage suppliers, process requests, create RFQs, and **generate purchase orders/delivery notes**.
+                        </p>
+                        <a asp-controller="PurchaseOrder" asp-action="Index" class="text-blue-600 font-bold hover:text-blue-800 flex items-center justify-center">
+                            View Orders <i class="bi bi-arrow-right ml-2 text-sm"></i>
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="group p-8 shadow-xl rounded-3xl border-t-4 border-purple-600 bg-gray-50 text-center transform hover:shadow-2xl hover:bg-purple-50 transition duration-300">
+                        <i class="bi bi-box-seam-fill text-purple-600 text-6xl mb-4 group-hover:text-purple-700 transition"></i>
+                        <h3 class="font-bold text-xl mb-3 text-gray-900">Inventory Control</h3>
+                        <p class="text-gray-600 mb-4">
+                            Keep **real-time track of fridge stock levels**, manage new deliveries, and "scrapped" units.
+                        </p>
+                        <a asp-controller="Inventory" asp-action="Index" class="text-blue-600 font-bold hover:text-blue-800 flex items-center justify-center">
+                            Manage Stock <i class="bi bi-arrow-right ml-2 text-sm"></i>
+                        </a>
                     </div>
                 }
             </div>
         </div>
     </section>
+
+    <footer class="mt-auto py-4 bg-gray-800 text-center text-gray-400">
+    </footer>
 </div>
+
+@section Scripts {
+    <script>
+        // Simple script to ensure elements are visible for smooth animation on load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.animate-fade-in-down, .animate-fade-in-up').forEach(el => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+}

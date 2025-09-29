@@ -21,6 +21,14 @@ namespace Code_Vanta_Systems.Models
         [Required, EmailAddress, StringLength(100)]
         public string Email { get; set; }
 
+        // Business Type (e.g., Spaza Shop, Shebeen)
+        [Required, StringLength(50)]
+        public string BusinessType { get; set; }
+
+        // Physical Address
+        [StringLength(250)]
+        public string PhysicalAddress { get; set; }
+
         // Location where customer is based
         [Required]
         public int LocationId { get; set; }
