@@ -250,45 +250,65 @@ namespace Code_Vanta_Systems.Controllers
         {
             var employees = await context.Employees
                 .Include(e => e.User)
-                .Where(e => e.IsActive) // filter active only
+                .Where(e => e.IsActive)
                 .ToListAsync();
 
-            var filteredEmployees = new List<Employee>();
+            var activeEmployees = new List<Employee>();
+
             foreach (var emp in employees)
             {
-                if (!await userManager.IsInRoleAsync(emp.User, "Admin") &&
+                if (emp.User != null &&
+                    !await userManager.IsInRoleAsync(emp.User, "Admin") &&
                     !await userManager.IsInRoleAsync(emp.User, "Customer"))
                 {
-                    filteredEmployees.Add(emp);
+                    activeEmployees.Add(emp);
                 }
             }
 
-            ViewBag.EmployeeCount = filteredEmployees.Count;
-            return View(filteredEmployees);
+            var inactiveEmployees = await context.Employees
+               .Include(e => e.User)
+               .Where(e => !e.IsActive)
+               .ToListAsync();
+
+            var activeCustomers = await context.Customers
+               .Include(c => c.Location)
+               .Include(c => c.User)
+               .Where(c => c.IsActive)
+               .ToListAsync();
+
+            ViewBag.EmployeeCount = activeEmployees.Count;
+            ViewBag.InactiveCount = inactiveEmployees.Count;
+            ViewBag.ActiveCustomerCount = activeCustomers.Count;
+
+            return View(activeEmployees);
         }
 
 
-        // Customers
-        public async Task<IActionResult> Customers()
+        public async Task<IActionResult> InactiveEmployees()
         {
-            // Load all employees including ApplicationUser
-            var employees = await context.Employees
-                .Include(e => e.User)
+            var inactiveEmployees = await context.Employees
+                .Include(e => e.User) // Assuming Employee has a navigation property to ApplicationUser
+                .Where(e => !e.IsActive)
                 .ToListAsync();
 
-            // Filter only users in the "Customer" role
-            var customers = new List<Employee>();
-            foreach (var emp in employees)
-            {
-                if (await userManager.IsInRoleAsync(emp.User, "Customer"))
-                {
-                    customers.Add(emp);
-                }
-            }
+            ViewBag.InactiveCount = inactiveEmployees.Count;
 
-            ViewBag.CustomerCount = customers.Count;
-            return View(customers);
+            return View(inactiveEmployees);
         }
+       
+            public async Task<IActionResult> ActiveCustomers()
+        {
+            var activeCustomers = await context.Customers
+                .Include(c => c.Location)  // Include related location if needed
+                .Include(c => c.User)      // Include linked ApplicationUser if needed
+                .Where(c => c.IsActive)
+                .ToListAsync();
+
+            ViewBag.ActiveCustomerCount = activeCustomers.Count;
+
+            return View(activeCustomers);
+        }
+        
 
 
         [HttpPost]
@@ -335,8 +355,6 @@ namespace Code_Vanta_Systems.Controllers
 
             return RedirectToAction(nameof(Employees));
         }
-
-
 
     }
 }

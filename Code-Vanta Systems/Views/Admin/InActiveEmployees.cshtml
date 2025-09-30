@@ -1,0 +1,30 @@
+﻿@model IEnumerable<Code_Vanta_Systems.Models.Employee>
+<h1>INACTIVE EMPLOYEES</h1><br /><br />
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Phone number</th>
+            <th>Role</th>
+            <th>Hired Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var emp in Model)
+        {
+            <tr>
+                <td>@emp.User?.FullName</td>
+                <td>@emp.User?.Email</td>
+                <td>@emp.PhoneNumber</td>
+
+                @* 🚨 FIX: The controller sets employee.Position = model.SelectedRole, so we display Position. *@
+                <td>@emp.Position</td>
+
+                <td>@emp.CreatedAt.ToString("yyyy-MMM-dd")</td>
+               
+            </tr>
+        }
+    </tbody>
+</table>
+

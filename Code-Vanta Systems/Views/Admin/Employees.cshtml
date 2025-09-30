@@ -8,19 +8,9 @@
     </div>
 }
 
-<div class="container-fluid py-4">
-
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="alert alert-success">Welcome back, @User.Identity?.Name</h1>
-            <p class="text-muted">
-                You have full access to manage employees, customers, view reports and oversee system operations.
-            </p>
-        </div>
-    </div>
-
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <a asp-controller="Admin" asp-action="Employees" class="text-decoration-none d-block">
             <div class="card text-center shadow-sm border-0">
                 <div class="card-body">
                     <i class="bi bi-people-fill fs-2 text-primary mb-2"></i>
@@ -28,29 +18,35 @@
                     <p class="mb-0 text-muted">Active Employees</p>
                 </div>
             </div>
-        </div>
+        </a>
+    </div>
 
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm border-0">
-                <div class="card-body">
-                    <i class="bi bi-kanban-fill fs-2 text-warning mb-2"></i>
-                    <h2 class="fw-bold text-warning">@ViewBag.CustomerEmployeeCount</h2>
-                    <p class="mb-0 text-muted">Customers</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
+    <div class="col-md-3">
+        <a asp-controller="Admin" asp-action="InactiveEmployees" class="text-decoration-none d-block">
             <div class="card text-center shadow-sm border-0">
                 <div class="card-body">
                     <i class="bi bi-list-task fs-2 text-success mb-2"></i>
-                    <h2 class="fw-bold text-success">76</h2>
-                    <p class="mb-0 text-muted">Pending Tasks</p>
+                    <h2 class="fw-bold text-success">@ViewBag.InactiveCount</h2>
+                    <p class="mb-0 text-muted">Inactive</p>
                 </div>
             </div>
-        </div>
+        </a>
+    </div>
 
-        <div class="col-md-3">
+    <div class="col-md-3">
+        <a asp-controller="Admin" asp-action="Customers" class="text-decoration-none d-block">
+            <div class="card text-center shadow-sm border-0">
+                <div class="card-body">
+                    <i class="bi bi-kanban-fill fs-2 text-warning mb-2"></i>
+                    <h2 class="fw-bold text-warning">@ViewBag.ActiveCustomerCount</h2>
+                    <p class="mb-0 text-muted">Customers</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a asp-controller="Admin" asp-action="Revenue" class="text-decoration-none d-block">
             <div class="card text-center shadow-sm border-0">
                 <div class="card-body">
                     <i class="bi bi-currency-dollar fs-2 text-danger mb-2"></i>
@@ -58,9 +54,10 @@
                     <p class="mb-0 text-muted">Revenue This Month</p>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
+
 
 <h2>Employees</h2>
 

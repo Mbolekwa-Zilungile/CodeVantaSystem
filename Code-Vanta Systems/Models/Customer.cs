@@ -33,6 +33,7 @@ namespace Code_Vanta_Systems.Models
         [Required]
         public int LocationId { get; set; }
         public virtual Location Location { get; set; }
+        public bool IsActive { get; set; } = true;
 
         // Optional link to an ApplicationUser (for customer portal logins)
         public string? UserId { get; set; }
