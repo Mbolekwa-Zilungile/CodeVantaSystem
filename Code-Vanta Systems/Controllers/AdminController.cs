@@ -161,7 +161,7 @@ namespace Code_Vanta_Systems.Controllers
 
             var currentRole = await userManager.GetRolesAsync(employee.User);
 
-            var viewModel = new RegisterEmployeeViewModel
+            var viewModel = new EditEmployeeViewModel
             {
                 Id = employee.Id,
                 FullName = employee.User.FullName,
@@ -178,7 +178,7 @@ namespace Code_Vanta_Systems.Controllers
         // POST: Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(RegisterEmployeeViewModel model)
+        public async Task<IActionResult> Edit(EditEmployeeViewModel model)
         {
             if (!ModelState.IsValid)
             {
