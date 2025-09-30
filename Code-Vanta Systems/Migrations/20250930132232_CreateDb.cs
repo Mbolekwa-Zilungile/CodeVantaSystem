@@ -339,7 +339,10 @@ namespace Code_Vanta_Systems.Migrations
                     ContactName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    BusinessType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    PhysicalAddress = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
                     LocationId = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
                 },
                 constraints: table =>
@@ -367,6 +370,8 @@ namespace Code_Vanta_Systems.Migrations
                     ApplicationUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Role = table.Column<int>(type: "int", nullable: false),
                     LocationId = table.Column<int>(type: "int", nullable: true),
+                    Position = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },

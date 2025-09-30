@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Code_Vanta_Systems.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250930100414_Add-IsActive")]
-    partial class AddIsActive
+    [Migration("20250930132232_CreateDb")]
+    partial class CreateDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

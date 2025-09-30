@@ -1,32 +1,27 @@
-﻿@model Code_Vanta_Systems.ViewModels.EditEmployeeViewModel
+﻿@using Code_Vanta_Systems.ViewModels
+@model RegisterEmployeeViewModel
 
 @{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Edit Employee";
-}
-
-<h2>Edit Employee</h2>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
 }
 
 <div class="row">
     <div class="col-md-8 offset-md-2">
-        <h2 class="mb-4 text-primary">Edit Employee Details</h2>
-        <p class="text-muted">Update employee profile and role assignment information below.</p>
+        <h2 class="mb-4 text-danger">Edit Employee Account</h2>
+        <p class="text-muted">Update the profile and role assignment for this employee.</p>
         <div class="card shadow-sm p-4">
 
-            <form asp-action="Edit" method="post" novalidate>
+            @* Point to the [HttpPost] Edit action *@
+            <form asp-action="Edit" method="post">
                 @Html.AntiForgeryToken()
-
-                <!-- Show validation errors -->
                 <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
+                @* CRITICAL - Pass the Employee ID back to the POST action *@
                 <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="Email" /> @* Keep Email as hidden field to pass to the controller's logic*@
+
+                <h5 class="mb-3 text-secondary border-bottom pb-2">Profile Information</h5>
 
                 <div class="mb-3">
                     <label asp-for="FullName" class="form-label"></label>
@@ -36,8 +31,8 @@
 
                 <div class="mb-3">
                     <label asp-for="Email" class="form-label"></label>
-                    <input asp-for="Email" class="form-control" placeholder="Employee's Email Address" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
+                    <input asp-for="Email" class="form-control" readonly />
+                    <span class="form-text text-muted">Email (Username) cannot be changed here.</span>
                 </div>
 
                 <div class="mb-3">
@@ -46,28 +41,36 @@
                     <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                 </div>
 
+                @* REMOVE Password and ConfirmPassword fields (They are not for editing) *@
+
+                <h5 class="mb-3 mt-4 text-secondary border-bottom pb-2">Role Assignment</h5>
+
                 <div class="mb-3">
-                    <label asp-for="SelectedRole" class="form-label">Role</label>
-                    <select asp-for="SelectedRole" asp-items="Model.Roles" class="form-select">
-                        <option value="">-- Select Role --</option>
+                    <label asp-for="SelectedRole" class="form-label">Assign New Role</label>
+                    @* The asp-items will be populated by the Roles property from the controller's GET action *@
+                    <select asp-for="SelectedRole"
+                            asp-items="Model.Roles"
+                            class="form-control">
+                        <option value="">-- Select Employee Role --</option>
                     </select>
                     <span asp-validation-for="SelectedRole" class="text-danger"></span>
                 </div>
 
                 <div class="mt-4 d-flex justify-content-between">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i> Save Changes
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-arrow-up-circle-fill"></i> Update Employee
                     </button>
                     <a asp-action="Employees" class="btn btn-secondary">
                         <i class="bi bi-x-circle"></i> Cancel
                     </a>
                 </div>
-
             </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

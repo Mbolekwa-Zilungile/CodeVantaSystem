@@ -1,0 +1,52 @@
+﻿@using Code_Vanta_Systems.ViewModels
+@model EditCustomerViewModel
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = $"Deactivate Customer: {Model.BusinessName}";
+}
+
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <h2 class="mb-4 text-danger">Deactivate Customer Account</h2>
+
+        <div class="alert alert-warning" role="alert">
+            <h4 class="alert-heading">Deactivation Warning</h4>
+            <p class="mb-0">
+                You are about to **deactivate** the customer **@Model.BusinessName**.
+                This will set their `IsActive` status to **False** and **lock their login account** but will retain their historical data in the database.
+            </p>
+        </div>
+
+        <div class="card shadow-sm p-4">
+            <h5 class="mb-3 border-bottom pb-2">Customer Details</h5>
+            <dl class="row">
+                <dt class="col-sm-4">Business Name:</dt>
+                <dd class="col-sm-8">@Model.BusinessName</dd>
+
+                <dt class="col-sm-4">Contact Person:</dt>
+                <dd class="col-sm-8">@Model.ContactName</dd>
+
+                <dt class="col-sm-4">Email (Login):</dt>
+                <dd class="col-sm-8">@Model.Email</dd>
+
+                <dt class="col-sm-4">Phone:</dt>
+                <dd class="col-sm-8">@Model.Phone</dd>
+            </dl>
+
+            <form asp-action="DeleteCustomer" method="post" class="mt-4">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-warning text-dark">
+                        <i class="bi bi-lock-fill"></i> Confirm Deactivation
+                    </button>
+                    <a asp-action="Customers" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

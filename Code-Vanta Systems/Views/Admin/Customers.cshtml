@@ -1,0 +1,76 @@
+﻿@model IEnumerable<Code_Vanta_Systems.Models.Customer>
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Customer Management";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Active Customers (@ViewBag.CustomerCount)</h1>
+        <a asp-action="CreateCustomer" class="btn btn-success">
+            <i class="bi bi-shop-window me-1"></i> Register New Customer
+        </a>
+    </div>
+
+    <p class="text-muted">
+        This list shows all **Active** customer accounts. Use the "Deactivate" action for soft deletion.
+    </p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Business Name</th>
+                        <th>Contact Person</th>
+                        <th>Email (Login)</th>
+                        <th>Phone</th>
+                        <th>Region</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var customer in Model)
+                    {
+                        <tr>
+                            <td>@customer.BusinessName</td>
+                            <td>@customer.ContactName</td>
+                            <td>@customer.User?.Email</td>
+                            <td>@customer.Phone</td>
+                            <td>@customer.Location?.Description</td>
+                            <td>
+                                <a asp-controller="Admin"
+                                   asp-action="EditCustomer"
+                                   asp-route-id="@customer.Id"
+                                   class="btn btn-outline-primary btn-sm">Edit</a>
+
+                                <a asp-controller="Admin"
+                                   asp-action="DeleteCustomer"
+                                   asp-route-id="@customer.Id"
+                                   class="btn btn-outline-danger btn-sm">Deactivate</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

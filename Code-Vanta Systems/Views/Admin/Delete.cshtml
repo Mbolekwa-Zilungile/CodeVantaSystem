@@ -1,0 +1,40 @@
+﻿@using Code_Vanta_Systems.ViewModels
+@model RegisterEmployeeViewModel
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Confirm Employee Deactivation";
+}
+
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <h2 class="mb-4 text-danger"><i class="bi bi-person-x me-2"></i> Confirm Employee Deactivation</h2>
+
+        <div class="alert alert-warning border-danger border-2" role="alert">
+            <h4 class="alert-heading">Warning: This is a **Soft Delete**!</h4>
+            <p>You are about to deactivate the account for **@Model.FullName**. This will remove all their roles, lock their login access, and mark the record as inactive.</p>
+            <hr>
+            <p class="mb-0">This record will remain in the database for historical auditing purposes.</p>
+        </div>
+
+        <dl class="row p-3 bg-white shadow-sm rounded">
+            <dt class="col-sm-4">Current Role</dt>
+            <dd class="col-sm-8">@Model.SelectedRole</dd> @* 🚨 Use SelectedRole here *@
+        </dl>
+
+        @* The form posts to the [HttpPost, ActionName("Delete")] action *@
+        <form asp-action="Delete" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" /> @* Pass the Employee ID for deletion *@
+
+            <div class="mt-4 d-flex justify-content-between">
+                <button type="submit" class="btn btn-danger btn-lg">
+                    <i class="bi bi-trash-fill"></i> Confirm Deactivate
+                </button>
+                <a asp-action="Employees" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>

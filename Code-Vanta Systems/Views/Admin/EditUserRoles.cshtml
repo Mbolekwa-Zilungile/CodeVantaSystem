@@ -1,0 +1,61 @@
+﻿@using Code_Vanta_Systems.ViewModels
+@model RoleAssignmentViewModel
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = Model.FullName != null ? $"Manage Roles for {Model.FullName}" : "Manage User Roles";
+}
+
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <h2 class="mb-4 text-warning"><i class="bi bi-gear-fill me-2"></i> Role Assignment: @Model.FullName</h2>
+        <p class="text-muted">Change the role for this user account. The selected role will overwrite the user's current permissions.</p>
+
+        <div class="card shadow-sm p-4">
+
+            <form asp-action="EditUserRoles" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                @* CRITICAL: Hidden field to pass the UserId back to the POST action *@
+                <input type="hidden" asp-for="UserId" />
+
+                <div class="mb-3">
+                    <label class="form-label">Full Name</label>
+                    <input asp-for="FullName" class="form-control" readonly />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email (Username)</label>
+                    <input asp-for="Email" class="form-control" readonly />
+                </div>
+
+                <h5 class="mb-3 mt-4 text-secondary border-bottom pb-2">Assign New Role</h5>
+
+                <div class="mb-3">
+                    <label asp-for="SelectedRole" class="form-label">New Role</label>
+                    <select asp-for="SelectedRole"
+                            asp-items="Model.AvailableRoles"
+                            class="form-control">
+                        <option value="">-- Select New Role --</option>
+                    </select>
+                    <span asp-validation-for="SelectedRole" class="text-danger"></span>
+                </div>
+
+                <div class="mt-4 d-flex justify-content-between">
+                    <button type="submit" class="btn btn-warning btn-lg">
+                        <i class="bi bi-arrow-clockwise"></i> Update Role
+                    </button>
+                    <a asp-action="ManageRoles" class="btn btn-secondary btn-lg">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
