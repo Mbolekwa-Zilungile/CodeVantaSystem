@@ -249,10 +249,10 @@ namespace Code_Vanta_Systems.Controllers
         public async Task<IActionResult> Employees()
         {
             var employees = await context.Employees
-        .Include(e => e.User)
-        .ToListAsync();
+                .Include(e => e.User)
+                .Where(e => e.IsActive) // filter active only
+                .ToListAsync();
 
-            // Filter out employees whose user is in Admin or Customer role
             var filteredEmployees = new List<Employee>();
             foreach (var emp in employees)
             {
@@ -266,6 +266,7 @@ namespace Code_Vanta_Systems.Controllers
             ViewBag.EmployeeCount = filteredEmployees.Count;
             return View(filteredEmployees);
         }
+
 
         // Customers
         public async Task<IActionResult> Customers()
@@ -288,6 +289,55 @@ namespace Code_Vanta_Systems.Controllers
             ViewBag.CustomerCount = customers.Count;
             return View(customers);
         }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var employee = await context.Employees.FindAsync(id);
+            if (employee == null)
+            {
+                return NotFound();
+            }
+
+            var user = await userManager.FindByIdAsync(employee.ApplicationUserId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var roles = await userManager.GetRolesAsync(user);
+
+            // Skip Admin or Customer roles
+            if (roles.Contains("Admin") || roles.Contains("Customer"))
+            {
+                TempData["ErrorMessage"] = "Cannot delete employees with Admin or Customer roles.";
+                return RedirectToAction(nameof(Employees));
+            }
+
+            // Remove all roles from the user
+            if (roles.Any())
+            {
+                var removeResult = await userManager.RemoveFromRolesAsync(user, roles);
+                if (!removeResult.Succeeded)
+                {
+                    TempData["ErrorMessage"] = "Failed to remove user roles.";
+                    return RedirectToAction(nameof(Employees));
+                }
+            }
+
+            employee.IsActive = false; // Soft delete
+            context.Update(employee);
+            await context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Employee soft deleted and roles removed successfully.";
+
+            return RedirectToAction(nameof(Employees));
+        }
+
+
+
     }
 }
 

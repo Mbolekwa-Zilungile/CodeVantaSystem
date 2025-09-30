@@ -30,7 +30,8 @@ public class RegisterViewModel
     public string BusinessType { get; set; } // Spaza Shop, Shebeen, Other
 
     [Required(ErrorMessage = "Phone number is required.")]
-    [Phone(ErrorMessage = "Invalid phone number format.")]
+    [Phone(ErrorMessage = "Enter a valid phone number")]
+    [RegularExpression(@"^(\+27\d{9}|0\d{9})$", ErrorMessage = "Phone number must start with +27 or 0 and be 10 digits total")]
     public string Phone { get; set; }
 
     [Required(ErrorMessage = "Region is required.")]

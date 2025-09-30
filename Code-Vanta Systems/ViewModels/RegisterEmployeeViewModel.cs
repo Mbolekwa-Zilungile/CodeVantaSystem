@@ -25,6 +25,7 @@ namespace Code_Vanta_Systems.ViewModels
         public string ConfirmPassword { get; set; }
 
         [Phone(ErrorMessage = "Enter a valid phone number")]
+        [RegularExpression(@"^(\+27\d{9}|0\d{9})$", ErrorMessage = "Phone number must start with +27 or 0 and be 10 digits total")]
         public string PhoneNumber { get; set; }
 
         // ✅ This is what your <select asp-for="SelectedRole"> binds to
