@@ -22,6 +22,7 @@ namespace Code_Vanta_Systems.Services
         public const string MaintenanceTechnician = "Maintenance Technician";
         public const string PurchasingManager = "Purchasing Manager";
         public const string Customer = "Customer";
+        public const string Supplier = "Supplier";
     }
 
     public class SeedService
@@ -39,7 +40,7 @@ namespace Code_Vanta_Systems.Services
             string[] roles = {
                 Roles.Admin, Roles.CustomerLiaison, Roles.InventoryLiaison,
                 Roles.ServiceTechnician, Roles.FaultTechnician,
-                Roles.MaintenanceTechnician, Roles.PurchasingManager, Roles.Customer 
+                Roles.MaintenanceTechnician, Roles.PurchasingManager, Roles.Customer , Roles.Supplier
             };
 
             // Create roles

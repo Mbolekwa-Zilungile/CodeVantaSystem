@@ -41,9 +41,10 @@ namespace Code_Vanta_Systems.Controllers
 
             foreach (var emp in allEmployees)
             {
-                if (emp.User != null &&
-                    !await userManager.IsInRoleAsync(emp.User, "Admin") &&
-                    !await userManager.IsInRoleAsync(emp.User, "Customer"))
+                    if (emp.User != null &&
+            !await userManager.IsInRoleAsync(emp.User, "Admin") &&
+            !await userManager.IsInRoleAsync(emp.User, "Customer") &&
+            !await userManager.IsInRoleAsync(emp.User, "Supplier"))
                 {
                     filteredEmployees.Add(emp);
                 }
@@ -97,7 +98,8 @@ namespace Code_Vanta_Systems.Controllers
             {
                 if (emp.User != null &&
                     !await userManager.IsInRoleAsync(emp.User, "Admin") &&
-                    !await userManager.IsInRoleAsync(emp.User, "Customer"))
+                    !await userManager.IsInRoleAsync(emp.User, "Customer") &&
+                    !await userManager.IsInRoleAsync(emp.User, "Supplier"))
                 {
                     filteredEmployees.Add(emp);
                 }
@@ -113,7 +115,7 @@ namespace Code_Vanta_Systems.Controllers
         {
             // Fetch all roles except 'Admin' and 'Customer'
             var roles = await roleManager.Roles
-                .Where(r => r.Name != "Admin" && r.Name != "Customer")
+                .Where(r => r.Name != "Admin" && r.Name != "Customer" && r.Name !="Supplier")
                 .Select(r => new SelectListItem
                 {
                     Value = r.Name,
@@ -139,7 +141,7 @@ namespace Code_Vanta_Systems.Controllers
             if (!ModelState.IsValid)
             {
                 model.Roles = await roleManager.Roles
-                    .Where(r => r.Name != "Admin" && r.Name != "Customer")
+                    .Where(r => r.Name != "Admin" && r.Name != "Customer" && r.Name != "Supplier")
                     .Select(r => new SelectListItem { Value = r.Name, Text = r.Name })
                     .ToListAsync();
                 return View(model);
@@ -185,7 +187,7 @@ namespace Code_Vanta_Systems.Controllers
 
             // Re-fetch roles and return to view on error
             model.Roles = await roleManager.Roles
-                .Where(r => r.Name != "Admin" && r.Name != "Customer")
+                .Where(r => r.Name != "Admin" && r.Name != "Customer" && r.Name != "Supplier")
                 .Select(r => new SelectListItem { Value = r.Name, Text = r.Name })
                 .ToListAsync();
 
@@ -209,7 +211,7 @@ namespace Code_Vanta_Systems.Controllers
 
             // 2. Fetch all non-Admin/non-Customer roles for the dropdown
             var roles = await roleManager.Roles
-                .Where(r => r.Name != "Admin" && r.Name != "Customer")
+                .Where(r => r.Name != "Admin" && r.Name != "Customer" && r.Name != "Supplier")
                 .Select(r => new SelectListItem
                 {
                     Value = r.Name,
@@ -252,7 +254,7 @@ namespace Code_Vanta_Systems.Controllers
             {
                 // Re-fetch roles excluding Admin/Customer for the dropdown
                 model.Roles = await roleManager.Roles
-                    .Where(r => r.Name != "Admin" && r.Name != "Customer")
+                    .Where(r => r.Name != "Admin" && r.Name != "Customer" && r.Name != "Supplier")
                     .Select(r => new SelectListItem { Value = r.Name, Text = r.Name })
                     .ToListAsync();
                 return View(model);
@@ -342,7 +344,7 @@ namespace Code_Vanta_Systems.Controllers
 
             // Prevent deactivation of Admin/Customer roles if they somehow got here
             if (await userManager.IsInRoleAsync(employee.User, "Admin") ||
-                await userManager.IsInRoleAsync(employee.User, "Customer"))
+                await userManager.IsInRoleAsync(employee.User, "Customer")) 
             {
                 TempData["ErrorMessage"] = "Cannot deactivate employees with Admin or Customer roles.";
                 return RedirectToAction("Employees");

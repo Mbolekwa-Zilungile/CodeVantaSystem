@@ -904,9 +904,12 @@ namespace Code_Vanta_Systems.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
-                    b.Property<string>("ContactEmail")
+                    b.Property<string>("ApplicationUserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -918,6 +921,8 @@ namespace Code_Vanta_Systems.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
 
                     b.ToTable("Suppliers");
                 });
@@ -1469,6 +1474,17 @@ namespace Code_Vanta_Systems.Migrations
                     b.Navigation("RequestedBy");
 
                     b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.Supplier", b =>
+                {
+                    b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("ApplicationUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.WorkFlowApproval", b =>

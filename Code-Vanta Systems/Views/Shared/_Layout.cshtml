@@ -33,7 +33,15 @@
 
                 @if (SignInManager.IsSignedIn(User))
                 {
-                    <a href="/Admin/Employees" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
+                    if(User.IsInRole("Admin"))
+                    {
+                        <a href="/Admin/Employees" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
+                    }
+                    else if (User.IsInRole("Purchasing Manager"))
+                    {
+                        <a href="PurchasingManager/Index" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
+                    }
+
                     <form method="post" asp-controller="Account" asp-action="Logout" class="inline">
                         <button type="submit" class="ml-2 text-red-500 hover:underline">Logout</button>
                     </form>

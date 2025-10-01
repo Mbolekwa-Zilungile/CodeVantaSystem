@@ -1,1 +1,92 @@
-﻿<h1>Purchasing Manager</h1>
+﻿@{
+    Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
+    ViewData["Title"] = "Purchasing manager Dashboard";
+}
+
+
+<style>
+    /* Custom style for professional-looking metrics cards */
+    .metric-card {
+        border: none;
+        border-radius: 0.75rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .metric-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+    .metric-value {
+        font-size: 2.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .metric-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+</style>
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="alert alert-success">Welcome back, @User.Identity?.Name</h1>
+            <p class="text-muted">
+                You have full access to manage employees, customers, view reports and oversee system operations.
+            </p>
+        </div>
+    </div>
+
+
+        <div class="row">
+            <!-- Card 1: Pending Requests -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card shadow h-100 py-2 bg-success text-white">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs fw-bold text-uppercase mb-2">Pending Requests</div>
+                                <div class="h4 mb-0 fw-bold">
+                                    <i class="bi bi-cart3 me-2"> 7</i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Active RFQs -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card shadow h-100 py-2 bg-primary text-white">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs fw-bold text-uppercase mb-2">Active RFQs</div>
+                                <div class="h4 mb-0 fw-bold">
+                                    <i class="bi bi-file-earmark me-2"> 5</i> 
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Overdue Deliveries -->
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card shadow h-100 py-2 bg-danger text-white">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs fw-bold text-uppercase mb-2">Overdue Deliveries</div>
+                                <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-truck me-2"> 7</i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>
+</div>
