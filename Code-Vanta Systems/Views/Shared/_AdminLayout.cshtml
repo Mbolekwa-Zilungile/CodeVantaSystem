@@ -61,10 +61,9 @@
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="#">Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form method="post" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/">
-                                    <button type="submit" class="dropdown-item">Logout</button>
-                                </form>
+                            <form method="post" asp-controller="Account" asp-action="Logout">
+                                <button type="submit" class="dropdown-item">Logout</button>
+                            </form>
                             </li>
                         </ul>
                     </li>

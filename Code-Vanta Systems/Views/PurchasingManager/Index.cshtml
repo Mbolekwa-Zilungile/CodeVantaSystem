@@ -41,70 +41,75 @@
     </div>
 
 
-        <div class="row">
-            <!-- Card 1: Pending Requests -->
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card shadow h-100 py-2 bg-success text-white">
+    <div class="row">
+
+
+        <!-- Card 4: Suppliers (wrapped in a link properly) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <a href="@Url.Action("Suppliers", "PurchasingManager")" class="text-decoration-none">
+                <div class="card shadow h-100 py-2 bg-warning text-dark">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col">
-                                <div class="text-xs fw-bold text-uppercase mb-2">Pending Requests</div>
+                                <div class="text-xs fw-bold text-uppercase mb-2">Suppliers</div>
                                 <div class="h4 mb-0 fw-bold">
-                                    <i class="bi bi-cart3 me-2"> 7</i>
+                                    <i class="bi bi-box me-2"></i> @ViewBag.ActiveSupplierCount
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Card 2: Active RFQs -->
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card shadow h-100 py-2 bg-primary text-white">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col">
-                                <div class="text-xs fw-bold text-uppercase mb-2">Active RFQs</div>
-                                <div class="h4 mb-0 fw-bold">
-                                    <i class="bi bi-file-earmark me-2"> 5</i> 
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card 3: Overdue Deliveries -->
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card shadow h-100 py-2 bg-danger text-white">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col">
-                                <div class="text-xs fw-bold text-uppercase mb-2">Overdue Deliveries</div>
-                                <div class="h4 mb-0 fw-bold">
-                                <i class="bi bi-truck me-2"> 7</i>
-                                </div>
+            </a>
+        </div>
+        <!-- Card 1: Pending Requests -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card shadow h-100 py-2 bg-success text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Pending Requests</div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-cart3 me-2"></i> 7
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    <a href="@Url.Action("Suppliers", "PurchasingManager")" class="text-decoration-none">
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card shadow h-100 py-2 bg-secondary text-white">
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col">
-                                <div class="text-xs fw-bold text-uppercase mb-2">Suppliers</div>
-                                <div class="h4 mb-0 fw-bold">
-                                    <i class="bi bi-box"> @ViewBag.ActiveSupplierCount</i>
-                                </div>
+
+        <!-- Card 2: Active RFQs -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card shadow h-100 py-2 bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Active RFQs</div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-file-earmark me-2"></i> 5
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-       </a>
+        </div>
+
+        <!-- Card 3: Overdue Deliveries -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card shadow h-100 py-2 bg-danger text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Overdue Deliveries</div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-truck me-2"></i> 7
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
 </div>
 
