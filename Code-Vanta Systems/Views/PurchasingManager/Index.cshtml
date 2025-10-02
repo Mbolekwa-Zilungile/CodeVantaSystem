@@ -1,4 +1,6 @@
-﻿@{
+﻿@model IEnumerable<Code_Vanta_Systems.Models.Supplier>
+
+@{
     Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
     ViewData["Title"] = "Purchasing manager Dashboard";
 }
@@ -88,5 +90,21 @@
                 </div>
             </div>
         </div>
+    <a href="@Url.Action("Suppliers", "PurchasingManager")" class="text-decoration-none">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card shadow h-100 py-2 bg-secondary text-white">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <div class="text-xs fw-bold text-uppercase mb-2">Suppliers</div>
+                                <div class="h4 mb-0 fw-bold">
+                                    <i class="bi bi-box"> @ViewBag.ActiveSupplierCount</i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+       </a>
 </div>
-</div>
+

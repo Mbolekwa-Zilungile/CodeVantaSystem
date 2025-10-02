@@ -85,13 +85,13 @@
         <h6 class="text-uppercase text-light px-3 mt-2 mb-3">@User.Identity.Name</h6>
 
         <a class="sidebar-link @(currentAction == "Index" ? "active" : "")"
-           asp-controller="Admin" asp-action="Index">
+           asp-controller="PurchasingManager" asp-action="Index">
             <i class="bi bi-speedometer2 me-2"></i>Dashboard
         </a>
 
         @* 🚨 FIX: Highlight Employees link for Employees, Create, Edit, and Delete actions *@
         <a class="sidebar-link @(currentAction == "Employees" || currentAction == "Create" || currentAction == "Edit" || currentAction == "Delete" ? "active" : "")"
-           asp-controller="Admin" asp-action="Employees">
+           asp-controller="PurchasingManager" asp-action="Suppliers">
             <i class="bi bi-person-lines-fill me-2"></i>Suppliers
         </a>
 
