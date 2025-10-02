@@ -38,6 +38,13 @@ namespace Code_Vanta_Systems.Controllers
             var activeSuppliers = await context.Suppliers.Include(s => s.User)
             .Where(s => s.IsActive)
             .ToListAsync();
+            ViewBag.ActiveSupplierCount = activeSuppliers.Count;
+
+            var InactiveSuppliers = await context.Suppliers.Include(s => s.User)
+           .Where(s => !s.IsActive)
+           .ToListAsync();
+
+            ViewBag.InactiveSuppliersCount = InactiveSuppliers.Count;
             return View(activeSuppliers);
         }
         // GET: Admin/CreateSupplier
@@ -62,7 +69,7 @@ namespace Code_Vanta_Systems.Controllers
             {
                 UserName = model.Email,
                 Email = model.Email,
-                FullName = model.FullName,
+                FullName = model.ContactPerson,
                 EmailConfirmed = true,
                 PhoneNumber = model.Phone
             };
@@ -87,7 +94,7 @@ namespace Code_Vanta_Systems.Controllers
                     var supplier = new Supplier
                     {
                         ApplicationUserId = user.Id,
-                        Name = model.Name,
+                        Name = model.CompanyName,
                         Phone = model.Phone,
                         Address = model.Address,
                         IsActive = true
@@ -96,7 +103,7 @@ namespace Code_Vanta_Systems.Controllers
                     await context.Suppliers.AddAsync(supplier);
                     await context.SaveChangesAsync();
 
-                    TempData["SuccessMessage"] = $"Supplier '{model.Name}' created successfully.";
+                    TempData["SuccessMessage"] = $"Supplier '{model.CompanyName}' created successfully.";
                     return RedirectToAction("Suppliers"); // Adjust this action to your supplier list page
                 }
 
@@ -114,5 +121,134 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(model);
         }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var supplier = await context.Suppliers
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (supplier == null || supplier.User == null)
+            {
+                TempData["ErrorMessage"] = "Error: Supplier not found. Deactivation failed.";
+                return RedirectToAction("Suppliers");
+            }
+
+            var user = supplier.User;
+
+            // 1. Perform soft delete
+            supplier.IsActive = false;
+            context.Suppliers.Update(supplier);
+
+            // 2. Lock user account
+            await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+            context.Users.Update(user);
+
+            await context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Supplier '{supplier.Name}' successfully deactivated.";
+            return RedirectToAction("Suppliers");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            // 1. Find the Supplier
+            var supplier = await context.Suppliers
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (supplier == null || supplier.User == null)
+            {
+                TempData["ErrorMessage"] = "Supplier not found.";
+                return RedirectToAction("Suppliers");
+            }
+
+            // 2. Map Supplier data to the ViewModel
+            var viewModel = new EditSupplierViewModel
+            {
+                Id = supplier.Id,
+                ApplicationUserId = supplier.ApplicationUserId,
+                FullName = supplier.User.FullName,
+                Email = supplier.User.Email,
+                Phone = supplier.Phone,
+                Name = supplier.Name,
+                Address = supplier.Address,
+                IsActive = supplier.IsActive
+            };
+
+            ViewData["Title"] = $"Edit Supplier: {supplier.Name}";
+            return View(viewModel); // Ensure you have a View that uses RegisterSupplierViewModel
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, EditSupplierViewModel model)
+        {
+            if (id != model.Id)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var supplier = await context.Suppliers
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (supplier == null || supplier.User == null)
+            {
+                TempData["ErrorMessage"] = "Supplier not found.";
+                return RedirectToAction("Suppliers");
+            }
+
+            var user = supplier.User;
+
+            try
+            {
+                // 1. Update ApplicationUser fields
+                user.FullName = model.FullName;
+                user.Email = model.Email;
+                user.UserName = model.Email;
+                user.PhoneNumber = model.Phone;
+
+                await userManager.UpdateAsync(user);
+
+                // 2. Update Supplier entity
+                supplier.Name = model.Name;
+                supplier.Phone = model.Phone;
+                supplier.Address = model.Address;
+                supplier.IsActive = model.IsActive;
+
+                // 3. Lock or unlock the account
+                if (model.IsActive)
+                {
+                    await userManager.SetLockoutEndDateAsync(user, null); // Reactivate
+                }
+                else
+                {
+                    await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue); // Deactivate
+                }
+
+                context.Suppliers.Update(supplier);
+                await context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = $"Supplier '{supplier.Name}' updated successfully. Status: {(model.IsActive ? "Active" : "Inactive")}.";
+                return RedirectToAction("Suppliers");
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!context.Suppliers.Any(s => s.Id == id))
+                {
+                    return NotFound();
+                }
+                throw;
+            }
+        }
+
     }
 }

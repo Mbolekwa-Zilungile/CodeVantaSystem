@@ -5,7 +5,7 @@ namespace Code_Vanta_Systems.ViewModels
     public class RegisterSupplierViewModel
     {
         [Required(ErrorMessage = "Contact person's name is required")]
-        public string FullName { get; set; }
+        public string ContactPerson { get; set; }
 
 
         [Required(ErrorMessage = "Email address is required")]
@@ -19,7 +19,7 @@ namespace Code_Vanta_Systems.ViewModels
         // From Supplier
         [Required(ErrorMessage = "Company name is required")]
         [StringLength(100)]
-        public string Name { get; set; } // Company name
+        public string CompanyName { get; set; } // Company name
 
         [Required]
         [StringLength(300)]

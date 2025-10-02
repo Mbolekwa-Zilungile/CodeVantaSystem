@@ -4,6 +4,44 @@
     Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
     ViewData["Title"] = "Register New Supplier";
 }
+<br /><br />
+<div class="row">
+    <!-- Card 1: Pending Requests -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card shadow h-100 py-2 bg-success text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs fw-bold text-uppercase mb-2">Active Suppliers</div>
+                        <div class="h4 mb-0 fw-bold">
+                            <i class="bi bi-check-circle-fill  me-2"> @ViewBag.ActiveSupplierCount</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Active RFQs -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card shadow h-100 py-2 bg-primary text-white">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-xs fw-bold text-uppercase mb-2">InActive Suppliers </div>
+                        <div class="h4 mb-0 fw-bold">
+                            <i class="bi bi-x-circle-fill me-2"> @ViewBag.InactiveSuppliersCount</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Overdue Deliveries -->
+</div>
+<hr />
+<br /><br />
 <h2>Active Suppliers</h2>
 
 <p>
@@ -33,12 +71,12 @@
                         <td>@supplier.ContactEmail</td>
                         <td>@supplier.Phone</td>
                         <td class="text-center">
-                            <a asp-controller="Admin" asp-action="Edit" asp-route-id="@supplier.Id "
+                            <a asp-controller="PurchasingManager" asp-action="Edit" asp-route-id="@supplier.Id "
                                class="btn btn-outline-primary btn-sm me-1">
                                 <i class="bi bi-pencil-square"></i> Edit
                             </a>
 
-                            <form asp-controller="Admin" asp-action="Delete" asp-route-id="@supplier.Id"
+                            <form asp-controller="PurchasingManager" asp-action="Delete" asp-route-id="@supplier.Id"
                                   method="post" style="display:inline;"
                                   onsubmit="return confirm('Are you sure you want to deactivate @supplier.User?.FullName? This will suspend their account and prevent login.');">
                                 <button type="submit" class="btn btn-outline-danger btn-sm">
