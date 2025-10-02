@@ -14,43 +14,39 @@ namespace Code_Vanta_Systems.Models
         [ForeignKey("ApplicationUserId")]
         public virtual ApplicationUser User { get; set; }
 
-        // Name of the supplier company
+        // Company name
         [Required, StringLength(100)]
         public string Name { get; set; }
 
-        //Contact email is stored in the associated ApplicationUser(User.Email)
+        // Contact info (pulled from ApplicationUser)
         [NotMapped]
         public string ContactEmail => User?.Email;
 
         [NotMapped]
         public string ContactName => User?.FullName;
 
-        // Contact phone number of the supplier
         [Required, Phone]
         public string Phone { get; set; }
 
-        // Physical or mailing address of the supplier
         [Required, StringLength(300)]
         public string Address { get; set; }
 
         public bool IsActive { get; set; } = true;
 
-
-        // Navigation property for fridges supplied by this supplier
+        // Navigation properties
         public virtual ICollection<Fridge> Fridges { get; set; }
-
-        // Navigation property for quotations provided by this supplier
         public virtual ICollection<Quotation> Quotations { get; set; }
-
-        // New: Navigation property for delivery notes
         public virtual ICollection<DeliveryNote> DeliveryNotes { get; set; }
 
-        // Constructor to initialize collections
+        // ✅ New: Supplier can have many RequestQuotations
+        public virtual ICollection<RequestQuotation> RequestQuotations { get; set; }
+
         public Supplier()
         {
             Fridges = new HashSet<Fridge>();
             Quotations = new HashSet<Quotation>();
             DeliveryNotes = new HashSet<DeliveryNote>();
+            RequestQuotations = new HashSet<RequestQuotation>();
         }
     }
 }

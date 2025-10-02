@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Code_Vanta_Systems.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251001191606_AddedSupplierRole")]
-    partial class AddedSupplierRole
+    [Migration("20251002072728_CreateDb")]
+    partial class CreateDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1445,12 +1445,13 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasOne("Code_Vanta_Systems.Models.RequestQuotation", "RequestQuotation")
                         .WithMany("Quotations")
-                        .HasForeignKey("RequestQuotationId");
+                        .HasForeignKey("RequestQuotationId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Code_Vanta_Systems.Models.Supplier", "Supplier")
                         .WithMany("Quotations")
                         .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("PurchaseRequest");
@@ -1469,9 +1470,9 @@ namespace Code_Vanta_Systems.Migrations
                         .IsRequired();
 
                     b.HasOne("Code_Vanta_Systems.Models.Supplier", "Supplier")
-                        .WithMany()
+                        .WithMany("RequestQuotations")
                         .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("RequestedBy");
@@ -1626,6 +1627,8 @@ namespace Code_Vanta_Systems.Migrations
                     b.Navigation("Fridges");
 
                     b.Navigation("Quotations");
+
+                    b.Navigation("RequestQuotations");
                 });
 #pragma warning restore 612, 618
         }

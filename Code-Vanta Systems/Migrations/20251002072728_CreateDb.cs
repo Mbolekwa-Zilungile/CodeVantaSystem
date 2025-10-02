@@ -68,22 +68,6 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Suppliers",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    ContactEmail = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Address = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Suppliers", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -306,6 +290,29 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Suppliers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ApplicationUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Suppliers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Suppliers_AspNetUsers_ApplicationUserId",
+                        column: x => x.ApplicationUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "WorkflowApprovals",
                 columns: table => new
                 {
@@ -496,7 +503,7 @@ namespace Code_Vanta_Systems.Migrations
                         column: x => x.SupplierId,
                         principalTable: "Suppliers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -773,13 +780,14 @@ namespace Code_Vanta_Systems.Migrations
                         name: "FK_Quotations_RequestQuotations_RequestQuotationId",
                         column: x => x.RequestQuotationId,
                         principalTable: "RequestQuotations",
-                        principalColumn: "RequestQuotationId");
+                        principalColumn: "RequestQuotationId",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Quotations_Suppliers_SupplierId",
                         column: x => x.SupplierId,
                         principalTable: "Suppliers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1064,6 +1072,11 @@ namespace Code_Vanta_Systems.Migrations
                 column: "SupplierId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Suppliers_ApplicationUserId",
+                table: "Suppliers",
+                column: "ApplicationUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowApprovals_ApproverUserId",
                 table: "WorkflowApprovals",
                 column: "ApproverUserId");
@@ -1157,13 +1170,13 @@ namespace Code_Vanta_Systems.Migrations
                 name: "Fridges");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
-
-            migrationBuilder.DropTable(
                 name: "Locations");
 
             migrationBuilder.DropTable(
                 name: "Suppliers");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
         }
     }
 }
