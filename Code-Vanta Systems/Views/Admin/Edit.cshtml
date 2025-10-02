@@ -1,67 +1,80 @@
-﻿@using Code_Vanta_Systems.ViewModels
-@model RegisterEmployeeViewModel
+﻿@model Code_Vanta_Systems.ViewModels.EditEmployeeViewModel
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
-    ViewData["Title"] = "Edit Employee";
+    ViewData["Title"] = $"Edit Employee: {Model.FullName}";
 }
 
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <h2 class="mb-4 text-danger">Edit Employee Account</h2>
-        <p class="text-muted">Update the profile and role assignment for this employee.</p>
-        <div class="card shadow-sm p-4">
+<div class="container py-4">
 
-            @* Point to the [HttpPost] Edit action *@
+    <h2 class="mb-4">Edit Employee: @Model.FullName</h2>
+    <p class="text-muted">Update contact information, system role, and status for this employee.</p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
             <form asp-action="Edit" method="post">
                 @Html.AntiForgeryToken()
-                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-                @* CRITICAL - Pass the Employee ID back to the POST action *@
-                <input type="hidden" asp-for="Id" />
-                <input type="hidden" asp-for="Email" /> @* Keep Email as hidden field to pass to the controller's logic*@
+                <input type="hidden" asp-for="EmployeeId" />
+                <input type="hidden" asp-for="ApplicationUserId" />
 
-                <h5 class="mb-3 text-secondary border-bottom pb-2">Profile Information</h5>
+                <div class="row">
+                    <div class="col-md-6 border-end pe-4">
+                        <h4 class="mb-3 text-primary"><i class="bi bi-person-fill me-2"></i> Contact Details</h4>
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label"></label>
+                            <input asp-for="FullName" class="form-control" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
 
-                <div class="mb-3">
-                    <label asp-for="FullName" class="form-label"></label>
-                    <input asp-for="FullName" class="form-control" placeholder="Employee's Full Name" />
-                    <span asp-validation-for="FullName" class="text-danger"></span>
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" readonly />
+                            <small class="form-text text-muted">Email (Username) cannot be changed here.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PhoneNumber" class="form-label"></label>
+                            <input asp-for="PhoneNumber" class="form-control" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 ps-4">
+                        <h4 class="mb-3 text-success"><i class="bi bi-gear-fill me-2"></i> System Settings</h4>
+
+                        <div class="mb-3">
+                            <label asp-for="SelectedRole" class="form-label">System Role</label>
+                            <select asp-for="SelectedRole"
+                                    asp-items="Model.Roles"
+                                    class="form-select">
+                                <option value="">-- Select Role --</option>
+                            </select>
+                            <span asp-validation-for="SelectedRole" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3 form-check mt-4">
+                            <input class="form-check-input" type="checkbox" asp-for="IsActive" />
+                            <label class="form-check-label" asp-for="IsActive">
+                                Is Active (Uncheck to deactivate/soft-delete employee)
+                            </label>
+                            <span asp-validation-for="IsActive" class="text-danger"></span>
+                        </div>
+
+                        @* Assuming you have an AccountController action for password reset *@
+                        <a asp-controller="Account" asp-action="ChangePasswordForUser" asp-route-id="@Model.ApplicationUserId" class="btn btn-outline-warning mt-3">
+                            <i class="bi bi-key-fill me-2"></i> Reset Password
+                        </a>
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label asp-for="Email" class="form-label"></label>
-                    <input asp-for="Email" class="form-control" readonly />
-                    <span class="form-text text-muted">Email (Username) cannot be changed here.</span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="PhoneNumber" class="form-label"></label>
-                    <input asp-for="PhoneNumber" class="form-control" placeholder="Employee's Contact Number" />
-                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-                </div>
-
-                @* REMOVE Password and ConfirmPassword fields (They are not for editing) *@
-
-                <h5 class="mb-3 mt-4 text-secondary border-bottom pb-2">Role Assignment</h5>
-
-                <div class="mb-3">
-                    <label asp-for="SelectedRole" class="form-label">Assign New Role</label>
-                    @* The asp-items will be populated by the Roles property from the controller's GET action *@
-                    <select asp-for="SelectedRole"
-                            asp-items="Model.Roles"
-                            class="form-control">
-                        <option value="">-- Select Employee Role --</option>
-                    </select>
-                    <span asp-validation-for="SelectedRole" class="text-danger"></span>
-                </div>
-
-                <div class="mt-4 d-flex justify-content-between">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-arrow-up-circle-fill"></i> Update Employee
+                <div class="mt-4 pt-3 border-top">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-save-fill me-2"></i> Save Changes
                     </button>
-                    <a asp-action="Employees" class="btn btn-secondary">
-                        <i class="bi bi-x-circle"></i> Cancel
+                    <a asp-action="Employees" class="btn btn-outline-secondary btn-lg ms-2">
+                        <i class="bi bi-x-circle-fill me-2"></i> Cancel
                     </a>
                 </div>
             </form>

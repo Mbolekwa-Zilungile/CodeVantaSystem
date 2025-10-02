@@ -1,22 +1,21 @@
 ﻿@model IEnumerable<Code_Vanta_Systems.Models.Employee>
 
 @{
-    // 1. Sets the Admin Layout
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Employee Management";
 }
 
-@* 2. Displays the TempData Success Message *@
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["SuccessMessage"]
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 
 <div class="container-fluid py-4">
 
+    <!-- Welcome Section -->
     <div class="row mb-4">
         <div class="col">
             <h1 class="alert alert-success">Welcome back, @User.Identity?.Name</h1>
@@ -26,91 +25,114 @@
         </div>
     </div>
 
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm border-0">
-                <div class="card-body">
-                    <i class="bi bi-people-fill fs-2 text-primary mb-2"></i>
-                    <h2 class="fw-bold text-primary">@ViewBag.EmployeeCount</h2>
-                    <p class="mb-0 text-muted">Active Employees</p>
-                </div>
-            </div>
-        </div>
+    <!-- Dashboard Cards -->
+    <h3 class="mb-3">Employee Overview</h3>
+    <div class="row g-4 mb-5">
 
-        @* 🚨 FIX 1: This card was a placeholder. It should be changed to reflect data available on this page or removed. 
-                 It is now set to display the Employee Count again, but labelled as 'Employees Listed' for clarity.*@
         <div class="col-md-3">
-            <div class="card text-center shadow-sm border-0">
-                <div class="card-body">
-                    <i class="bi bi-person-workspace fs-2 text-success mb-2"></i>
-                    <h2 class="fw-bold text-success">@ViewBag.EmployeeCount</h2>
-                    <p class="mb-0 text-muted">Employees Listed</p>
+            <a asp-controller="Admin" asp-action="Employees" class="text-decoration-none d-block">
+                <div class="card text-center shadow-sm border-0 bg-primary text-white">
+                    <div class="card-body">
+                        <i class="bi bi-people-fill fs-2 mb-2"></i>
+                        <h2 class="fw-bold">@ViewBag.ActiveEmployeeCount</h2>
+                        <p class="mb-0">Active Staff</p>
+                    </div>
                 </div>
-            </div>
-        </div>
-
-        @* 🚨 FIX 2: Correcting the other two metric cards to display relevant data if you intend to keep them. *@
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm border-0">
-                <div class="card-body">
-                    <i class="bi bi-person-x fs-2 text-danger mb-2"></i>
-                    <h2 class="fw-bold text-danger">0</h2> @* Placeholder: Inactive Employees *@
-                    <p class="mb-0 text-muted">Inactive Employees</p>
-                </div>
-            </div>
+            </a>
         </div>
 
         <div class="col-md-3">
-            <div class="card text-center shadow-sm border-0">
-                <div class="card-body">
-                    <i class="bi bi-currency-dollar fs-2 text-warning mb-2"></i>
-                    <h2 class="fw-bold text-warning">R0.00</h2> @* Placeholder: Revenue/Budget *@
-                    <p class="mb-0 text-muted">Budget Overview</p>
+            <a asp-controller="Admin" asp-action="InactiveEmployees" class="text-decoration-none d-block">
+                <div class="card text-center shadow-sm border-0 bg-warning text-dark">
+                    <div class="card-body">
+                        <i class="bi bi-person-slash-fill fs-2 mb-2"></i>
+                        <h2 class="fw-bold">@ViewBag.InactiveEmployeeCount</h2>
+                        <p class="mb-0">Deactivated Staff</p>
+                    </div>
                 </div>
-            </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a asp-controller="Admin" asp-action="Customers" class="text-decoration-none d-block">
+                <div class="card text-center shadow-sm border-0">
+                    <div class="card-body">
+                        <i class="bi bi-shop-window fs-2 text-success mb-2"></i>
+                        <h2 class="fw-bold text-success">@ViewBag.ActiveCustomerCount</h2>
+                        <p class="mb-0 text-muted">Active Customers</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a asp-controller="Admin" asp-action="Revenue" class="text-decoration-none d-block">
+                <div class="card text-center shadow-sm border-0">
+                    <div class="card-body">
+                        <i class="bi bi-currency-dollar fs-2 text-danger mb-2"></i>
+                        <h2 class="fw-bold text-danger">$45K</h2>
+                        <p class="mb-0 text-muted">Revenue This Month</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Employee Table -->
+    <h2>Active Employees</h2>
+
+    <p>
+        <a asp-action="Create" class="btn btn-success">
+            <i class="bi bi-person-plus-fill me-1"></i> Add New Employee
+        </a>
+    </p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>Hired Date</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var emp in Model)
+                    {
+                        <tr>
+                            <td>@emp.User?.FullName</td>
+                            <td>@emp.User?.Email</td>
+                            <td>@emp.PhoneNumber</td>
+                            <td>@emp.Position</td>
+                            <td>@emp.CreatedAt.ToString("yyyy-MMM-dd")</td>
+                            <td>
+                                <span class="badge bg-success">Active</span>
+                            </td>
+                            <td class="text-center">
+                                <a asp-controller="Admin" asp-action="Edit" asp-route-id="@emp.Id"
+                                   class="btn btn-outline-primary btn-sm me-1">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </a>
+
+                                <form asp-controller="Admin" asp-action="Delete" asp-route-id="@emp.Id"
+                                      method="post" style="display:inline;"
+                                      onsubmit="return confirm('Are you sure you want to deactivate @emp.User?.FullName? This will suspend their account and prevent login.');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-person-x"></i> Deactivate
+                                    </button>
+                                    @Html.AntiForgeryToken()
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
-
-<h2>Employees</h2>
-
-<p>
-    <a asp-action="Create" class="btn btn-success">Create a New Employee</a>
-</p>
-
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Full Name</th>
-            <th>Email</th>
-            <th>Phone number</th>
-            <th>Role</th>
-            <th>Hired Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var emp in Model)
-        {
-            <tr>
-                <td>@emp.User?.FullName</td>
-                <td>@emp.User?.Email</td>
-                <td>@emp.PhoneNumber</td>
-                <td>@emp.Position</td> @* Displays the position set in the controller *@
-                <td>@emp.CreatedAt.ToString("yyyy-MMM-dd")</td>
-                <td>
-                    @* 🚨 CRITICAL FIX: Ensure asp-route-id is correctly bound to emp.Id *@
-                    <a asp-controller="Admin"
-                       asp-action="Edit"
-                       asp-route-id="@emp.Id"
-                       class="btn btn-outline-primary btn-sm">Edit</a>
-
-                    <a asp-controller="Admin"
-                       asp-action="Delete"
-                       asp-route-id="@emp.Id"
-                       class="btn btn-outline-danger btn-sm">Delete</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>

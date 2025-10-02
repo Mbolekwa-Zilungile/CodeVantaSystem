@@ -4,6 +4,7 @@ using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Services;
 using Code_Vanta_Systems.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -62,7 +63,7 @@ namespace Code_Vanta_Systems.Controllers
                     return RedirectToAction("Employees", "Admin");
 
                 if (await _userManager.IsInRoleAsync(user, Roles.Customer))
-                    return RedirectToAction("Index", "CustomerDashboard"); // ✅ Fixed
+                    return RedirectToAction("Index", "CustomerDashboard");
 
                 if (await _userManager.IsInRoleAsync(user, Roles.CustomerLiaison))
                     return RedirectToAction("Index", "CustomerLiaison");
@@ -90,7 +91,6 @@ namespace Code_Vanta_Systems.Controllers
         }
 
         [HttpGet]
-
         public IActionResult Register()
         {
             var model = new RegisterViewModel
@@ -104,7 +104,6 @@ namespace Code_Vanta_Systems.Controllers
 
 
         [HttpPost]
-
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
@@ -195,6 +194,74 @@ namespace Code_Vanta_Systems.Controllers
         {
             await _signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
+        }
+
+        // GET: Account/ChangePasswordForUser/{userId}
+        [Authorize(Roles = "Admin")] // Only Admins should be able to reset user passwords
+        public async Task<IActionResult> ChangePasswordForUser(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return NotFound();
+            }
+
+            var user = await _userManager.FindByIdAsync(id);
+
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Employees", "Admin"); // Redirect back to employee list
+            }
+
+            var model = new ChangePasswordForUserViewModel
+            {
+                UserId = user.Id,
+                UserEmail = user.Email
+            };
+
+            return View(model);
+        }
+
+        // POST: Account/ChangePasswordForUser
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePasswordForUser(ChangePasswordForUserViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await _userManager.FindByIdAsync(model.UserId);
+            if (user == null)
+            {
+                ModelState.AddModelError(string.Empty, "User not found.");
+                return View(model);
+            }
+
+            // 1. Generate a valid password reset token
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            // 2. Use the token to change the password directly
+            var result = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
+
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = $"Password for {user.Email} has been successfully reset.";
+                return RedirectToAction("Edit", "Admin", new { id = _context.Employees.FirstOrDefault(e => e.ApplicationUserId == user.Id)?.Id });
+                // NOTE: The redirect action attempts to return to the Admin/Edit view for the employee
+            }
+
+            // Handle errors if password reset fails
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            // Re-set email display name and return view on error
+            model.UserEmail = user.Email;
+            return View(model);
         }
     }
 }

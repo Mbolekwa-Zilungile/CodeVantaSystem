@@ -1,0 +1,31 @@
+﻿@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Create Role";
+}
+
+<div class="container py-4">
+    <h2 class="text-primary mb-4">
+        <i class="bi bi-shield-plus me-2"></i> Create New Role
+    </h2>
+
+    <form asp-action="CreateRole" method="post" class="card shadow-sm p-4" style="max-width: 500px;">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label for="roleName" class="form-label fw-bold">Role Name</label>
+            <input type="text" name="roleName" id="roleName" class="form-control" placeholder="e.g. ServiceTechnician" />
+        </div>
+
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle me-1"></i> Save Role
+        </button>
+        <a asp-action="ManageRoles" class="btn btn-secondary ms-2">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </form>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

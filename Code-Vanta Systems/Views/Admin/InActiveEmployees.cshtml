@@ -1,30 +1,95 @@
 ﻿@model IEnumerable<Code_Vanta_Systems.Models.Employee>
-<h1>INACTIVE EMPLOYEES</h1><br /><br />
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Full Name</th>
-            <th>Email</th>
-            <th>Phone number</th>
-            <th>Role</th>
-            <th>Hired Date</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var emp in Model)
-        {
-            <tr>
-                <td>@emp.User?.FullName</td>
-                <td>@emp.User?.Email</td>
-                <td>@emp.PhoneNumber</td>
 
-                @* 🚨 FIX: The controller sets employee.Position = model.SelectedRole, so we display Position. *@
-                <td>@emp.Position</td>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Employee Management (Inactive)";
+}
 
-                <td>@emp.CreatedAt.ToString("yyyy-MMM-dd")</td>
-               
-            </tr>
-        }
-    </tbody>
-</table>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 
+<div class="container-fluid py-4">
+
+    <h2 class="text-warning mb-4">Deactivated Employees List</h2>
+    <p class="text-muted">This list shows all staff accounts that have been soft-deleted (IsActive = False).</p>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <a asp-controller="Admin" asp-action="Employees" class="text-decoration-none d-block">
+                <div class="card text-center shadow-sm border-0">
+                    <div class="card-body">
+                        <i class="bi bi-people-fill fs-2 text-primary mb-2"></i>
+                        <h2 class="fw-bold text-primary">@ViewBag.ActiveEmployeeCount</h2>
+                        <p class="mb-0 text-muted">Active Staff</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a asp-controller="Admin" asp-action="InactiveEmployees" class="text-decoration-none d-block">
+                <div class="card text-center shadow-sm border-0 bg-warning text-dark">
+                    <div class="card-body">
+                        <i class="bi bi-person-slash-fill fs-2 mb-2"></i>
+                        <h2 class="fw-bold">@ViewBag.InactiveEmployeeCount</h2>
+                        <p class="mb-0">Deactivated Staff</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a asp-controller="Admin" asp-action="Customers" class="text-decoration-none d-block">
+                <div class="card text-center shadow-sm border-0">
+                    <div class="card-body">
+                        <i class="bi bi-shop-window fs-2 text-success mb-2"></i>
+                        <h2 class="fw-bold text-success">@ViewBag.ActiveCustomerCount</h2>
+                        <p class="mb-0 text-muted">Active Customers</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Email (Locked)</th>
+                        <th>Phone number</th>
+                        <th>Last Position</th>
+                        <th>Deactivated On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var emp in Model)
+                    {
+                        <tr>
+                            <td>@emp.User?.FullName</td>
+                            <td class="text-danger">@emp.User?.Email</td>
+                            <td>@emp.PhoneNumber</td>
+                            <td>@emp.Position</td>
+                            <td>@emp.CreatedAt.ToString("yyyy-MMM-dd")</td>
+                            <td>
+                                <form asp-controller="Admin" asp-action="Reactivate" asp-route-id="@emp.Id" method="post" style="display:inline;"
+                                      onsubmit="return confirm('Are you sure you want to REACTIVATE @emp.User?.FullName?');">
+                                    <button type="submit" class="btn btn-outline-success btn-sm">Reactivate</button>
+                                    @Html.AntiForgeryToken()
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

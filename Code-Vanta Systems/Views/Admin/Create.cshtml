@@ -1,73 +1,73 @@
-﻿@using Code_Vanta_Systems.ViewModels
-@model RegisterEmployeeViewModel
+﻿@model Code_Vanta_Systems.ViewModels.RegisterEmployeeViewModel
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
-    ViewData["Title"] = "Create New Employee";
+    ViewData["Title"] = "Register New Employee";
 }
 
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <h2 class="mb-4 text-danger">Create New Employee Account</h2>
-        <p class="text-muted">Create a new user account and assign an initial role for FMS operations.</p>
-        <div class="card shadow-sm p-4">
+<div class="container py-4">
 
+    <h2 class="mb-4">Register New Employee</h2>
+    <p class="text-muted">Fill in the details below to create a new employee account and system user.</p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
             <form asp-action="Create" method="post">
                 @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-                <!-- ✅ Show all validation errors at once -->
-                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label"></label>
+                            <input asp-for="FullName" class="form-control" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
 
-                <h5 class="mb-3 text-secondary border-bottom pb-2">Login Credentials</h5>
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
 
-                <div class="mb-3">
-                    <label asp-for="Email" class="form-label"></label>
-                    <input asp-for="Email" class="form-control" placeholder="Employee's Email Address (Login Username)" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
+                        <div class="mb-3">
+                            <label asp-for="PhoneNumber" class="form-label"></label>
+                            <input asp-for="PhoneNumber" class="form-control" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="SelectedRole" class="form-label">System Role</label>
+                            <select asp-for="SelectedRole"
+                                    asp-items="Model.Roles"
+                                    class="form-select">
+                                <option value="">-- Select Role --</option>
+                            </select>
+                            <span asp-validation-for="SelectedRole" class="text-danger"></span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label asp-for="Password" class="form-label"></label>
-                    <input asp-for="Password" type="password" class="form-control" placeholder="Temporary Password" />
-                    <span asp-validation-for="Password" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="ConfirmPassword" class="form-label"></label>
-                    <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Confirm Password" />
-                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-                </div>
-
-                <h5 class="mb-3 mt-4 text-secondary border-bottom pb-2">Employee Profile & Role Assignment</h5>
-
-                <div class="mb-3">
-                    <label asp-for="FullName" class="form-label"></label>
-                    <input asp-for="FullName" class="form-control" placeholder="Employee's Full Name" />
-                    <span asp-validation-for="FullName" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="PhoneNumber" class="form-label"></label>
-                    <input asp-for="PhoneNumber" class="form-control" placeholder="Employee's Contact Number" />
-                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="SelectedRole" class="form-label">Assign Initial Role</label>
-                    <select asp-for="SelectedRole"
-                            asp-items="Model.Roles"
-                            class="form-control">
-                        <option value="">-- Select Employee Role --</option>
-                    </select>
-                    <span asp-validation-for="SelectedRole" class="text-danger"></span>
-                </div>
-
-                <div class="mt-4 d-flex justify-content-between">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-person-plus-fill"></i> Create Employee
+                <div class="mt-4 pt-3 border-top">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-person-plus-fill me-2"></i> Register Employee
                     </button>
-                    <a asp-action="Employees" class="btn btn-secondary">
-                        <i class="bi bi-x-circle"></i> Cancel
+                    <a asp-action="Employees" class="btn btn-outline-secondary btn-lg ms-2">
+                        <i class="bi bi-x-circle-fill me-2"></i> Cancel
                     </a>
                 </div>
             </form>

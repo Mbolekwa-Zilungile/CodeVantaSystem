@@ -1,0 +1,104 @@
+﻿@model Code_Vanta_Systems.ViewModels.RegisterCustomerViewModel
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Register New Customer";
+}
+
+<div class="container py-4">
+
+    <h2 class="mb-4">Register New Customer</h2>
+    <p class="text-muted">Fill in the details below to create a new customer account and entity.</p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="CreateCustomer" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="row">
+                    <div class="col-md-6 border-end pe-4">
+                        <h4 class="mb-3 text-primary"><i class="bi bi-person-circle me-2"></i> Account & Contact Info</h4>
+
+                        <div class="mb-3">
+                            <label asp-for="ContactName" class="form-label"></label>
+                            <input asp-for="ContactName" class="form-control" />
+                            <span asp-validation-for="ContactName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Phone" class="form-label"></label>
+                            <input asp-for="Phone" class="form-control" />
+                            <span asp-validation-for="Phone" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 ps-4">
+                        <h4 class="mb-3 text-success"><i class="bi bi-shop me-2"></i> Business Information</h4>
+
+                        <div class="mb-3">
+                            <label asp-for="BusinessName" class="form-label"></label>
+                            <input asp-for="BusinessName" class="form-control" />
+                            <span asp-validation-for="BusinessName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="BusinessType" class="form-label"></label>
+                            <input asp-for="BusinessType" class="form-control" placeholder="e.g., Spaza Shop, Restaurant" />
+                            <span asp-validation-for="BusinessType" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PhysicalAddress" class="form-label"></label>
+                            <textarea asp-for="PhysicalAddress" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="PhysicalAddress" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="SelectedLocationId" class="form-label">Location/Region</label>
+                            <select asp-for="SelectedLocationId"
+                                    asp-items="Model.AvailableLocations"
+                                    class="form-select">
+                                <option value="">-- Select Region --</option>
+                            </select>
+                            <span asp-validation-for="SelectedLocationId" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-top">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-person-plus-fill me-2"></i> Register Customer
+                    </button>
+                    <a asp-action="Customers" class="btn btn-outline-secondary btn-lg ms-2">
+                        <i class="bi bi-x-circle-fill me-2"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

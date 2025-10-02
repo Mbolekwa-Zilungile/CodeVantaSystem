@@ -8,34 +8,52 @@
 }
 
 <div class="container-fluid py-4">
-    <h2 class="mb-4 text-primary"><i class="bi bi-person-rolodex me-2"></i> User Role Management</h2>
-    <p class="text-muted">Overview of all system users, their assigned roles, and total defined roles.</p>
-    
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary mb-0">
+            <i class="bi bi-person-rolodex me-2"></i> User Role Management
+        </h2>
+        <a asp-controller="Admin" asp-action="CreateRole" class="btn btn-success">
+            <i class="bi bi-shield-plus me-1"></i> Add New Role
+        </a>
+    </div>
+
+    <p class="text-muted">
+        Manage system users and their role assignments. You can view, edit, or update roles as needed.
+    </p>
+
+    <!-- Stats Cards -->
     <div class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="card bg-info-subtle shadow-sm border-0 p-3">
-                <h4 class="mb-0 text-info fw-bold">Total Users: @Model.Users.Count()</h4>
+                <h5 class="text-info fw-bold mb-0">
+                    <i class="bi bi-people me-2"></i> Total Users: @Model.Users.Count()
+                </h5>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card bg-success-subtle shadow-sm border-0 p-3">
-                <h4 class="mb-0 text-success fw-bold">Defined Roles: @Model.Roles.Count()</h4>
+                <h5 class="text-success fw-bold mb-0">
+                    <i class="bi bi-shield-lock me-2"></i> Defined Roles: @Model.Roles.Count()
+                </h5>
             </div>
         </div>
     </div>
 
+    <!-- Users Table -->
     <div class="card shadow-sm mt-4">
         <div class="card-header bg-dark text-white fw-bold">
-            All System Users
+            <i class="bi bi-list-ul me-2"></i> All System Users
         </div>
         <div class="card-body">
-            <table class="table table-striped table-hover">
+            <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
                         <th>User Name</th>
                         <th>Email</th>
-                        <th>Current Roles</th>
-                        <th>Actions</th>
+                        <th>Assigned Roles</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -47,22 +65,26 @@
                             <td>
                                 @if (Model.UserRoles.ContainsKey(user.Id))
                                 {
-                                    @foreach (var roleName in Model.UserRoles[user.Id])
+                                    foreach (var roleName in Model.UserRoles[user.Id])
                                     {
-                                        // Display roles as color-coded badges
-                                        <span class="badge 
-                                              @(roleName == "Admin" ? "bg-danger" : 
-                                                roleName == "Customer" ? "bg-primary" : 
-                                                "bg-secondary") me-1">
-                                            @roleName
-                                        </span>
-                                    }
+                                        <span class="badge
+                                                        @(roleName == "Admin" ? "bg-danger" :
+                                                                                            roleName == "Customer" ? "bg-primary" :
+                                                                                            roleName.Contains("Technician") ? "bg-warning text-dark" :
+                                                                                            "bg-secondary") me-1">
+                                @roleName
+                            </span>
+                                                        }
+                                }
+                                else
+                                {
+                                    <span class="badge bg-light text-dark">No Role Assigned</span>
                                 }
                             </td>
-                            <td>
+                            <td class="text-center">
                                 <a asp-controller="Admin"
                                    asp-action="EditUserRoles"
-                                   asp-route-userId="@user.Id" @* Use the route parameter userId to pass the user's ID *@
+                                   asp-route-userId="@user.Id"
                                    class="btn btn-outline-warning btn-sm">
                                     <i class="bi bi-pencil"></i> Manage Roles
                                 </a>
