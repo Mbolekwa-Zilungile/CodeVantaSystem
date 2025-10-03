@@ -16,14 +16,20 @@ namespace Code_Vanta_Systems.Models
         public string RequestedByUserId { get; set; }
         public virtual ApplicationUser RequestedBy { get; set; }
 
-        [Required, StringLength(100)]
-        public string ModelRequested { get; set; }
-
-        [Range(1, int.MaxValue)]
-        public int Quantity { get; set; }
-
         [Required]
         public RequestStatus Status { get; set; } = RequestStatus.Pending;
+
+        [Required]
+        public PriorityLevel Priority { get; set; } = PriorityLevel.Medium; // Default value
+
+        [DataType(DataType.Date)]
+        [Display(Name = "Expected Delivery Date")]
+        public DateTime? ExpectedDate { get; set; }  // Nullable, since it might not always be known upfront
+
+        [StringLength(1000)]
+        public string? Notes { get; set; }  // Optional notes field for extra info
+
+        public virtual ICollection<PurchaseRequestItem> RequestedItems { get; set; } = new HashSet<PurchaseRequestItem>();
 
         public virtual ICollection<Quotation> Quotations { get; set; } = new HashSet<Quotation>();
     }

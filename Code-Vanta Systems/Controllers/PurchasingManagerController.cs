@@ -1,5 +1,6 @@
 ﻿using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
+using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -25,7 +26,7 @@ namespace Code_Vanta_Systems.Controllers
             this.roleManager = roleManager;
             this.context = context;
         }
-
+        // SUPPLIERS
         public async Task<IActionResult> Index()
         {
             var activeSuppliers = await context.Suppliers
@@ -305,6 +306,52 @@ namespace Code_Vanta_Systems.Controllers
 
             TempData["SuccessMessage"] = $"Supplier '{user.Email}' has been successfully reactivated.";
             return RedirectToAction(nameof(Suppliers)); // Adjust to your active suppliers list
+        }
+
+        //PURCHASE REQUEST
+        // Optional: list all purchase requests for current user or all (for manager)
+        public async Task<IActionResult> PurchaseRequests()
+        {
+            var purchaseRequests = await context.PurchaseRequests
+                .Include(pr => pr.RequestedBy)
+                .Include(pr => pr.RequestedItems)
+                .ToListAsync();
+
+            return View(purchaseRequests);
+        }
+
+        // GET: PurchaseRequest/CreatePurchaseRequest
+        public IActionResult CreatePurchaseRequest()
+        {
+            return View();
+        }
+
+        // POST: PurchaseRequest/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreatePurchaseRequest(RegisterPurchaseRequestViewModel vm)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(vm);
+            }
+
+            var user = await userManager.GetUserAsync(User);
+
+            var purchaseRequest = new PurchaseRequest
+            {
+                RequestedByUserId = user.Id,
+                RequestDate = DateTime.Now,
+                Status = RequestStatus.Pending,
+                Priority = vm.Priority,
+                ExpectedDate = vm.ExpectedDate,
+                Notes = vm.Notes
+            };
+
+            context.PurchaseRequests.Add(purchaseRequest);
+            await context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(PurchaseRequests));
         }
     }
 }

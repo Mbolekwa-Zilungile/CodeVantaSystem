@@ -75,44 +75,38 @@
     </nav>
 
 
+
     @{
-        // 🚨 FIX: Get the current action name from the route data
-        // Use "Index" as a default if the action is not found (e.g., when visiting the root /Admin)
-        string currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "Index";
+        // Get current controller and action for active link highlighting
+        string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+        string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
     }
 
     <div id="sidebar">
         <h6 class="text-uppercase text-light px-3 mt-2 mb-3">@User.Identity.Name</h6>
 
-        <a class="sidebar-link @(currentAction == "Index" ? "active" : "")"
+        <a class="sidebar-link @(currentController == "PurchasingManager" && currentAction == "Index" ? "active" : "")"
            asp-controller="PurchasingManager" asp-action="Index">
             <i class="bi bi-speedometer2 me-2"></i>Dashboard
         </a>
 
-        @* 🚨 FIX: Highlight Employees link for Employees, Create, Edit, and Delete actions *@
-        <a class="sidebar-link @(currentAction == "Employees" || currentAction == "Create" || currentAction == "Edit" || currentAction == "Delete" ? "active" : "")"
+        <a class="sidebar-link @(currentController == "PurchasingManager" && (currentAction == "Suppliers" || currentAction == "Create" || currentAction == "Edit" || currentAction == "Delete") ? "active" : "")"
            asp-controller="PurchasingManager" asp-action="Suppliers">
             <i class="bi bi-person-lines-fill me-2"></i>Suppliers
         </a>
 
-        @* 🚨 FIX: Highlight Customers link only for Customers action *@
-        <a class="sidebar-link @(currentAction == "Customers" ? "active" : "")"
-           asp-controller="Admin" asp-action="Customers">
-            <i class="bi bi-shop me-2"></i>Purchase Request
+        <a class="sidebar-link @(currentController == "PurchasingManager" && currentAction == "PurchaseRequests" ? "active" : "")"
+           asp-controller="PurchasingManager" asp-action="PurchaseRequests">
+            <i class="bi bi-receipt me-2"></i>Purchase Orders
         </a>
 
-        @* 🚨 FIX: Highlight User Roles link for ManageRoles and EditUserRoles actions *@
-        <a class="sidebar-link @(currentAction == "ManageRoles" || currentAction == "EditUserRoles" ? "active" : "")"
+        <a class="sidebar-link @(currentController == "Admin" && (currentAction == "ManageRoles" || currentAction == "EditUserRoles") ? "active" : "")"
            asp-controller="Admin" asp-action="ManageRoles">
             <i class="bi bi-send me-2"></i>RFQS
         </a>
 
-        <a class="sidebar-link @(currentAction == "ManageRoles" || currentAction == "EditUserRoles" ? "active" : "")"
-           asp-controller="Admin" asp-action="ManageRoles">
-            <i class="bi bi-receipt"></i>Purchase Orders
-        </a>
-        <a class="sidebar-link @(currentAction == "ManageRoles" || currentAction == "EditUserRoles" ? "active" : "")"
-           asp-controller="Admin" asp-action="ManageRoles">
+        <a class="sidebar-link @(currentController == "Reports" ? "active" : "")"
+           asp-controller="Reports" asp-action="Index">
             <i class="bi bi-graph-up me-2"></i>Reports
         </a>
 
@@ -120,6 +114,7 @@
             <small class="text-muted">FMS v1.0</small>
         </div>
     </div>
+
 
     <div id="main-content">
         <main role="main" class="pb-3">

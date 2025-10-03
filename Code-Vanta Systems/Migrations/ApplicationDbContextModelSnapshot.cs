@@ -800,12 +800,14 @@ namespace Code_Vanta_Systems.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ModelRequested")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<DateTime?>("ExpectedDate")
+                        .HasColumnType("datetime2");
 
-                    b.Property<int>("Quantity")
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Priority")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("RequestDate")
@@ -823,6 +825,36 @@ namespace Code_Vanta_Systems.Migrations
                     b.HasIndex("RequestedByUserId");
 
                     b.ToTable("PurchaseRequests");
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.PurchaseRequestItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ModelRequested")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("PurchaseRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PurchaseRequestId");
+
+                    b.ToTable("PurchaseRequestItem");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Quotation", b =>
@@ -1432,6 +1464,17 @@ namespace Code_Vanta_Systems.Migrations
                     b.Navigation("RequestedBy");
                 });
 
+            modelBuilder.Entity("Code_Vanta_Systems.Models.PurchaseRequestItem", b =>
+                {
+                    b.HasOne("Code_Vanta_Systems.Models.PurchaseRequest", "PurchaseRequest")
+                        .WithMany("RequestedItems")
+                        .HasForeignKey("PurchaseRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PurchaseRequest");
+                });
+
             modelBuilder.Entity("Code_Vanta_Systems.Models.Quotation", b =>
                 {
                     b.HasOne("Code_Vanta_Systems.Models.PurchaseRequest", "PurchaseRequest")
@@ -1610,6 +1653,8 @@ namespace Code_Vanta_Systems.Migrations
             modelBuilder.Entity("Code_Vanta_Systems.Models.PurchaseRequest", b =>
                 {
                     b.Navigation("Quotations");
+
+                    b.Navigation("RequestedItems");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.RequestQuotation", b =>
