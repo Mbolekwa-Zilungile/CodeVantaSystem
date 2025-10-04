@@ -1,4 +1,21 @@
-﻿<!DOCTYPE html>
+﻿@using Code_Vanta_Systems.Data
+@using Code_Vanta_Systems.Models
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext _context
+
+@{
+    // Get the currently logged-in user (if signed in)
+    var currentUser = SignInManager.IsSignedIn(User) ? await UserManager.GetUserAsync(User) : null;
+
+    // Count unread notifications for the current user
+    var unread = currentUser != null
+        ? _context.Notifications.Count(n => n.RecipientUserId == currentUser.Id && !n.IsRead)
+        : 0;
+}
+
+<!DOCTYPE html>
 
 <html>
 <head>
@@ -53,7 +70,19 @@
             <a class="navbar-brand fw-bold" asp-controller="Admin" asp-action="Index">
                 <i class="bi bi-gear-fill me-2"></i>Purchase Manager Portal
             </a>
+            
+
             <div class="d-flex">
+               <div class="relative flex items-center space-x-1 text-gray-800 cursor-pointer"
+                     onclick="location.href='@Url.Action("Notifications", "PurchasingManager")'">
+                    🔔 Notifications
+                    @if (unread > 0)
+                    {
+                        <span class="bg-danger text-white rounded-full px-2 py-1 ml-1 text-sm font-semibold">
+                            @unread
+                        </span>
+                    }
+                </div><br /><br />
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -97,7 +126,7 @@
 
         <a class="sidebar-link @(currentController == "PurchasingManager" && currentAction == "PurchaseRequests" ? "active" : "")"
            asp-controller="PurchasingManager" asp-action="PurchaseRequests">
-            <i class="bi bi-receipt me-2"></i>Purchase Orders
+            <i class="bi bi-receipt me-2"></i>Purchase Request
         </a>
 
         <a class="sidebar-link @(currentController == "Admin" && (currentAction == "ManageRoles" || currentAction == "EditUserRoles") ? "active" : "")"

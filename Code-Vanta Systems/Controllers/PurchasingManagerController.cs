@@ -325,33 +325,36 @@ namespace Code_Vanta_Systems.Controllers
         {
             return View();
         }
+        //notifications
 
-        // POST: PurchaseRequest/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreatePurchaseRequest(RegisterPurchaseRequestViewModel vm)
+        // 📬 Show dashboard with new notifications
+        public async Task<IActionResult> Notifications()
         {
-            if (!ModelState.IsValid)
-            {
-                return View(vm);
-            }
-
             var user = await userManager.GetUserAsync(User);
 
-            var purchaseRequest = new PurchaseRequest
+            var notifications = await context.Notifications
+                .Where(n => n.RecipientUserId == user.Id)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+
+            var unreadCount = notifications.Count(n => !n.IsRead);
+
+            ViewBag.UnreadNotifications = unreadCount;
+
+            return View(notifications);
+        }
+
+        // ✅ Mark notification as read
+        [HttpPost]
+        public async Task<IActionResult> MarkAsRead(int id)
+        {
+            var notification = await context.Notifications.FindAsync(id);
+            if (notification != null)
             {
-                RequestedByUserId = user.Id,
-                RequestDate = DateTime.Now,
-                Status = RequestStatus.Pending,
-                Priority = vm.Priority,
-                ExpectedDate = vm.ExpectedDate,
-                Notes = vm.Notes
-            };
-
-            context.PurchaseRequests.Add(purchaseRequest);
-            await context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(PurchaseRequests));
+                notification.IsRead = true;
+                await context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(Notifications));
         }
     }
 }

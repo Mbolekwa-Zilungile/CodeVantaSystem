@@ -38,8 +38,9 @@ namespace Code_Vanta_Systems.Data
         public DbSet<AuditTrail> AuditTrails { get; set; } // Tracks changes for auditing
         public DbSet<WorkFlowApproval> WorkflowApprovals { get; set; } // Workflow-based approval records
         public DbSet<Employee> Employees { get; set; }
-
-
+        public DbSet<ItemCatalog> ItemCatalogs { get; set; }
+        public DbSet<PurchaseRequestItem> PurchaseRequestItems { get; set; }
+       
 
 
 
@@ -48,7 +49,30 @@ namespace Code_Vanta_Systems.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // Apply all separate configuration classes
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+            // Optional: Explicit relationships
+
+            // PurchaseRequest -> PurchaseRequestItem
+            modelBuilder.Entity<PurchaseRequestItem>()
+              .HasOne(p => p.ItemCatalog)
+              .WithMany()
+              .HasForeignKey(p => p.ItemCatalogId)
+              .OnDelete(DeleteBehavior.Restrict);
+            // PurchaseRequestItem -> ItemCatalog
+            modelBuilder.Entity<PurchaseRequestItem>()
+                .HasOne<ItemCatalog>() // No navigation in your current model, can add if needed
+                .WithMany()
+                .HasForeignKey("ItemCatalogId") // Shadow property if not in model
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // PurchaseRequest -> RequestedBy (ApplicationUser)
+            modelBuilder.Entity<PurchaseRequest>()
+                .HasOne(r => r.RequestedBy)
+                .WithMany() // Or navigation property in ApplicationUser if exists
+                .HasForeignKey(r => r.RequestedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

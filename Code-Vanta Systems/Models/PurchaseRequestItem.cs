@@ -11,11 +11,12 @@ namespace Code_Vanta_Systems.Models
         public int PurchaseRequestId { get; set; }
         public PurchaseRequest PurchaseRequest { get; set; }
 
-        [Required, StringLength(100)]
-        public string ModelRequested { get; set; }
+        [Required]
+        public int ItemCatalogId { get; set; }
+        public ItemCatalog ItemCatalog { get; set; }
 
-        [StringLength(500)]
-        public string? Description { get; set; }
+        public string ModelRequested { get; set; }   // ✅ Needed for your code
+        public string Description { get; set; }
 
         [Range(1, int.MaxValue)]
         public int Quantity { get; set; }

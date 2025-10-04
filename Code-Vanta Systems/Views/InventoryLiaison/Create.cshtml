@@ -1,0 +1,119 @@
+﻿
+@model Code_Vanta_Systems.ViewModels.CreatePurchaseRequestViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
+    ViewData["Title"] = "Create Purchase Request";
+}
+
+<h2>Create Purchase Request</h2>
+
+<form asp-action="Create" method="post">
+
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="ExpectedDate" class="form-label">Expected Date</label>
+        <input asp-for="ExpectedDate" type="date" class="form-control" />
+        <span asp-validation-for="ExpectedDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Priority" class="form-label">Priority</label>
+        <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<Code_Vanta_Systems.Models.Enums.PriorityLevel>()">
+            <option value="">-- Select Priority --</option>
+        </select>
+        <span asp-validation-for="Priority" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Notes" class="form-label">Notes</label>
+        <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Notes" class="text-danger"></span>
+    </div>
+
+    <h4>Items</h4>
+    <table class="table table-bordered" id="itemsTable">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Items.Count; i++)
+            {
+                <tr>
+                    <td>
+                        <select asp-for="@Model.Items[i].ItemCatalogId" class="form-select" asp-items="Model.Items[i].AvailableItems">
+                            <option value="">-- Select Item --</option>
+                        </select>
+                        <span asp-validation-for="@Model.Items[i].ItemCatalogId" class="text-danger"></span>
+                    </td>
+                    <td>
+                        <input asp-for="@Model.Items[i].Quantity" type="number" min="1" class="form-control" />
+                        <span asp-validation-for="@Model.Items[i].Quantity" class="text-danger"></span>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="button" id="addItem" class="btn btn-secondary mb-3">Add Item</button>
+
+
+    <button type="submit" class="btn btn-primary">Submit Request</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function () {
+            var itemIndex = @Model.Items.Count;
+
+            // Store all available items
+            var allItems = [];
+        @foreach (var item in Model.Items[0].AvailableItems)
+        {
+            <text>allItems.push({value: "@item.Value", text: "@item.Text" });</text>
+        }
+
+                $("#addItem").click(function () {
+                    var options = '<option value="">-- Select Item --</option>';
+                    allItems.forEach(function (i) {
+                        options += `<option value="${i.value}">${i.text}</option>`;
+                    });
+
+                    var newRow = `<tr>
+                            <td>
+                                <select name="Items[${itemIndex}].ItemCatalogId" class="form-select">${options}</select>
+                            </td>
+                            <td>
+                                <input name="Items[${itemIndex}].Quantity" type="number" min="1" class="form-control" />
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
+                            </td>
+                        </tr>`;
+
+                    $("#itemsTable tbody").append(newRow);
+                    itemIndex++;
+                });
+
+            $(document).on("click", ".remove-item", function () {
+                $(this).closest("tr").remove();
+            });
+        });
+    </script>
+}
+
+
+
+}

@@ -1,0 +1,44 @@
+﻿@model IEnumerable<Code_Vanta_Systems.Models.PurchaseRequest>
+
+@{
+    Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
+    ViewData["Title"] = "My Purchase Requests";
+}
+
+<h2 class="mb-3">📦 My Purchase Requests</h2>
+
+<a asp-action="Create" class="btn btn-primary mb-3">+ Create New Purchase Request</a>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">You have not submitted any purchase requests yet.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Expected Delivery</th>
+                <th>Items</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var request in Model)
+            {
+                <tr>
+                    <td>@request.Id</td>
+                    <td>@request.RequestDate.ToShortDateString()</td>
+                    <td>@request.Status</td>
+                    <td>@request.Priority</td>
+                    <td>@request.ExpectedDate?.ToShortDateString()</td>
+                    <td>@request.RequestedItems.Count()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+

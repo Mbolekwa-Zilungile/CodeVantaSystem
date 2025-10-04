@@ -20,17 +20,17 @@ namespace Code_Vanta_Systems.Models
         public RequestStatus Status { get; set; } = RequestStatus.Pending;
 
         [Required]
-        public PriorityLevel Priority { get; set; } = PriorityLevel.Medium; // Default value
+        public PriorityLevel Priority { get; set; } = PriorityLevel.Medium;
 
         [DataType(DataType.Date)]
         [Display(Name = "Expected Delivery Date")]
-        public DateTime? ExpectedDate { get; set; }  // Nullable, since it might not always be known upfront
+        public DateTime? ExpectedDate { get; set; }
 
         [StringLength(1000)]
-        public string? Notes { get; set; }  // Optional notes field for extra info
+        public string? Notes { get; set; }
 
+        // Navigation properties
         public virtual ICollection<PurchaseRequestItem> RequestedItems { get; set; } = new HashSet<PurchaseRequestItem>();
-
         public virtual ICollection<Quotation> Quotations { get; set; } = new HashSet<Quotation>();
     }
 }

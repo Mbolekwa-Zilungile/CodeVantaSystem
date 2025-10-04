@@ -1,7 +1,11 @@
-﻿@using Code_Vanta_Systems.Models
+﻿@using Code_Vanta_Systems.Data
+@using Code_Vanta_Systems.Models
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext _context
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -12,6 +16,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="~/css/site.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body class="flex flex-col min-h-screen bg-gray-50">
 
@@ -33,15 +38,24 @@
 
                 @if (SignInManager.IsSignedIn(User))
                 {
-                    if(User.IsInRole("Admin"))
+                    @* Admin Dashboard *@
+                    @if (User.IsInRole("Admin"))
                     {
                         <a href="/Admin/Employees" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
                     }
+                    @* Purchasing Manager Dashboard + Notifications *@
                     else if (User.IsInRole("Purchasing Manager"))
                     {
-                        <a href="PurchasingManager/Index" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
+                        <a href="/PurchasingManager/Index" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
+
+                    }
+                    @* Inventory Liaison Dashboard *@
+                    else if (User.IsInRole("Inventory Liaison"))
+                    {
+                        <a href="/InventoryLiaison/Index" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
                     }
 
+                    @* Logout Form *@
                     <form method="post" asp-controller="Account" asp-action="Logout" class="inline">
                         <button type="submit" class="ml-2 text-red-500 hover:underline">Logout</button>
                     </form>
