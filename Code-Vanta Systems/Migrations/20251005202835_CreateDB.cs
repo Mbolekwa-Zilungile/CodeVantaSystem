@@ -5,17 +5,18 @@
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class fixItemCatalog : Migration
+    public partial class CreateDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            
+
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            
+
         }
     }
 }

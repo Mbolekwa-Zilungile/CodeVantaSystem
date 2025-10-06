@@ -6,6 +6,8 @@ namespace Code_Vanta_Systems.ViewModels
 {
     public class PurchaseRequestItemViewModel
     {
+
+        public int? PurchaseRequestItemId { get; set; }
         [Required]
         [Display(Name = "Item")]
         public int ItemCatalogId { get; set; }   // Selected item from dropdown

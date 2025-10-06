@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Code_Vanta_Systems.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251004154408_initial")]
-    partial class initial
+    [Migration("20251005202835_CreateDB")]
+    partial class CreateDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -672,7 +672,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ItemCatalog");
+                    b.ToTable("ItemCatalogs");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Location", b =>

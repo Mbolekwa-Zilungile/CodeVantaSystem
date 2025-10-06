@@ -7,6 +7,9 @@ namespace Code_Vanta_Systems.ViewModels
 
     public class CreatePurchaseRequestViewModel
     {
+
+        public int Id { get; set; }
+
         [DataType(DataType.Date)]
         public DateTime? ExpectedDate { get; set; }
 
@@ -21,6 +24,7 @@ namespace Code_Vanta_Systems.ViewModels
 
         // ✅ Add this to populate the dropdown in the view
         public List<SelectListItem> AvailableItems { get; set; } = new();
+        public RequestStatus Status { get; set; }
     }
 
 }

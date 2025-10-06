@@ -1,5 +1,6 @@
 ﻿using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
+using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -26,17 +27,38 @@ namespace Code_Vanta_Systems.Controllers
             return View();
         }
         // 🗂️ Display all purchase requests created by this liaison
+      
         public async Task<IActionResult> PurchaseRequests()
         {
-            var user = await _userManager.GetUserAsync(User);
+            var purchaseRequests = await _context.PurchaseRequests
+                .Include(pr => pr.RequestedBy)
+                .Include(pr => pr.RequestedItems)
+                .Where(pr => pr.Status == RequestStatus.Submited)
+                .OrderByDescending(pr => pr.RequestDate)
+                .ToListAsync();
+            ViewBag.SubmitedCount = purchaseRequests.Count;
 
-            var requests = await _context.PurchaseRequests
-                .Include(r => r.RequestedItems)
-                .Where(r => r.RequestedByUserId == user.Id)
-                .OrderByDescending(r => r.RequestDate)
+            ViewBag.RejectedRequests = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Rejected);
+
+            ViewBag.PendingRequestsCount = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Pending);
+
+            ViewBag.CompletedRequestsCount = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Approved);
+            return View(purchaseRequests);
+        }
+
+        public async Task<IActionResult> RejectedPurchaseRequests()
+        {
+            var purchaseRequests = await _context.PurchaseRequests
+                .Include(pr => pr.RequestedBy)
+                .Include(pr => pr.RequestedItems)
+                .Where(pr => pr.Status == RequestStatus.Rejected)
+                .OrderByDescending(pr => pr.RequestDate)
                 .ToListAsync();
 
-            return View(requests);
+            return View(purchaseRequests);
         }
 
         // ✍️ GET: Create new purchase request
@@ -71,6 +93,11 @@ namespace Code_Vanta_Systems.Controllers
                 ModelState.AddModelError(nameof(model.Priority), "Priority is required.");
             }
 
+            if (model.ExpectedDate.HasValue && model.ExpectedDate.Value.Date < DateTime.Now.Date)
+            {
+                ModelState.AddModelError("ExpectedDate", "Expected date cannot be in the past.");
+            }
+
             // ✅ Validate at least one item is selected
             if (model.Items == null || !model.Items.Any(i => i.ItemCatalogId > 0))
             {
@@ -79,15 +106,18 @@ namespace Code_Vanta_Systems.Controllers
 
             if (!ModelState.IsValid)
             {
-                // Re-populate dropdowns
                 var allItems = await _context.ItemCatalogs
                     .Where(i => i.IsActive)
                     .Select(i => new SelectListItem { Value = i.Id.ToString(), Text = i.Name })
                     .ToListAsync();
 
-                foreach (var item in model.Items)
+                // Repopulate AvailableItems for all rows
+                if (model.Items != null)
                 {
-                    item.AvailableItems = allItems;
+                    foreach (var item in model.Items)
+                    {
+                        item.AvailableItems = allItems;
+                    }
                 }
 
                 return View(model);
@@ -100,29 +130,33 @@ namespace Code_Vanta_Systems.Controllers
                 RequestDate = DateTime.Now,
                 ExpectedDate = model.ExpectedDate,
                 Priority = model.Priority,
-                Notes = model.Notes
+                Notes = model.Notes,
+                Status=Models.Enums.RequestStatus.Submited,
+               // RequestedItems = new List<PurchaseRequestItem>() // 👈 IMPORTANT
             };
+
+            // Add request first to generate ID
+            _context.PurchaseRequests.Add(request);
+            await _context.SaveChangesAsync(); // now request.Id is available
 
             // 🛒 Map selected items and auto-assign description from catalog
             foreach (var item in model.Items.Where(i => i.ItemCatalogId > 0))
             {
-                var catalogItem = await _context.ItemCatalogs
-                    .FirstOrDefaultAsync(i => i.Id == item.ItemCatalogId);
-
+                var catalogItem = await _context.ItemCatalogs.FindAsync(item.ItemCatalogId);
                 if (catalogItem != null)
                 {
-                    request.RequestedItems.Add(new PurchaseRequestItem
+                    var requestItem = new PurchaseRequestItem
                     {
+                        PurchaseRequestId = request.Id, // explicitly set FK
                         ItemCatalogId = catalogItem.Id,
-                        ModelRequested = catalogItem.Name,       // Automatically assign model/item name
-                        Description = catalogItem.Description,   // Automatically assign description
+                        ModelRequested = catalogItem.Name,
+                        Description = catalogItem.Description,
                         Quantity = item.Quantity
-                    });
+                    };
+                    _context.PurchaseRequestItems.Add(requestItem);
                 }
             }
 
-            // Save request
-            _context.PurchaseRequests.Add(request);
             await _context.SaveChangesAsync();
 
             // 🔔 Notify Purchasing Manager

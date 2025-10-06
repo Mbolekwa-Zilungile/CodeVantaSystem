@@ -7,38 +7,111 @@
 
 <h2 class="mb-3">📦 My Purchase Requests</h2>
 
-<a asp-action="Create" class="btn btn-primary mb-3">+ Create New Purchase Request</a>
+<div class="row">
 
-@if (!Model.Any())
-{
-    <div class="alert alert-info">You have not submitted any purchase requests yet.</div>
-}
-else
-{
-    <table class="table table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Priority</th>
-                <th>Expected Delivery</th>
-                <th>Items</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var request in Model)
-            {
+    <!-- Card 4: Suppliers (wrapped in a link properly) -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="@Url.Action("PurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2 ">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Submitted</div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-box me-2"></i> @ViewBag.SubmitedCount
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <!-- Card 1: Pending Requests -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="@Url.Action("RejectedPurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2 ">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Rejected</div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="@Url.Action("RejectedPurchaseRequests", "PurchasingManager")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2 ">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Approved</div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card 2: Active RFQs -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="@Url.Action("RejectedPurchaseRequests", "PurchasingManager")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2 ">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Complete</div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+ 
+    <a asp-action="Create" class="btn btn-primary mb-3">+ Create New Purchase Request</a>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">You have not submitted any purchase requests yet.</div>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead class="table-dark">
                 <tr>
-                    <td>@request.Id</td>
-                    <td>@request.RequestDate.ToShortDateString()</td>
-                    <td>@request.Status</td>
-                    <td>@request.Priority</td>
-                    <td>@request.ExpectedDate?.ToShortDateString()</td>
-                    <td>@request.RequestedItems.Count()</td>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Expected Delivery</th>
+                    <th>Items</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-}
+            </thead>
+            <tbody>
+                @foreach (var request in Model)
+                {
+                    <tr>
+                        <td>@request.Id</td>
+                        <td>@request.RequestDate.ToShortDateString()</td>
+                        <td>@request.Status</td>
+                        <td>@request.Priority</td>
+                        <td>@request.ExpectedDate?.ToShortDateString()</td>
+                        <td>@request.RequestedItems.Count()</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 

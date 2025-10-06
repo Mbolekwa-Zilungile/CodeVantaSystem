@@ -15,7 +15,7 @@ namespace Code_Vanta_Systems.Models
         public int ItemCatalogId { get; set; }
         public ItemCatalog ItemCatalog { get; set; }
 
-        public string ModelRequested { get; set; }   // ✅ Needed for your code
+        public string ModelRequested { get; set; }   
         public string Description { get; set; }
 
         [Range(1, int.MaxValue)]

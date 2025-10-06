@@ -1,0 +1,87 @@
+﻿@model Code_Vanta_Systems.Models.PurchaseRequest
+
+@{
+    Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
+    ViewData["Title"] = "Purchase Request Details";
+}
+
+<h2>Purchase Request #@Model.Id</h2>
+<hr />
+
+<!-- Basic Info -->
+<div class="mb-3"><strong>Requested By:</strong> @Model.RequestedBy?.UserName</div>
+<div class="mb-3"><strong>Request Date:</strong> @Model.RequestDate.ToString("dd MMM yyyy HH:mm")</div>
+<div class="mb-3">
+    <strong>Expected Date:</strong> @(Model.ExpectedDate.HasValue ? Model.ExpectedDate.Value.ToString("dd MMM yyyy") : "N/A")
+</div>
+
+<!-- Status -->
+<div class="mb-3">
+    <strong>Status:</strong>
+    @{
+        string statusClass = Model.Status switch
+        {
+            Code_Vanta_Systems.Models.Enums.RequestStatus.Submited => "badge bg-primary",
+            Code_Vanta_Systems.Models.Enums.RequestStatus.Approved => "badge bg-success",
+            Code_Vanta_Systems.Models.Enums.RequestStatus.Rejected => "badge bg-danger",
+           Code_Vanta_Systems.Models.Enums.RequestStatus.Pending => "badge bg-secondary",
+            _ => "badge bg-light text-dark"
+        };
+    }
+    <span class="@statusClass">@Model.Status</span>
+</div>
+
+<!-- Priority -->
+<div class="mb-3">
+    <strong>Priority:</strong>
+    @{
+        string priorityClass = Model.Priority switch
+        {
+            Code_Vanta_Systems.Models.Enums.PriorityLevel.Urgent => "badge bg-danger text-white",
+            Code_Vanta_Systems.Models.Enums.PriorityLevel.High => "badge bg-warning text-dark",
+            Code_Vanta_Systems.Models.Enums.PriorityLevel.Medium => "badge bg-info text-dark",
+            Code_Vanta_Systems.Models.Enums.PriorityLevel.Low => "badge bg-success",
+            _ => "badge bg-secondary"
+        };
+    }
+    <span class="@priorityClass">@Model.Priority</span>
+</div>
+
+<!-- Notes -->
+<div class="mb-3"><strong>Notes:</strong> @Model.Notes</div>
+
+<!-- Requested Items -->
+<h4>Requested Items</h4>
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Item Name</th>
+            <th>Description</th>
+            <th>Quantity</th>
+            <!-- Optional if you have ItemCatalog navigation -->
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.RequestedItems)
+        {
+            <tr>
+                <td>@item.ModelRequested</td>
+                <td>@item.Description</td>
+                <td>@item.Quantity</td>
+               
+            </tr>
+        }
+    </tbody>
+
+    
+</table>
+
+<a asp-action="EditRequest" asp-route-id="@Model.Id" class="btn btn-primary me-2">
+    Edit
+</a>
+<a asp-action="RejectRequest" asp-route-id="@Model.Id" class="btn btn-danger me-2">
+    Reject
+</a>
+<a asp-action="CreateRFQ" asp-route-id="@Model.Id" class="btn btn-outline-success">
+    Create RFQ
+</a>

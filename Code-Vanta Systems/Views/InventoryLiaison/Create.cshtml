@@ -16,7 +16,7 @@
 
     <div class="mb-3">
         <label asp-for="ExpectedDate" class="form-label">Expected Date</label>
-        <input asp-for="ExpectedDate" type="date" class="form-control" />
+        <input asp-for="ExpectedDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
         <span asp-validation-for="ExpectedDate" class="text-danger"></span>
     </div>
 
@@ -74,39 +74,54 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
+   
+
     <script>
         $(document).ready(function () {
-            var itemIndex = @Model.Items.Count;
+            var itemIndex = @(Model?.Items?.Count ?? 1);
 
-            // Store all available items
+            // ✅ Store all available items safely
             var allItems = [];
-        @foreach (var item in Model.Items[0].AvailableItems)
-        {
-            <text>allItems.push({value: "@item.Value", text: "@item.Text" });</text>
-        }
+            @if (Model.Items != null && Model.Items.Count > 0 && Model.Items[0].AvailableItems != null)
+            {
+                foreach (var item in Model.Items[0].AvailableItems)
+                {
+                    @:allItems.push({ value: "@item.Value", text: "@item.Text" });
+                }
+            }
 
-                $("#addItem").click(function () {
-                    var options = '<option value="">-- Select Item --</option>';
-                    allItems.forEach(function (i) {
-                        options += `<option value="${i.value}">${i.text}</option>`;
-                    });
+            // ✅ Add item button
+            $("#addItem").click(function () {
+                if (allItems.length === 0) {
+                    alert("⚠️ No items available to add. Make sure ItemCatalog has data.");
+                    return;
+                }
 
-                    var newRow = `<tr>
-                            <td>
-                                <select name="Items[${itemIndex}].ItemCatalogId" class="form-select">${options}</select>
-                            </td>
-                            <td>
-                                <input name="Items[${itemIndex}].Quantity" type="number" min="1" class="form-control" />
-                            </td>
-                            <td>
-                                <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
-                            </td>
-                        </tr>`;
-
-                    $("#itemsTable tbody").append(newRow);
-                    itemIndex++;
+                var options = '<option value="">-- Select Item --</option>';
+                allItems.forEach(function (i) {
+                    options += `<option value="${i.value}">${i.text}</option>`;
                 });
 
+                var newRow = `
+                    <tr>
+                        <td>
+                            <select name="Items[${itemIndex}].ItemCatalogId" class="form-select">
+                                ${options}
+                            </select>
+                        </td>
+                        <td>
+                            <input name="Items[${itemIndex}].Quantity" type="number" min="1" class="form-control" />
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
+                        </td>
+                    </tr>`;
+
+                $("#itemsTable tbody").append(newRow);
+                itemIndex++;
+            });
+
+            // ✅ Remove row
             $(document).on("click", ".remove-item", function () {
                 $(this).closest("tr").remove();
             });
@@ -114,6 +129,3 @@
     </script>
 }
 
-
-
-}

@@ -5,6 +5,7 @@ using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace Code_Vanta_Systems.Controllers
@@ -32,8 +33,10 @@ namespace Code_Vanta_Systems.Controllers
             var activeSuppliers = await context.Suppliers
             .ToListAsync();
             ViewBag.ActiveSupplierCount = activeSuppliers.Count;
+            ViewBag.RequestCount = await context.PurchaseRequests.CountAsync();
             return View();
         }
+  
         public async Task<IActionResult> Suppliers()
         {
             var activeSuppliers = await context.Suppliers.Include(s => s.User)
@@ -41,11 +44,7 @@ namespace Code_Vanta_Systems.Controllers
             .ToListAsync();
             ViewBag.ActiveSupplierCount = activeSuppliers.Count;
 
-            var InactiveSuppliers = await context.Suppliers.Include(s => s.User)
-           .Where(s => !s.IsActive)
-           .ToListAsync();
-
-            ViewBag.InactiveSuppliersCount = InactiveSuppliers.Count;
+            ViewBag.InactiveSuppliersCount = await context.Suppliers.CountAsync(s => !s.IsActive);
             return View(activeSuppliers);
         }
 
@@ -315,46 +314,234 @@ namespace Code_Vanta_Systems.Controllers
             var purchaseRequests = await context.PurchaseRequests
                 .Include(pr => pr.RequestedBy)
                 .Include(pr => pr.RequestedItems)
+                .Where(pr => pr.Status == RequestStatus.Submited)
+                .OrderByDescending(pr => pr.RequestDate)
+                .ToListAsync();
+            ViewBag.SubmitedCount = purchaseRequests.Count;
+
+            ViewBag.RejectedRequests = await context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Rejected);
+
+            ViewBag.PendingRequestsCount = await context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Pending);
+
+            ViewBag.CompletedRequestsCount = await context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Approved);
+            return View(purchaseRequests);
+        }
+
+        public async Task<IActionResult> RejectedPurchaseRequests()
+        {
+            var purchaseRequests = await context.PurchaseRequests
+                .Include(pr => pr.RequestedBy)
+                .Include(pr => pr.RequestedItems)
+                .Where(pr => pr.Status == RequestStatus.Rejected)
+                .OrderByDescending(pr => pr.RequestDate)
                 .ToListAsync();
 
             return View(purchaseRequests);
         }
+
 
         // GET: PurchaseRequest/CreatePurchaseRequest
         public IActionResult CreatePurchaseRequest()
         {
             return View();
         }
-        //notifications
-
-        // 📬 Show dashboard with new notifications
-        public async Task<IActionResult> Notifications()
+       
+        public async Task<IActionResult> Details(int id)
         {
-            var user = await userManager.GetUserAsync(User);
+            var request = await context.PurchaseRequests
+                         .Include(r => r.RequestedBy)
+                         .Include(r => r.RequestedItems)
+                         /*.ThenInclude(i => i.ItemCatalog) */// <--- This is correct for eager loading
+                         .FirstOrDefaultAsync(r => r.Id == id);
 
-            var notifications = await context.Notifications
-                .Where(n => n.RecipientUserId == user.Id)
-                .OrderByDescending(n => n.CreatedAt)
+            if (request == null) return NotFound();
+
+            return View(request);
+        }
+
+        // GET: Edit Purchase Request
+        [HttpGet]
+        public async Task<IActionResult> EditRequest(int id)
+        {
+            var request = await context.PurchaseRequests
+                .Include(r => r.RequestedItems)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null)
+                return NotFound();
+
+            // Get all active catalog items
+            var catalogItems = await context.ItemCatalogs
+                .Where(c => c.IsActive)
+                .Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.Name })
                 .ToListAsync();
 
-            var unreadCount = notifications.Count(n => !n.IsRead);
+            // Map to view model
+            var model = new CreatePurchaseRequestViewModel
+            {
+                Id = request.Id,
+                ExpectedDate = request.ExpectedDate,
+                Priority = request.Priority,
+                Status = request.Status,
+                Notes = request.Notes,
+                Items = request.RequestedItems.Select(i => new PurchaseRequestItemViewModel
+                {
+                    PurchaseRequestItemId = i.Id,
+                    ItemCatalogId = i.ItemCatalogId,
+                    Quantity = i.Quantity,
+                    Description = i.Description,
+                    AvailableItems = catalogItems
+                }).ToList()
+            };
 
-            ViewBag.UnreadNotifications = unreadCount;
-
-            return View(notifications);
+            ViewBag.CatalogItems = catalogItems;
+            return View(model);
         }
 
-        // ✅ Mark notification as read
+        // POST: Edit Purchase Request
         [HttpPost]
-        public async Task<IActionResult> MarkAsRead(int id)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditRequest(CreatePurchaseRequestViewModel model)
         {
-            var notification = await context.Notifications.FindAsync(id);
-            if (notification != null)
+            if (!ModelState.IsValid)
             {
-                notification.IsRead = true;
+                var catalogItems = await context.ItemCatalogs
+                    .Where(c => c.IsActive)
+                    .Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.Name })
+                    .ToListAsync();
+
+                foreach (var item in model.Items)
+                    item.AvailableItems = catalogItems;
+
+                ViewBag.CatalogItems = catalogItems;
+                return View(model);
+            }
+
+            var request = await context.PurchaseRequests
+                .Include(r => r.RequestedItems)
+                .FirstOrDefaultAsync(r => r.Id == model.Id);
+
+            if (request == null) return NotFound();
+
+            // Update main fields
+            request.ExpectedDate = model.ExpectedDate;
+            request.Priority = model.Priority;
+            request.Status = model.Status;
+            request.Notes = model.Notes;
+
+            // Remove deleted items
+            var itemIdsFromForm = model.Items
+                .Where(i => i.PurchaseRequestItemId.HasValue)
+                .Select(i => i.PurchaseRequestItemId.Value)
+                .ToList();
+            var itemsToRemove = request.RequestedItems
+                .Where(i => !itemIdsFromForm.Contains(i.Id))
+                .ToList();
+            context.PurchaseRequestItems.RemoveRange(itemsToRemove);
+
+            // Update existing or add new items
+            foreach (var itemVm in model.Items)
+            {
+                if (itemVm.PurchaseRequestItemId.HasValue)
+                {
+                    // Existing item
+                    var existingItem = request.RequestedItems.First(i => i.Id == itemVm.PurchaseRequestItemId.Value);
+                    existingItem.ItemCatalogId = itemVm.ItemCatalogId;
+                    existingItem.Quantity = itemVm.Quantity;
+
+                    var catalog = await context.ItemCatalogs.FindAsync(itemVm.ItemCatalogId);
+                    if (catalog != null)
+                    {
+                        existingItem.ModelRequested = catalog.Name;
+                        existingItem.Description = catalog.Description;
+                    }
+                }
+                else
+                {
+                    // New item
+                    var catalog = await context.ItemCatalogs.FindAsync(itemVm.ItemCatalogId);
+                    if (catalog != null)
+                    {
+                        var newItem = new PurchaseRequestItem
+                        {
+                            PurchaseRequestId = request.Id,
+                            ItemCatalogId = catalog.Id,
+                            ModelRequested = catalog.Name,
+                            Description = catalog.Description,
+                            Quantity = itemVm.Quantity
+                        };
+                        context.PurchaseRequestItems.Add(newItem);
+                    }
+                }
+            }
+
+            await context.SaveChangesAsync();
+            TempData["Success"] = "Purchase request updated successfully!";
+            return RedirectToAction("Details", new { id = request.Id });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> RejectRequest(int id)
+        {
+            var request = await context.PurchaseRequests
+                .Include(r => r.RequestedBy)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null)
+                return NotFound();
+
+            return View(request);
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectRequest(int id, string reason)
+        {
+            // 1️⃣ Load the purchase request
+            var request = await context.PurchaseRequests
+                .Include(r => r.RequestedBy)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null)
+                return NotFound();
+
+            // 2️⃣ Update status to Rejected
+            request.Status = Models.Enums.RequestStatus.Rejected;
+            request.Notes += string.IsNullOrEmpty(reason) ? "" : $"\nRejection Reason: {reason}";
+
+            // 3️⃣ Save changes
+            try
+            {
                 await context.SaveChangesAsync();
             }
-            return RedirectToAction(nameof(Notifications));
+            catch (DbUpdateException ex)
+            {
+                ModelState.AddModelError("", "Unable to update request: " + ex.Message);
+                return RedirectToAction("Details", new { id });
+            }
+
+            // 4️⃣ Notify Inventory Liaison
+            var inventoryLiaisons = await userManager.GetUsersInRoleAsync("InventoryLiaison");
+            foreach (var liaison in inventoryLiaisons)
+            {
+                var notification = new Notification
+                {
+                    RecipientUserId = liaison.Id,
+                    Message = $"Purchase request #{request.Id} has been rejected by {User.Identity.Name}. Reason: {reason}",
+                    CreatedAt = DateTime.UtcNow
+                };
+                context.Notifications.Add(notification);
+            }
+
+            await context.SaveChangesAsync();
+
+            TempData["Success"] = $"Purchase request #{request.Id} rejected successfully!";
+            return RedirectToAction("PurchaseRequests");
         }
     }
+
 }
