@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Code_Vanta_Systems.Models
 {
+    // Quotation is now a header that contains no line-item details.
     public class Quotation
     {
         [Key]
@@ -12,12 +13,6 @@ namespace Code_Vanta_Systems.Models
         [Required]
         [DataType(DataType.Date)]
         public DateTime DateReceived { get; set; } = DateTime.Now;
-
-        [Required(ErrorMessage = "Unit Price is required")]
-        [Range(0.01, 999999.99, ErrorMessage = "Price must be greater than 0")]
-        [RegularExpression(@"^\d+(\.\d{1,2})?$", ErrorMessage = "Please enter a valid amount with up to 2 decimal places")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal UnitPrice { get; set; }
 
         [Required]
         public int SupplierId { get; set; }
@@ -30,5 +25,8 @@ namespace Code_Vanta_Systems.Models
         // Optional link to RFQ
         public int? RequestQuotationId { get; set; }
         public virtual RequestQuotation RequestQuotation { get; set; }
+
+        // Navigation collection for the line items of the quotation
+        public virtual ICollection<QuotationItem> Items { get; set; } = new HashSet<QuotationItem>();
     }
 }

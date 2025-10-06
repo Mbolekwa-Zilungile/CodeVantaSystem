@@ -17,6 +17,12 @@ namespace Code_Vanta_Systems.Data.Configurations
                    .WithMany(l => l.FridgeRequests)
                    .HasForeignKey(fr => fr.LocationId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            // 🛠️ ADDED: Link to the User who submitted the request
+            builder.HasOne(fr => fr.RequestedBy)
+                   .WithMany(u => u.SubmittedRequests)
+                   .HasForeignKey(fr => fr.RequestedByUserId)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

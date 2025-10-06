@@ -27,25 +27,23 @@ namespace Code_Vanta_Systems.Models
         public int LocationId { get; set; }
         public virtual Location Location { get; set; }
 
+        // Added for completeness
         public virtual ICollection<FridgeFault> Faults { get; set; }
         public virtual ICollection<FridgeMaintenance> Maintenances { get; set; }
         public virtual ICollection<FridgeAllocation> Allocations { get; set; }
-
-        // Renamed to match OnModelCreating
-        public virtual ICollection<FridgeServiceHistory> ServiceHistories { get; set; }
-
-        // Added for completeness
         public virtual ICollection<FridgeUsageLog> UsageLogs { get; set; }
         public virtual ICollection<MaintenanceSchedule> MaintenanceSchedules { get; set; }
+        public virtual ICollection<SensorReading> SensorReadings { get; set; }
+
 
         public Fridge()
         {
             Faults = new HashSet<FridgeFault>();
             Maintenances = new HashSet<FridgeMaintenance>();
             Allocations = new HashSet<FridgeAllocation>();
-            ServiceHistories = new HashSet<FridgeServiceHistory>();
             UsageLogs = new HashSet<FridgeUsageLog>();
             MaintenanceSchedules = new HashSet<MaintenanceSchedule>();
+            SensorReadings = new HashSet<SensorReading>(); // Initialize new collection
         }
     }
 }

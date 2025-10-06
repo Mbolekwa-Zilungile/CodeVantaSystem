@@ -3,7 +3,7 @@
     public enum RequestStatus
     {
         Pending = 1,
-        Submited=2,
+        Submitted=2,
         Approved = 3,
         Rejected = 4,
         Fulfilled = 5

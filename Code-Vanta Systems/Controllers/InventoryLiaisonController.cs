@@ -33,7 +33,7 @@ namespace Code_Vanta_Systems.Controllers
             var purchaseRequests = await _context.PurchaseRequests
                 .Include(pr => pr.RequestedBy)
                 .Include(pr => pr.RequestedItems)
-                .Where(pr => pr.Status == RequestStatus.Submited)
+                .Where(pr => pr.Status == RequestStatus.Submitted)
                 .OrderByDescending(pr => pr.RequestDate)
                 .ToListAsync();
             ViewBag.SubmitedCount = purchaseRequests.Count;
@@ -131,7 +131,7 @@ namespace Code_Vanta_Systems.Controllers
                 ExpectedDate = model.ExpectedDate,
                 Priority = model.Priority,
                 Notes = model.Notes,
-                Status=Models.Enums.RequestStatus.Submited,
+                Status=Models.Enums.RequestStatus.Submitted,
                // RequestedItems = new List<PurchaseRequestItem>() // 👈 IMPORTANT
             };
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema; // Added for NotMapped if necessary
 
 namespace Code_Vanta_Systems.Models
 {
@@ -9,20 +10,21 @@ namespace Code_Vanta_Systems.Models
         [Required, StringLength(100)]
         public string FullName { get; set; }
 
-        // Faults assigned to this user (technician role)
-        public virtual ICollection<FridgeFault> AssignedFaults { get; set; }
+        // One-to-One Navigation Properties
+        public virtual Employee EmployeeProfile { get; set; }
+        public virtual Customer CustomerProfile { get; set; } // <--- ADDED for one-to-one link
 
-        // Faults reported by this user (customer role)
-        public virtual ICollection<FridgeFault> ReportedFaults { get; set; }
-
-        // Maintenance tasks assigned to this user
+        // One-to-Many Navigation Collections
+        public virtual ICollection<FridgeFault> AssignedFaults { get; set; } // Technician role
+        public virtual ICollection<FridgeFault> ReportedFaults { get; set; } // User/Customer role
         public virtual ICollection<FridgeMaintenance> AssignedMaintenances { get; set; }
 
-        // Purchase requests created by this user
+        // Purchasing & Scheduling Audit Trails
         public virtual ICollection<PurchaseRequest> PurchaseRequests { get; set; }
-
-        // Employee profile (role, etc.)
-        public virtual Employee EmployeeProfile { get; set; }
+        public virtual ICollection<TechnicianSchedule> TechnicianSchedules { get; set; } // <--- ADDED for Schedule
+        public virtual ICollection<PurchaseOrder> PlacedOrders { get; set; } // <--- ADDED for Purchase Orders
+        public virtual ICollection<FridgeAllocation> CreatedAllocations { get; set; } // <--- ADDED for Allocations
+        public virtual ICollection<FridgeRequest> SubmittedRequests { get; set; } // <--- ADDED for Fridge Requests
 
         public ApplicationUser()
         {
@@ -30,6 +32,10 @@ namespace Code_Vanta_Systems.Models
             ReportedFaults = new HashSet<FridgeFault>();
             AssignedMaintenances = new HashSet<FridgeMaintenance>();
             PurchaseRequests = new HashSet<PurchaseRequest>();
+            TechnicianSchedules = new HashSet<TechnicianSchedule>();
+            PlacedOrders = new HashSet<PurchaseOrder>();
+            CreatedAllocations = new HashSet<FridgeAllocation>();
+            SubmittedRequests = new HashSet<FridgeRequest>();
         }
     }
 }

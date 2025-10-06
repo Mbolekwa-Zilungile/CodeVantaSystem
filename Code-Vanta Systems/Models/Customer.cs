@@ -41,6 +41,13 @@ namespace Code_Vanta_Systems.Models
         [ForeignKey("UserId")]
         public virtual ApplicationUser? User { get; set; }
 
+        // Foreign Key property for the assigned technician
+        [Required]
+        public string TechnicianId { get; set; }
+
+        // Navigation property
+        public virtual ApplicationUser Technician { get; set; }
+
         // Navigation collections
         public virtual ICollection<FridgeAllocation> Allocations { get; set; }
         public virtual ICollection<FridgeRequest> FridgeRequests { get; set; }

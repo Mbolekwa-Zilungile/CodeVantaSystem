@@ -37,9 +37,12 @@ namespace Code_Vanta_Systems.Models
         public virtual ICollection<Fridge> Fridges { get; set; }
         public virtual ICollection<Quotation> Quotations { get; set; }
         public virtual ICollection<DeliveryNote> DeliveryNotes { get; set; }
-
-        // ✅ New: Supplier can have many RequestQuotations
         public virtual ICollection<RequestQuotation> RequestQuotations { get; set; }
+        public virtual ICollection<ItemCatalog> ItemCatalogs { get; set; } // <--- ADDED
+
+        // ADDED: Supplier can have many PurchaseOrders - FIX
+        public virtual ICollection<PurchaseOrder> PurchaseOrders { get; set; }
+
 
         public Supplier()
         {
@@ -47,6 +50,9 @@ namespace Code_Vanta_Systems.Models
             Quotations = new HashSet<Quotation>();
             DeliveryNotes = new HashSet<DeliveryNote>();
             RequestQuotations = new HashSet<RequestQuotation>();
+            PurchaseOrders = new HashSet<PurchaseOrder>(); // Initialize new collection
+            RequestQuotations = new HashSet<RequestQuotation>();
+            ItemCatalogs = new HashSet<ItemCatalog>(); // ADDED INITIALIZATION
         }
     }
 }

@@ -17,6 +17,12 @@ namespace Code_Vanta_Systems.Data.Configurations
                    .WithMany(c => c.Allocations)
                    .HasForeignKey(fa => fa.CustomerId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            // 🛠️ ADDED: Link to the User who created this allocation record
+            builder.HasOne(fa => fa.CreatedBy)
+                   .WithMany(u => u.CreatedAllocations)
+                   .HasForeignKey(fa => fa.CreatedByUserId)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

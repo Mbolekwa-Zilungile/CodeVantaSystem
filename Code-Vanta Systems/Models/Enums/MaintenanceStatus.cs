@@ -3,6 +3,7 @@
     public enum MaintenanceStatus
     {
         Scheduled,
+        Cancelled,
         Completed,
         Overdue
     }

@@ -12,7 +12,6 @@ namespace Code_Vanta_Systems.Data
         {
         }
 
-
         // DbSets represent tables in the database
         public DbSet<Customer> Customers { get; set; } // Stores customer details
         public DbSet<Location> Locations { get; set; } // Physical locations for fridges or customers
@@ -21,14 +20,13 @@ namespace Code_Vanta_Systems.Data
         public DbSet<FridgeFault> FridgeFaults { get; set; } // Records faults reported on fridges
         public DbSet<FridgeMaintenance> FridgeMaintenances { get; set; } // Maintenance activities on fridges
         public DbSet<MaintenanceSchedule> MaintenanceSchedules { get; set; } // Planned maintenance schedules
-        public DbSet<FridgeServiceHistory> FridgeServiceHistories { get; set; } // Historical service records
         public DbSet<Supplier> Suppliers { get; set; } // Suppliers providing fridges or parts
         public DbSet<PurchaseRequest> PurchaseRequests { get; set; } // Requests for purchasing items
-        public DbSet<Quotation> Quotations { get; set; } // Supplier quotations (already configured)
+        public DbSet<Quotation> Quotations { get; set; } // Supplier quotations
         public DbSet<DeliveryNote> DeliveryNotes { get; set; } // Delivery confirmations
         public DbSet<ActivityLog> ActivityLogs { get; set; } // Logs of system or user activities
         public DbSet<Notification> Notifications { get; set; } // System or user notifications
-        public DbSet<Document> Documents { get; set; } // Uploaded documents (already configured)
+        public DbSet<Document> Documents { get; set; } // Uploaded documents
         public DbSet<FridgeUsageLog> FridgeUsageLogs { get; set; } // Usage tracking for fridges
         public DbSet<FridgeRequest> FridgeRequests { get; set; } // Requests for fridge allocations
         public DbSet<InventoryItem> InventoryItems { get; set; } // Items in inventory
@@ -40,39 +38,18 @@ namespace Code_Vanta_Systems.Data
         public DbSet<Employee> Employees { get; set; }
         public DbSet<ItemCatalog> ItemCatalogs { get; set; }
         public DbSet<PurchaseRequestItem> PurchaseRequestItems { get; set; }
-       
 
-
+        // Note: The DbSet for SensorReading and TechnicianSchedule (mentioned in overview) 
+        // were not included in the original DbContext code, but are listed in the model overview.
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Call base method first for Identity configurations
             base.OnModelCreating(modelBuilder);
 
             // Apply all separate configuration classes
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
-
-            // Optional: Explicit relationships
-
-            // PurchaseRequest -> PurchaseRequestItem
-            modelBuilder.Entity<PurchaseRequestItem>()
-              .HasOne(p => p.ItemCatalog)
-              .WithMany()
-              .HasForeignKey(p => p.ItemCatalogId)
-              .OnDelete(DeleteBehavior.Restrict);
-            // PurchaseRequestItem -> ItemCatalog
-            modelBuilder.Entity<PurchaseRequestItem>()
-                .HasOne<ItemCatalog>() // No navigation in your current model, can add if needed
-                .WithMany()
-                .HasForeignKey("ItemCatalogId") // Shadow property if not in model
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // PurchaseRequest -> RequestedBy (ApplicationUser)
-            modelBuilder.Entity<PurchaseRequest>()
-                .HasOne(r => r.RequestedBy)
-                .WithMany() // Or navigation property in ApplicationUser if exists
-                .HasForeignKey(r => r.RequestedByUserId)
-                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

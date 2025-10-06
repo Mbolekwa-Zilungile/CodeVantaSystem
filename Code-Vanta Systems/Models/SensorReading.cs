@@ -1,39 +1,26 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Code_Vanta_Systems.Models
 {
     public class SensorReading
     {
+        [Key] // <--- FIX: This explicitly defines the Primary Key
+        public int Id { get; set; }
 
-        public int ReadingId { get; set; }
-
-        // Foreign key referencing the fridge where the reading was taken
+        // Foreign Key to the Fridge
         [Required]
         public int FridgeId { get; set; }
+        public virtual Fridge Fridge { get; set; }
 
-        // Navigation property for the fridge
-        [ForeignKey("FridgeId")]
-        public Fridge Fridge { get; set; }
-
-        // Date and time when the reading was recorded
         [Required]
-        public DateTime ReadingDate { get; set; }
+        public DateTime Timestamp { get; set; }
 
-        // Temperature reading in degrees Celsius
-        [Range(-50, 100)]
-        public double Temperature { get; set; }
+        [Required]
+        public decimal TemperatureCelsius { get; set; }
 
-        // Humidity reading as a percentage
-        [Range(0, 100)]
-        public double Humidity { get; set; }
+        public decimal? HumidityPercent { get; set; }
 
-        // Number of times the fridge door was opened
-        [Range(0, int.MaxValue)]
-        public int DoorOpenCount { get; set; }
-
-        // Indicates whether an alert was triggered based on the reading
-        public bool AlertTriggered { get; set; }
-
+        public bool DoorOpen { get; set; }
     }
 }

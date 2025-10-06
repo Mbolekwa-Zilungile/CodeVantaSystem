@@ -314,7 +314,7 @@ namespace Code_Vanta_Systems.Controllers
             var purchaseRequests = await context.PurchaseRequests
                 .Include(pr => pr.RequestedBy)
                 .Include(pr => pr.RequestedItems)
-                .Where(pr => pr.Status == RequestStatus.Submited)
+                .Where(pr => pr.Status == RequestStatus.Submitted)
                 .OrderByDescending(pr => pr.RequestDate)
                 .ToListAsync();
             ViewBag.SubmitedCount = purchaseRequests.Count;
