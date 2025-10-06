@@ -38,7 +38,6 @@ namespace Code_Vanta_Systems.Controllers
 
         [HttpGet]
         public IActionResult Login() => View();
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModels model)
@@ -59,27 +58,52 @@ namespace Code_Vanta_Systems.Controllers
             var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, false);
             if (result.Succeeded)
             {
+                // Admin
                 if (await _userManager.IsInRoleAsync(user, Roles.Admin))
                     return RedirectToAction("Employees", "Admin");
 
+                // Customer
                 if (await _userManager.IsInRoleAsync(user, Roles.Customer))
-                    return RedirectToAction("Index", "CustomerDashboard");
+                {
+                    // Check customer status
+                    var customer = await _context.Customers
+                        .FirstOrDefaultAsync(c => c.UserId == user.Id);
 
+                    if (customer != null && customer.Status == CustomerStatus.Pending)
+                    {
+                        // Pending customers go to PendingPage to upload document
+                        return RedirectToAction("PendingPage", "CustomerDashboard");
+                    }
+                    if (customer != null && customer.Status == CustomerStatus.Active)
+                    {
+                        // Pending customers go to PendingPage to upload document
+                        return RedirectToAction("Index", "CustomerDashboard");
+                    }
+                    // Active customers go to dashboard
+                    return RedirectToAction("Rejected", "CustomerDashboard", new { id = customer.Id });
+                }
+
+                // Customer Liaison
                 if (await _userManager.IsInRoleAsync(user, Roles.CustomerLiaison))
                     return RedirectToAction("Index", "CustomerLiaison");
 
+                // Inventory Liaison
                 if (await _userManager.IsInRoleAsync(user, Roles.InventoryLiaison))
                     return RedirectToAction("Index", "InventoryLiaison");
 
+                // Service Technician
                 if (await _userManager.IsInRoleAsync(user, Roles.ServiceTechnician))
                     return RedirectToAction("Index", "ServiceTechnician");
 
+                // Fault Technician
                 if (await _userManager.IsInRoleAsync(user, Roles.FaultTechnician))
                     return RedirectToAction("Index", "FaultTechnician");
 
+                // Maintenance Technician
                 if (await _userManager.IsInRoleAsync(user, Roles.MaintenanceTechnician))
                     return RedirectToAction("Index", "MaintenanceTechnician");
 
+                // Purchasing Manager
                 if (await _userManager.IsInRoleAsync(user, Roles.PurchasingManager))
                     return RedirectToAction("Index", "PurchasingManager");
 
@@ -151,14 +175,15 @@ namespace Code_Vanta_Systems.Controllers
                     Email = model.Email,
                     PhysicalAddress = model.PhysicalAddress,
                     LocationId = location.Id,
-                    UserId = user.Id
+                    UserId = user.Id,
+                    Status = CustomerStatus.Pending
                 };
 
                 _context.Customers.Add(customer);
                 await _context.SaveChangesAsync();
 
                 await _signInManager.SignInAsync(user, isPersistent: false);
-                return RedirectToAction("Index", "CustomerDashboard");
+                return RedirectToAction("PendingPage", "CustomerDashboard");
             }
 
             foreach (var error in result.Errors)

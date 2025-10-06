@@ -54,6 +54,11 @@
                     {
                         <a href="/InventoryLiaison/Index" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
                     }
+                    else if (User.IsInRole("Customer Liaison"))
+                    {
+                        <a href="/CustomerLiaison/PendingCustomers" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
+                       
+                    }
 
                     @* Logout Form *@
                     <form method="post" asp-controller="Account" asp-action="Logout" class="inline">

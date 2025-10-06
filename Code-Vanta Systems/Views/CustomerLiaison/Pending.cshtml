@@ -1,0 +1,46 @@
+﻿@model IEnumerable<Code_Vanta_Systems.Models.Customer>
+
+@{
+    Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
+    ViewData["Title"] = "Pending Customers";
+}
+
+<h2>Pending Customers</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No pending customers found.</div>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Business Name</th>
+                <th>Contact Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Business Type</th>
+              @*   <th>Location</th> *@
+                <th>Technician</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var customer in Model)
+            {
+                <tr>
+                    <td>@customer.BusinessName</td>
+                    <td>@customer.ContactName</td>
+                    <td>@customer.Phone</td>
+                    <td>@customer.Email</td>
+                    <td>@customer.BusinessType</td>
+                  @*   <td>@customer.Location?.Name</td> *@
+                    <td>@customer.Technician?.FullName</td>
+                    <td>@customer.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+

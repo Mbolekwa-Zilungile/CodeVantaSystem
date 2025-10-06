@@ -1,0 +1,107 @@
+﻿@model IEnumerable<Code_Vanta_Systems.Models.Customer>
+
+@{
+    Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
+    ViewData["Title"] = "Pending Customers";
+}
+
+<br />
+<div class="row">
+    <!-- Card 4: Suppliers (wrapped in a link properly) -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="@Url.Action("PendingCustomers", "CustomerLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2 ">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Pending </div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-box me-2"></i> @ViewBag.PendingCustomerCount
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <!-- Card 1: Pending Requests -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="@Url.Action("ActiveCustomers", "CustomerLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2 ">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Approved </div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-cart3 me-2"></i>@ViewBag.ActiveCustomerCount
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card 2: Active RFQs -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="@Url.Action("RejectCustomers", "CustomerLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2 ">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Rejected </div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectCustomerCount
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+</div>
+
+
+
+<div class="container mt-5">
+    <h2 class="mb-4 text-primary">Pending Customers</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            There are no pending customers at the moment.
+        </div>
+    }
+    else
+    {
+        <table class="table table-striped table-hover shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Business Name</th>
+                    <th>Contact Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var customer in Model)
+                {
+                    <tr>
+                        <td>@customer.BusinessName</td>
+                        <td>@customer.ContactName</td>
+                        <td>@customer.Email</td>
+                        <td>@customer.Phone</td>
+                        <td>
+                            <a asp-action="ViewCustomer" asp-route-id="@customer.Id"
+                               class="btn btn-sm btn-primary shadow-sm">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

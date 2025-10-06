@@ -25,6 +25,7 @@ namespace Code_Vanta_Systems.Models
 
         // Navigation property for the recipient user
         public ApplicationUser RecipientUser { get; set; }
+       // public string UserId { get; set; }
 
     }
 }
