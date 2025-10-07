@@ -1,0 +1,74 @@
+﻿@model Code_Vanta_Systems.Models.Fridge
+@{
+    Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
+    ViewData["Title"] = "Fridge Details";
+}
+
+<div class="container mt-4">
+    <h3 class="mb-4"><i class="bi bi-eye-fill me-2"></i>Fridge Details</h3>
+
+    <div class="card shadow-sm">
+        <div class="row g-0">
+            <!-- Image -->
+            <div class="col-md-4 p-3 text-center">
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <img src="@Model.ImageUrl" class="img-fluid rounded" alt="Fridge Image" />
+                }
+                else
+                {
+                    <img src="/images/no-image.png" class="img-fluid rounded" alt="No Image" />
+                }
+            </div>
+
+            <!-- Details -->
+            <div class="col-md-8">
+                <div class="card-body">
+                    <h5 class="card-title">@Model.Model (@Model.Category)</h5>
+                    <p class="card-text"><strong>Serial Number:</strong> @Model.SerialNumber</p>
+                    <p class="card-text"><strong>Status:</strong> @Model.Status</p>
+                    <p class="card-text"><strong>In Stock:</strong> @Model.StockQuantity</p>
+                    <p class="card-text"><strong>Purchase Date:</strong> @Model.PurchaseDate.ToString("yyyy-MM-dd")</p>
+                    <p class="card-text"><strong>Rental Price / Month:</strong> @Model.RentalPricePerMonth.ToString("C")</p>
+                    <p class="card-text"><strong>Description:</strong> @Model.Description</p>
+
+                    <hr />
+
+                    <h6>Supplier Details</h6>
+                    <p class="card-text"><strong>Name:</strong> @Model.Supplier?.ContactName</p>
+                    <p class="card-text"><strong>Contact:</strong> @Model.Supplier?.Phone</p>
+                    <p class="card-text"><strong>Email:</strong> @Model.Supplier?.ContactEmail</p>
+                    <p class="card-text"><strong>Address:</strong> @Model.Supplier?.Address</p>
+
+                    <hr />
+
+                    <h6>Location</h6>
+                    <p class="card-text"><strong>Description:</strong> @Model.Location?.Description</p>
+
+                    <a asp-action="Index" class="btn btn-secondary mt-3">
+                        <i class="bi bi-arrow-left-circle me-1"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-body p {
+        margin-bottom: 0.5rem;
+    }
+
+    body {
+        background-color: rgba(0,0,0,0.7);
+    }
+
+    .card {
+        background-color: rgba(255,255,255,0.95);
+    }
+</style>
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}

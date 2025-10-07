@@ -1,0 +1,30 @@
+﻿@model Code_Vanta_Systems.Models.FridgeAllocation
+
+@{
+    ViewData["Title"] = "Allocate Fridge";
+}
+
+<div class="container mt-4">
+    <h3>Allocate Fridge to @ViewBag.CustomerName</h3>
+    <hr />
+
+    <form asp-action="AllocateFridge" method="post">
+        <input type="hidden" asp-for="CustomerId" />
+
+        <div class="form-group">
+            <label for="FridgeId">Select Fridge</label>
+            <select asp-for="FridgeId" class="form-control" required>
+                <option value="">-- Select Available Fridge --</option>
+                @foreach (var fridge in ViewBag.Fridges)
+                {
+                    <option value="@fridge.Id">@fridge.SerialNumber (@fridge.ModelName)</option>
+                }
+            </select>
+        </div>
+
+        
+
+        <button type="submit" class="btn btn-primary mt-3">Allocate</button>
+        <a asp-action="ActiveCustomers" class="btn btn-secondary mt-3">Cancel</a>
+    </form>
+</div>

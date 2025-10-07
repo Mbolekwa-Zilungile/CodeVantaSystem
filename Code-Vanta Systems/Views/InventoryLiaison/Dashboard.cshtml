@@ -1,0 +1,94 @@
+﻿@model Code_Vanta_Systems.ViewModels.DashboardViewModel
+@{
+    Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
+    ViewData["Title"] = "Fridge Dashboard";
+}
+@using Code_Vanta_Systems.Models.Enums
+
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="alert alert-success">Welcome back, @User.Identity?.Name</h1>
+       
+        <div class="container-fluid py-4">
+        </div>
+        </div>
+        </div>
+<div class="container mt-4">
+    <h3 class="mb-4">Fridge Dashboard</h3>
+
+    <!-- Top Metrics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center p-3 bg-primary text-white">
+                <h5>Total Stock</h5>
+                <h2>@Model.TotalStock</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3 bg-success text-white">
+                <h5>Available</h5>
+                <h2>@(Model.StatusCounts.ContainsKey(FridgeStatus.Available) ? Model.StatusCounts[FridgeStatus.Available] : 0)</h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3 bg-warning text-dark">
+                <h5>Allocated / Repair</h5>
+                <h2>
+                    @(Model.StatusCounts.ContainsKey(FridgeStatus.Allocated) ? Model.StatusCounts[FridgeStatus.Allocated] : 0
+                                        + (Model.StatusCounts.ContainsKey(FridgeStatus.InRepair) ? Model.StatusCounts[FridgeStatus.InRepair] : 0))
+                </h2>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3 bg-danger text-white">
+                <h5>Deleted</h5>
+                <h2>@Model.DeletedStock</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Table -->
+    <div class="card p-3">
+        <h5>Stock by Category & Model</h5>
+        <table class="table table-striped table-bordered mt-3 align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Category</th>
+                    <th>Model</th>
+                    <th>Total Stock</th>
+                    <th>Stock Level</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var g in Model.GroupedStock)
+                {
+                    <tr>
+                        <td>@g.Category</td>
+                        <td>@g.Model</td>
+                        <td>@g.Count</td>
+                        <td>
+                            @if (g.StockLevel == "Low")
+                            {
+                                <span class="badge bg-danger">Low</span>
+                            }
+                            else if (g.StockLevel == "Average")
+                            {
+                                <span class="badge bg-warning text-dark">Average</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">High</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="SendStockEmail" asp-route-category="@g.Category" asp-route-model="@g.Model" class="btn btn-info btn-sm">
+                                <i class="bi bi-envelope-fill"></i> Send Email
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

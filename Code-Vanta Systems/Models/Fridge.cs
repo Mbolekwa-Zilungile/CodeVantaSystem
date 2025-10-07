@@ -35,6 +35,25 @@ namespace Code_Vanta_Systems.Models
         public virtual ICollection<MaintenanceSchedule> MaintenanceSchedules { get; set; }
         public virtual ICollection<SensorReading> SensorReadings { get; set; }
 
+        // Added New Fridge Props
+        [Required]
+        public FridgeCategory Category { get; set; }
+
+        [StringLength(250)]
+        public string ImageUrl { get; set; }
+
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+
+        [Required(ErrorMessage = "Rental Price is required")]
+        [Range(0, double.MaxValue, ErrorMessage = "Rental Price must be positive")]
+        public decimal RentalPricePerMonth { get; set; }
+
+        [StringLength(500)]
+        public string Description { get; set; }
+
+        [Required]
+        public string StockQuantity { get; set; }
 
         public Fridge()
         {

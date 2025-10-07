@@ -157,7 +157,66 @@ namespace Code_Vanta_Systems.Controllers
             TempData["Success"] = $"Customer '{customer.BusinessName}' has been rejected and notified.";
             return RedirectToAction("RejectCustomers");
         }
+        //Esethu 
 
-        
+        // GET: Allocate Fridge to Customer
+        public async Task<IActionResult> AllocateFridge(int customerId)
+        {
+            var customer = await _context.Customers
+                .Include(c => c.Location)
+                .FirstOrDefaultAsync(c => c.Id == customerId);
+
+            if (customer == null)
+                return NotFound("Customer not found.");
+
+            // Get all available fridges
+            var availableFridges = await _context.Fridges
+                .Where(f => f.Status == FridgeStatus.Available)
+                .ToListAsync();
+
+            ViewBag.Fridges = availableFridges;
+            ViewBag.CustomerName = customer.BusinessName;
+            return View(new FridgeAllocation { CustomerId = customerId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AllocateFridge(FridgeAllocation allocation)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Fridges = await _context.Fridges
+                    .Where(f => f.Status == FridgeStatus.Available)
+                    .ToListAsync();
+                return View(allocation);
+            }
+
+            var fridge = await _context.Fridges.FindAsync(allocation.FridgeId);
+            var customer = await _context.Customers.FindAsync(allocation.CustomerId);
+
+            if (fridge == null || customer == null)
+                return NotFound("Invalid fridge or customer.");
+
+            if (fridge.Status != FridgeStatus.Available)
+            {
+                TempData["Error"] = "This fridge is no longer available.";
+                return RedirectToAction("ActiveCustomers");
+            }
+
+            // Create allocation record
+            allocation.AllocationDate = DateTime.UtcNow;
+            _context.FridgeAllocations.Add(allocation);
+
+            // Update fridge status
+            fridge.Status = FridgeStatus.Allocated;
+            _context.Fridges.Update(fridge);
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"Fridge '{fridge.SerialNumber}' successfully allocated to {customer.BusinessName}.";
+            return RedirectToAction("ViewCustomer", new { id = allocation.CustomerId });
+        }
+
+
     }
 }

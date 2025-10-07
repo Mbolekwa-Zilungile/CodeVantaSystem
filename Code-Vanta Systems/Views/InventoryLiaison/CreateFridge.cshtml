@@ -1,0 +1,176 @@
+﻿@model Code_Vanta_Systems.ViewModels.CreateFridgeViewModel
+@{
+    Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
+    ViewData["Title"] = "Add New Fridge";
+}
+
+<div class="container mt-4">
+    <h3 class="mb-4"><i class="bi bi-box-seam me-2"></i>Add New Fridge</h3>
+
+    <form asp-action="CreateFridge" method="post" enctype="multipart/form-data">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="row g-3">
+            <!-- Left Column -->
+            <div class="col-md-6">
+
+                <!-- Category -->
+                <div class="mb-3">
+                    <label class="form-label"><i class="bi bi-tags-fill me-1"></i>Category</label>
+                    <select id="Category" asp-for="Category" class="form-select">
+                        <option value="">-- Select Category --</option>
+                        @foreach (var item in ViewBag.Categories ?? new List<SelectListItem>())
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Category" class="text-danger"></span>
+                </div>
+
+                <!-- Model -->
+                <div class="mb-3">
+                    <label class="form-label"><i class="bi bi-box-fill me-1"></i>Model</label>
+                    <select id="Model" asp-for="Model" class="form-select">
+                        <option value="">-- Select Model --</option>
+                    </select>
+                    <span asp-validation-for="Model" class="text-danger"></span>
+                </div>
+
+                <!-- Serial Number -->
+                <div class="mb-3">
+                    <label class="form-label"><i class="bi bi-upc-scan me-1"></i>Serial Number</label>
+                    <input asp-for="SerialNumber" class="form-control" />
+                    <span asp-validation-for="SerialNumber" class="text-danger"></span>
+                </div>
+
+                <!-- Supplier -->
+                <div class="mb-3">
+                    <label class="form-label"><i class="bi bi-person-badge-fill me-1"></i>Supplier</label>
+                    <select asp-for="SupplierId" class="form-select">
+                        <option value="">-- Select Supplier --</option>
+                        @foreach (var s in ViewBag.Suppliers ?? new List<SelectListItem>())
+                        {
+                            <option value="@s.Value">@s.Text</option>
+                        }
+                    </select>
+                    <span asp-validation-for="SupplierId" class="text-danger"></span>
+                </div>
+
+                <!-- Location -->
+                <div class="mb-3">
+                    <label class="form-label"><i class="bi bi-geo-alt-fill me-1"></i>Location</label>
+                    <select asp-for="LocationId" class="form-select">
+                        <option value="">-- Select Location --</option>
+                        @foreach (var l in ViewBag.Locations ?? new List<SelectListItem>())
+                        {
+                            <option value="@l.Value">@l.Text</option>
+                        }
+                    </select>
+                    <span asp-validation-for="LocationId" class="text-danger"></span>
+                </div>
+
+                <!-- Purchase Date -->
+                <div class="mb-3">
+                    <label class="form-label"><i class="bi bi-calendar-check-fill me-1"></i>Purchase Date</label>
+                    <input asp-for="PurchaseDate" type="date" class="form-control" />
+                    <span asp-validation-for="PurchaseDate" class="text-danger"></span>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="col-md-6">
+
+                <!-- Status -->
+                <div class="mb-3">
+                    <label asp-for="Status" class="form-label"><i class="bi bi-gear-fill me-1"></i>Status</label>
+                    <select asp-for="Status" class="form-select" asp-items="ViewBag.Statuses">
+                        <option value="">-- Select Status --</option>
+                    </select>
+                    <span asp-validation-for="Status" class="text-danger"></span>
+                </div>
+
+                <!-- Rental Price -->
+                <div class="mb-3">
+                    <label asp-for="RentalPricePerMonth" class="form-label"><i class="bi bi-currency-dollar me-1"></i>Rental Price / Month</label>
+                    <input asp-for="RentalPricePerMonth" class="form-control" />
+                    <span asp-validation-for="RentalPricePerMonth" class="text-danger"></span>
+                </div>
+
+                <!-- In Stock -->
+                <div class="mb-3">
+                    <label asp-for="StockQuantity" class="form-label"><i class="bi bi-currency-dollar me-1"></i>In Stock</label>
+                    <input asp-for="StockQuantity" class="form-control" />
+                    <span asp-validation-for="StockQuantity" class="text-danger"></span>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label"><i class="bi bi-card-text me-1"></i>Description</label>
+                    <textarea asp-for="Description" class="form-control"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <!-- Image Upload -->
+                <div class="mb-3">
+                    <label class="form-label"><i class="bi bi-image-fill me-1"></i>Fridge Image</label>
+                    <input asp-for="ImageFile" type="file" accept="image/*" class="form-control" id="ImageInput" />
+                    <span asp-validation-for="ImageFile" class="text-danger"></span>
+                    <div class="mt-2">
+                        <img id="ImagePreview" src="#" alt="Image Preview" style="max-width: 100%; display: none;" class="img-thumbnail" />
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-3"><i class="bi bi-plus-circle me-1"></i>Add Fridge</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+
+    <script>
+        // Category → Model dropdown
+        $('#Category').change(function () {
+            var category = $(this).val();
+            $('#Model').empty().append('<option value="">-- Select Model --</option>');
+
+            if (category) {
+                $.getJSON('/InventoryLiaison/GetModels', { category: category }, function (data) {
+                    $.each(data, function (i, model) {
+                        $('#Model').append('<option value="' + model + '">' + model + '</option>');
+                    });
+                });
+            }
+        });
+
+        // Live Image Preview
+        function readURL(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    $('#ImagePreview').attr('src', e.target.result).show();
+                }
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                $('#ImagePreview').hide();
+            }
+        }
+
+        $("#ImageInput").change(function () {
+            readURL(this);
+        });
+    </script>
+}
+
+<style>
+    body {
+        background-color: rgba(0,0,0,0.5);
+    }
+
+    form {
+        background-color: rgba(0,0,0,0.5);
+    }
+</style>

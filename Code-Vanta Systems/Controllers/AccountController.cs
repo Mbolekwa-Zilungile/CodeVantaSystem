@@ -89,7 +89,7 @@ namespace Code_Vanta_Systems.Controllers
 
                 // Inventory Liaison
                 if (await _userManager.IsInRoleAsync(user, Roles.InventoryLiaison))
-                    return RedirectToAction("Index", "InventoryLiaison");
+                    return RedirectToAction("Dashboard", "InventoryLiaison");
 
                 // Service Technician
                 if (await _userManager.IsInRoleAsync(user, Roles.ServiceTechnician))
