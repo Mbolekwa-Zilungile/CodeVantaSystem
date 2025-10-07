@@ -10,14 +10,14 @@ namespace Code_Vanta_Systems.Data.Configurations
         {
             // Relationship: PurchaseRequestItem → PurchaseRequest
             builder.HasOne(pri => pri.PurchaseRequest)
-                   .WithMany(pr => pr.RequestedItems) // Assuming 'RequestedItems' is the collection on PurchaseRequest
+                   .WithMany(pr => pr.RequestedItems)
                    .HasForeignKey(pri => pri.PurchaseRequestId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            // Relationship: PurchaseRequestItem → ItemCatalog
-            builder.HasOne(pri => pri.ItemCatalog)
+            // Relationship: PurchaseRequestItem → Fridge (instead of ItemCatalog)
+            builder.HasOne(pri => pri.Fridge)
                    .WithMany()
-                   .HasForeignKey(pri => pri.ItemCatalogId)
+                   .HasForeignKey(pri => pri.FridgeId)
                    .OnDelete(DeleteBehavior.Restrict);
         }
     }

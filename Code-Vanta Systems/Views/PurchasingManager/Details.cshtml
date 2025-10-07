@@ -4,7 +4,12 @@
     Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
     ViewData["Title"] = "Purchase Request Details";
 }
-
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
 <h2>Purchase Request #@Model.Id</h2>
 <hr />
 
@@ -24,7 +29,6 @@
             Code_Vanta_Systems.Models.Enums.RequestStatus.Submitted => "badge bg-primary",
             Code_Vanta_Systems.Models.Enums.RequestStatus.Approved => "badge bg-success",
             Code_Vanta_Systems.Models.Enums.RequestStatus.Rejected => "badge bg-danger",
-           Code_Vanta_Systems.Models.Enums.RequestStatus.Pending => "badge bg-secondary",
             _ => "badge bg-light text-dark"
         };
     }

@@ -7,79 +7,78 @@
 
 <h2 class="mb-3">📦 Rejected Purchase Requests</h2>
 
-<div class="row">
-
-    <!-- Card 4: Suppliers (wrapped in a link properly) -->
-    <div class="col-xl-3 col-md-6 mb-4">
+<div class="row row-cols-5">
+    <div class="col mb-4">
+        <!-- Pending -->
         <a href="@Url.Action("PurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
-            <div class="card shadow h-100 py-2 ">
+            <div class="card shadow h-100 py-2">
                 <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <div class="text-xs fw-bold text-uppercase mb-2">Submitted</div>
-                            <div class="h4 mb-0 fw-bold">
-                                <i class="bi bi-box me-2"></i> @ViewBag.SubmitedCount
-                            </div>
-                        </div>
+                    <div class="text-xs fw-bold text-uppercase mb-2">Pending</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-box me-2"></i> @ViewBag.PendingCount
                     </div>
                 </div>
             </div>
         </a>
     </div>
-    <!-- Card 1: Pending Requests -->
-    <div class="col-xl-3 col-md-6 mb-4">
+
+    <div class="col mb-4">
+        <!-- Submitted -->
+        <a href="@Url.Action("SubmitedPurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-2">Submitted</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-box me-2"></i> @ViewBag.SubmitedCount
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col mb-4">
+        <!-- Rejected -->
         <a href="@Url.Action("RejectedPurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
-            <div class="card shadow h-100 py-2 ">
+            <div class="card shadow h-100 py-2">
                 <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <div class="text-xs fw-bold text-uppercase mb-2">Rejected</div>
-                            <div class="h4 mb-0 fw-bold">
-                                <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
-                            </div>
-                        </div>
+                    <div class="text-xs fw-bold text-uppercase mb-2">Rejected</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
                     </div>
                 </div>
             </div>
         </a>
     </div>
 
-    <div class="col-xl-3 col-md-6 mb-4">
-        <a href="@Url.Action("RejectedPurchaseRequests", "PurchasingManager")" class="text-decoration-none">
-            <div class="card shadow h-100 py-2 ">
+    <div class="col mb-4">
+        <!-- Approved -->
+        <a href="@Url.Action("ApprovedPurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2">
                 <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <div class="text-xs fw-bold text-uppercase mb-2">Approved</div>
-                            <div class="h4 mb-0 fw-bold">
-                                <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
-                            </div>
-                        </div>
+                    <div class="text-xs fw-bold text-uppercase mb-2">Approved</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-cart3 me-2"></i>@ViewBag.ApprovedCount
                     </div>
                 </div>
             </div>
         </a>
     </div>
 
-    <!-- Card 2: Active RFQs -->
-    <div class="col-xl-3 col-md-6 mb-4">
-        <a href="@Url.Action("RejectedPurchaseRequests", "PurchasingManager")" class="text-decoration-none">
-            <div class="card shadow h-100 py-2 ">
+    <div class="col mb-4">
+        <!-- Complete -->
+        <a href="@Url.Action("CompletedPurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2">
                 <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <div class="text-xs fw-bold text-uppercase mb-2">Complete</div>
-                            <div class="h4 mb-0 fw-bold">
-                                <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
-                            </div>
-                        </div>
+                    <div class="text-xs fw-bold text-uppercase mb-2">Complete</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-cart3 me-2"></i>@ViewBag.CompletedCount
                     </div>
                 </div>
             </div>
         </a>
     </div>
 </div>
-<br /><br />
+
    
     @if (!Model.Any())
     {
@@ -96,6 +95,7 @@
                     <th>Priority</th>
                     <th>Expected Delivery</th>
                     <th>Items</th>
+                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -108,9 +108,18 @@
                         <td>@request.Priority</td>
                         <td>@request.ExpectedDate?.ToShortDateString()</td>
                         <td>@request.RequestedItems.Count()</td>
+                        <td class="text-center">
+                        <a asp-controller="InventoryLiaison"
+                               asp-action="Details"
+                               asp-route-id="@request.Id"
+                               class="btn btn-outline-primary btn-sm me-1">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </td>
                     </tr>
                 }
             </tbody>
+        
         </table>
     }
 

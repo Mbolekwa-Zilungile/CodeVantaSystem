@@ -2,7 +2,7 @@
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
-    Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
+
     ViewData["Title"] = "Notifications";
     var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }

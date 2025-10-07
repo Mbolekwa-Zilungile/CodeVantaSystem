@@ -311,23 +311,24 @@ namespace Code_Vanta_Systems.Controllers
         // Optional: list all purchase requests for current user or all (for manager)
         public async Task<IActionResult> PurchaseRequests()
         {
-            var purchaseRequests = await context.PurchaseRequests
-                .Include(pr => pr.RequestedBy)
-                .Include(pr => pr.RequestedItems)
-                .Where(pr => pr.Status == RequestStatus.Submitted)
-                .OrderByDescending(pr => pr.RequestDate)
-                .ToListAsync();
-            ViewBag.SubmitedCount = purchaseRequests.Count;
+            var SubmitedRequests = await context.PurchaseRequests
+               .Include(pr => pr.RequestedBy)
+               .Include(pr => pr.RequestedItems)
+               .Where(pr => pr.Status == Code_Vanta_Systems.Models.Enums.RequestStatus.Submitted)
+               .OrderByDescending(pr => pr.RequestDate)
+               .ToListAsync();
 
+            ViewBag.PendingCount = ViewBag.RejectedRequests = await context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Pending);
+            ViewBag.SubmitedCount = SubmitedRequests.Count;
             ViewBag.RejectedRequests = await context.PurchaseRequests
                 .CountAsync(s => s.Status == RequestStatus.Rejected);
 
-            ViewBag.PendingRequestsCount = await context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Pending);
-
-            ViewBag.CompletedRequestsCount = await context.PurchaseRequests
+            ViewBag.ApprovedRequestsCount = await context.PurchaseRequests
                 .CountAsync(s => s.Status == RequestStatus.Approved);
-            return View(purchaseRequests);
+            ViewBag.CompletedRequestsCount = await context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Completed);
+            return View(SubmitedRequests);
         }
 
         public async Task<IActionResult> RejectedPurchaseRequests()
@@ -339,6 +340,18 @@ namespace Code_Vanta_Systems.Controllers
                 .OrderByDescending(pr => pr.RequestDate)
                 .ToListAsync();
 
+            ViewBag.PendingCount = ViewBag.RejectedRequests = await context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Pending);
+            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Submitted);
+
+            ViewBag.RejectedRequests = await context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Rejected);
+
+            ViewBag.ApprovedRequestsCount = await context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Approved);
+            ViewBag.CompletedRequestsCount = await context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Completed);
             return View(purchaseRequests);
         }
 
@@ -362,10 +375,11 @@ namespace Code_Vanta_Systems.Controllers
             return View(request);
         }
 
-        // GET: Edit Purchase Request
+        //  GET: Edit Purchase Request
         [HttpGet]
         public async Task<IActionResult> EditRequest(int id)
         {
+            // 1. Fetch the existing Purchase Request and its line items
             var request = await context.PurchaseRequests
                 .Include(r => r.RequestedItems)
                 .FirstOrDefaultAsync(r => r.Id == id);
@@ -373,66 +387,80 @@ namespace Code_Vanta_Systems.Controllers
             if (request == null)
                 return NotFound();
 
-            // Get all active catalog items
-            var catalogItems = await context.ItemCatalogs
-                .Where(c => c.IsActive)
-                .Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.Name })
-                .ToListAsync();
+            // 2. Get all active fridges for dropdown lists
+            var fridges = await context.Fridges
+                 .Where(f => !f.IsDeleted)
+                 .Select(f => new SelectListItem
+                 {
+                     Value = f.Id.ToString(),
+                     Text = $"{f.Model} ({f.StockQuantity} in stock)"
+                 })
+                 .ToListAsync();
 
-            // Map to view model
-            var model = new CreatePurchaseRequestViewModel
+            // 3. Map the entity to the view model
+            var model = new EditPurchaseRequestViewModel
             {
                 Id = request.Id,
                 ExpectedDate = request.ExpectedDate,
                 Priority = request.Priority,
-                Status = request.Status,
+                Status = Code_Vanta_Systems.Models.Enums.RequestStatus.Submitted,
                 Notes = request.Notes,
                 Items = request.RequestedItems.Select(i => new PurchaseRequestItemViewModel
                 {
                     PurchaseRequestItemId = i.Id,
-                    ItemCatalogId = i.ItemCatalogId,
+                    FridgeId = i.FridgeId,
                     Quantity = i.Quantity,
-                    Description = i.Description,
-                    AvailableItems = catalogItems
+                    AvailableItems = fridges
                 }).ToList()
             };
 
-            ViewBag.CatalogItems = catalogItems;
+            model.Items.Add(new PurchaseRequestItemViewModel { AvailableItems = fridges });
+
+            ViewBag.Fridges = fridges;
             return View(model);
         }
 
-        // POST: Edit Purchase Request
+        // POST: Handle the form submission for editing
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditRequest(CreatePurchaseRequestViewModel model)
+        public async Task<IActionResult> EditRequest(EditPurchaseRequestViewModel model)
         {
+            // 1. Validate form data
             if (!ModelState.IsValid)
             {
-                var catalogItems = await context.ItemCatalogs
-                    .Where(c => c.IsActive)
-                    .Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.Name })
-                    .ToListAsync();
+                // On failure, reload fridges to repopulate dropdowns
+                var fridges = await context.Fridges
+                     .Where(f => !f.IsDeleted)
+                     .Select(f => new SelectListItem
+                     {
+                         Value = f.Id.ToString(),
+                         Text = $"{f.Model} ({f.StockQuantity} in stock)"
+                     })
+                     .ToListAsync();
 
                 foreach (var item in model.Items)
-                    item.AvailableItems = catalogItems;
+                    item.AvailableItems = fridges;
 
-                ViewBag.CatalogItems = catalogItems;
+                ViewBag.Fridges = fridges;
                 return View(model);
             }
 
+            // 2. Fetch the existing request with items
             var request = await context.PurchaseRequests
                 .Include(r => r.RequestedItems)
                 .FirstOrDefaultAsync(r => r.Id == model.Id);
 
             if (request == null) return NotFound();
 
-            // Update main fields
+            // 3. Update main request fields
             request.ExpectedDate = model.ExpectedDate;
             request.Priority = model.Priority;
-            request.Status = model.Status;
+            request.Status = Code_Vanta_Systems.Models.Enums.RequestStatus.Submitted; 
             request.Notes = model.Notes;
 
-            // Remove deleted items
+            // 4. Manage line items (Delete, Update, Add)
+
+            // Identify which existing items were removed from the form
             var itemIdsFromForm = model.Items
                 .Where(i => i.PurchaseRequestItemId.HasValue)
                 .Select(i => i.PurchaseRequestItemId.Value)
@@ -442,44 +470,43 @@ namespace Code_Vanta_Systems.Controllers
                 .ToList();
             context.PurchaseRequestItems.RemoveRange(itemsToRemove);
 
-            // Update existing or add new items
-            foreach (var itemVm in model.Items)
+            // Process all items submitted in the form
+            foreach (var itemVm in model.Items.Where(i => i.FridgeId > 0 && i.Quantity >= 1))
             {
+                // Fetch the details of the selected Fridge (needed for ModelRequested/Description)
+                var fridge = await context.Fridges.FindAsync(itemVm.FridgeId);
+
+                if (fridge == null) continue;
+
                 if (itemVm.PurchaseRequestItemId.HasValue)
                 {
-                    // Existing item
+                    // A. Update Existing Item
                     var existingItem = request.RequestedItems.First(i => i.Id == itemVm.PurchaseRequestItemId.Value);
-                    existingItem.ItemCatalogId = itemVm.ItemCatalogId;
-                    existingItem.Quantity = itemVm.Quantity;
 
-                    var catalog = await context.ItemCatalogs.FindAsync(itemVm.ItemCatalogId);
-                    if (catalog != null)
-                    {
-                        existingItem.ModelRequested = catalog.Name;
-                        existingItem.Description = catalog.Description;
-                    }
+                    existingItem.FridgeId = fridge.Id;
+                    existingItem.ModelRequested = fridge.Model;
+                    existingItem.Description = fridge.Description;
+                    existingItem.Quantity = itemVm.Quantity;
                 }
                 else
                 {
-                    // New item
-                    var catalog = await context.ItemCatalogs.FindAsync(itemVm.ItemCatalogId);
-                    if (catalog != null)
+                    // B. Add New Item
+                    var newItem = new PurchaseRequestItem
                     {
-                        var newItem = new PurchaseRequestItem
-                        {
-                            PurchaseRequestId = request.Id,
-                            ItemCatalogId = catalog.Id,
-                            ModelRequested = catalog.Name,
-                            Description = catalog.Description,
-                            Quantity = itemVm.Quantity
-                        };
-                        context.PurchaseRequestItems.Add(newItem);
-                    }
+                        PurchaseRequestId = request.Id,
+                        FridgeId = fridge.Id,
+                        ModelRequested = fridge.Model,
+                        Description = fridge.Description,
+                        Quantity = itemVm.Quantity
+                    };
+                    context.PurchaseRequestItems.Add(newItem);
                 }
             }
 
+            // 5. Save all changes (Request updates, item removals, item updates, item additions)
             await context.SaveChangesAsync();
-            TempData["Success"] = "Purchase request updated successfully!";
+
+            TempData["Success"] = $"Purchase request #{request.Id} updated successfully!";
             return RedirectToAction("Details", new { id = request.Id });
         }
 
@@ -523,21 +550,26 @@ namespace Code_Vanta_Systems.Controllers
                 ModelState.AddModelError("", "Unable to update request: " + ex.Message);
                 return RedirectToAction("Details", new { id });
             }
+            var inventoryliaison = await userManager.GetUsersInRoleAsync("Inventory Liaison");
+            var liaisonUser = inventoryliaison.FirstOrDefault();
 
-            // 4️⃣ Notify Inventory Liaison
-            var inventoryLiaisons = await userManager.GetUsersInRoleAsync("InventoryLiaison");
-            foreach (var liaison in inventoryLiaisons)
+            if (liaisonUser != null)
             {
+                // ✅ 2. Create notification
                 var notification = new Notification
                 {
-                    RecipientUserId = liaison.Id,
-                    Message = $"Purchase request #{request.Id} has been rejected by {User.Identity.Name}. Reason: {reason}",
-                    CreatedAt = DateTime.UtcNow
+                    RecipientUserId = liaisonUser.Id,
+                    Title = "Purchase Request Rejected",
+                    Message = $"Your purchase request #{request.Id} has been rejected by {User.Identity.Name}.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
+                    TargetController = "InventoryLiaison",
+                    TargetAction = "RejectedPurchaseRequests"
                 };
-                context.Notifications.Add(notification);
-            }
 
-            await context.SaveChangesAsync();
+                context.Notifications.Add(notification);
+                await context.SaveChangesAsync();
+            }
 
             TempData["Success"] = $"Purchase request #{request.Id} rejected successfully!";
             return RedirectToAction("PurchaseRequests");

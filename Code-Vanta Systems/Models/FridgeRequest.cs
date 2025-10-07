@@ -30,6 +30,6 @@ namespace Code_Vanta_Systems.Models
         public string Notes { get; set; }
 
         [Required]
-        public RequestStatus Status { get; set; } = RequestStatus.Pending;
+        public RequestStatus Status { get; set; } 
     }
 }

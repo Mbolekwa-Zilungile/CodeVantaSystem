@@ -1,0 +1,122 @@
+﻿@model IEnumerable<Code_Vanta_Systems.Models.PurchaseRequest>
+
+@{
+    Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
+    ViewData["Title"] = "My Purchase Requests";
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+<h2 class="mb-3">📦 Submited Purchase Requests</h2>
+
+<div class="row row-cols-5">
+    <div class="col mb-4">
+        <!-- Pending -->
+        <a href="@Url.Action("PurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-2">Pending</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-box me-2"></i> @ViewBag.PendingCount
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col mb-4">
+        <!-- Submitted -->
+        <a href="@Url.Action("SubmitedPurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-2">Submitted</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-box me-2"></i> @ViewBag.SubmitedCount
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col mb-4">
+        <!-- Rejected -->
+        <a href="@Url.Action("RejectedPurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-2">Rejected</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col mb-4">
+        <!-- Approved -->
+        <a href="@Url.Action("ApprovedPurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-2">Approved</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-cart3 me-2"></i>@ViewBag.ApprovedCount
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col mb-4">
+        <!-- Complete -->
+        <a href="@Url.Action("CompletedPurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-2">Complete</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-cart3 me-2"></i>@ViewBag.CompletedCount
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">You have not submitted any purchase requests yet.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Expected Delivery</th>
+                <th>Items</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var request in Model)
+            {
+                <tr>
+                    <td>@request.Id</td>
+                    <td>@request.RequestDate.ToShortDateString()</td>
+                    <td>@request.Status</td>
+                    <td>@request.Priority</td>
+                    <td>@request.ExpectedDate?.ToShortDateString()</td>
+                    <td>@request.RequestedItems.Count()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+

@@ -88,7 +88,9 @@ namespace Code_Vanta_Systems.Services
                             ApplicationUserId = newAdmin.Id,
                             Role = EmployeeRole.Admin,
                             IsActive = true,
-                            CreatedAt = DateTime.Now
+                            CreatedAt = DateTime.Now,
+                            Position = "Admin",
+                            PhoneNumber = "0000000000",
                         };
 
                         dbContext.Employees.Add(adminEmployee);

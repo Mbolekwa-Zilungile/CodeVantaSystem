@@ -748,6 +748,35 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PurchaseRequestItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PurchaseRequestId = table.Column<int>(type: "int", nullable: false),
+                    FridgeId = table.Column<int>(type: "int", nullable: false),
+                    ModelRequested = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PurchaseRequestItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PurchaseRequestItems_Fridges_FridgeId",
+                        column: x => x.FridgeId,
+                        principalTable: "Fridges",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseRequestItems_PurchaseRequests_PurchaseRequestId",
+                        column: x => x.PurchaseRequestId,
+                        principalTable: "PurchaseRequests",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SensorReading",
                 columns: table => new
                 {
@@ -794,35 +823,6 @@ namespace Code_Vanta_Systems.Migrations
                         column: x => x.SupplierId,
                         principalTable: "Suppliers",
                         principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PurchaseRequestItems",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PurchaseRequestId = table.Column<int>(type: "int", nullable: false),
-                    ItemCatalogId = table.Column<int>(type: "int", nullable: false),
-                    ModelRequested = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PurchaseRequestItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PurchaseRequestItems_ItemCatalogs_ItemCatalogId",
-                        column: x => x.ItemCatalogId,
-                        principalTable: "ItemCatalogs",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_PurchaseRequestItems_PurchaseRequests_PurchaseRequestId",
-                        column: x => x.PurchaseRequestId,
-                        principalTable: "PurchaseRequests",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1168,9 +1168,9 @@ namespace Code_Vanta_Systems.Migrations
                 column: "SupplierId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PurchaseRequestItems_ItemCatalogId",
+                name: "IX_PurchaseRequestItems_FridgeId",
                 table: "PurchaseRequestItems",
-                column: "ItemCatalogId");
+                column: "FridgeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PurchaseRequestItems_PurchaseRequestId",
@@ -1331,10 +1331,10 @@ namespace Code_Vanta_Systems.Migrations
                 name: "Quotations");
 
             migrationBuilder.DropTable(
-                name: "Fridges");
+                name: "ItemCatalogs");
 
             migrationBuilder.DropTable(
-                name: "ItemCatalogs");
+                name: "Fridges");
 
             migrationBuilder.DropTable(
                 name: "PurchaseRequests");

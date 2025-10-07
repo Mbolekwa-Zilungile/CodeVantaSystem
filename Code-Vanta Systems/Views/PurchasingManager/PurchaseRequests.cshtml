@@ -12,7 +12,7 @@
 
 <div class="row">
 
-    <!-- Card 4: Suppliers (wrapped in a link properly) -->
+    <!-- Card 2: Submitted (wrapped in a link properly) -->
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="@Url.Action("PurchaseRequests", "PurchasingManager")" class="text-decoration-none">
             <div class="card shadow h-100 py-2 ">
@@ -29,7 +29,7 @@
             </div>
         </a>
     </div>
-    <!-- Card 1: Pending Requests -->
+    <!-- Card 2: Rejected -->
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="@Url.Action("RejectedPurchaseRequests", "PurchasingManager")" class="text-decoration-none">
             <div class="card shadow h-100 py-2 ">
@@ -47,16 +47,16 @@
         </a>
     </div>
 
-    <!-- Card 2: Active RFQs -->
+    <!-- Card 3: Approved -->
     <div class="col-xl-3 col-md-6 mb-4">
-        <a href="@Url.Action("RejectedPurchaseRequests", "PurchasingManager")" class="text-decoration-none">
+        <a href="@Url.Action("", "")" class="text-decoration-none">
             <div class="card shadow h-100 py-2 ">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
                             <div class="text-xs fw-bold text-uppercase mb-2">Approved</div>
                             <div class="h4 mb-0 fw-bold">
-                                <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
+                                <i class="bi bi-cart3 me-2"></i>@ViewBag.ApprovedRequestsCount
                             </div>
                         </div>
                     </div>
@@ -65,16 +65,16 @@
         </a>
     </div>
 
-    <!-- Card 2: Active RFQs -->
+    <!-- Card 4: Complete -->
     <div class="col-xl-3 col-md-6 mb-4">
-        <a href="@Url.Action("RejectedPurchaseRequests", "PurchasingManager")" class="text-decoration-none">
+        <a href="@Url.Action("", "")" class="text-decoration-none">
             <div class="card shadow h-100 py-2 ">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
                             <div class="text-xs fw-bold text-uppercase mb-2">Complete</div>
                             <div class="h4 mb-0 fw-bold">
-                                <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
+                                <i class="bi bi-cart3 me-2"></i>@ViewBag.CompletedRequestsCount
                             </div>
                         </div>
                     </div>

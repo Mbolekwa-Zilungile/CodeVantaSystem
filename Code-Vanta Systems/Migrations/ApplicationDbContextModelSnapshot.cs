@@ -880,7 +880,7 @@ namespace Code_Vanta_Systems.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ItemCatalogId")
+                    b.Property<int>("FridgeId")
                         .HasColumnType("int");
 
                     b.Property<string>("ModelRequested")
@@ -895,7 +895,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ItemCatalogId");
+                    b.HasIndex("FridgeId");
 
                     b.HasIndex("PurchaseRequestId");
 
@@ -1613,9 +1613,9 @@ namespace Code_Vanta_Systems.Migrations
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.PurchaseRequestItem", b =>
                 {
-                    b.HasOne("Code_Vanta_Systems.Models.ItemCatalog", "ItemCatalog")
+                    b.HasOne("Code_Vanta_Systems.Models.Fridge", "Fridge")
                         .WithMany()
-                        .HasForeignKey("ItemCatalogId")
+                        .HasForeignKey("FridgeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1625,7 +1625,7 @@ namespace Code_Vanta_Systems.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ItemCatalog");
+                    b.Navigation("Fridge");
 
                     b.Navigation("PurchaseRequest");
                 });

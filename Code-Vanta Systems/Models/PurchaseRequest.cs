@@ -17,7 +17,7 @@ namespace Code_Vanta_Systems.Models
         public virtual ApplicationUser RequestedBy { get; set; }
 
         [Required]
-        public RequestStatus Status { get; set; } = RequestStatus.Pending;
+        public RequestStatus Status { get; set; }
 
         [Required]
         public PriorityLevel Priority { get; set; } = PriorityLevel.Medium;

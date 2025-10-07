@@ -1,16 +1,21 @@
-﻿
-@model Code_Vanta_Systems.ViewModels.CreatePurchaseRequestViewModel
+﻿@model Code_Vanta_Systems.ViewModels.CreatePurchaseRequestViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
     Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
     ViewData["Title"] = "Create Purchase Request";
 }
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
 
 <h2>Create Purchase Request</h2>
 
 <form asp-action="Create" method="post">
-
     @Html.AntiForgeryToken()
     <div asp-validation-summary="All" class="alert alert-danger"></div>
 
@@ -34,11 +39,11 @@
         <span asp-validation-for="Notes" class="text-danger"></span>
     </div>
 
-    <h4>Items</h4>
+    <h4>Fridges</h4>
     <table class="table table-bordered" id="itemsTable">
         <thead>
             <tr>
-                <th>Item</th>
+                <th>Fridge</th>
                 <th>Quantity</th>
                 <th></th>
             </tr>
@@ -48,10 +53,10 @@
             {
                 <tr>
                     <td>
-                        <select asp-for="@Model.Items[i].ItemCatalogId" class="form-select" asp-items="Model.Items[i].AvailableItems">
-                            <option value="">-- Select Item --</option>
+                        <select asp-for="@Model.Items[i].FridgeId" class="form-select" asp-items="Model.Items[i].AvailableItems">
+                            <option value="">-- Select Fridge --</option>
                         </select>
-                        <span asp-validation-for="@Model.Items[i].ItemCatalogId" class="text-danger"></span>
+                        <span asp-validation-for="@Model.Items[i].FridgeId" class="text-danger"></span>
                     </td>
                     <td>
                         <input asp-for="@Model.Items[i].Quantity" type="number" min="1" class="form-control" />
@@ -65,67 +70,62 @@
         </tbody>
     </table>
 
-    <button type="button" id="addItem" class="btn btn-secondary mb-3">Add Item</button>
-
-
+    <button type="button" id="addItem" class="btn btn-secondary mb-3">Add Fridge</button>
     <button type="submit" class="btn btn-primary">Submit Request</button>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
-   
-
     <script>
         $(document).ready(function () {
             var itemIndex = @(Model?.Items?.Count ?? 1);
 
-            // ✅ Store all available items safely
+            // Store all available fridges
             var allItems = [];
-            @if (Model.Items != null && Model.Items.Count > 0 && Model.Items[0].AvailableItems != null)
+        @if (Model.Items != null && Model.Items.Count > 0 && Model.Items[0].AvailableItems != null)
+        {
+            foreach (var item in Model.Items[0].AvailableItems)
             {
-                foreach (var item in Model.Items[0].AvailableItems)
-                {
-                    @:allItems.push({ value: "@item.Value", text: "@item.Text" });
-                }
+                @:allItems.push({ value: "@item.Value", text: "@item.Text" });
             }
+        }
 
-            // ✅ Add item button
-            $("#addItem").click(function () {
-                if (allItems.length === 0) {
-                    alert("⚠️ No items available to add. Make sure ItemCatalog has data.");
-                    return;
-                }
+                // Add Fridge button
+                $("#addItem").click(function () {
+                    if (allItems.length === 0) {
+                        alert("⚠️ No fridges available to add. Make sure Fridge table has data.");
+                        return;
+                    }
 
-                var options = '<option value="">-- Select Item --</option>';
-                allItems.forEach(function (i) {
-                    options += `<option value="${i.value}">${i.text}</option>`;
+                    var options = '<option value="">-- Select Fridge --</option>';
+                    allItems.forEach(function (i) {
+                        options += `<option value="${i.value}">${i.text}</option>`;
+                    });
+
+                    var newRow = `
+                            <tr>
+                                <td>
+                                    <select name="Items[${itemIndex}].FridgeId" class="form-select">
+                                        ${options}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input name="Items[${itemIndex}].Quantity" type="number" min="1" class="form-control" />
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
+                                </td>
+                            </tr>`;
+
+                    $("#itemsTable tbody").append(newRow);
+                    itemIndex++;
                 });
 
-                var newRow = `
-                    <tr>
-                        <td>
-                            <select name="Items[${itemIndex}].ItemCatalogId" class="form-select">
-                                ${options}
-                            </select>
-                        </td>
-                        <td>
-                            <input name="Items[${itemIndex}].Quantity" type="number" min="1" class="form-control" />
-                        </td>
-                        <td>
-                            <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
-                        </td>
-                    </tr>`;
-
-                $("#itemsTable tbody").append(newRow);
-                itemIndex++;
-            });
-
-            // ✅ Remove row
+            // Remove row
             $(document).on("click", ".remove-item", function () {
                 $(this).closest("tr").remove();
             });
         });
     </script>
 }
-

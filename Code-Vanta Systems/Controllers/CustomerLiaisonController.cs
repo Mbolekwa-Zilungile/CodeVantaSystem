@@ -1,6 +1,7 @@
 ﻿using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
+using Code_Vanta_Systems.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,12 @@ namespace Code_Vanta_Systems.Controllers
     public class CustomerLiaisonController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly EmailService _emailService;
 
-        public CustomerLiaisonController(ApplicationDbContext context)
+        public CustomerLiaisonController(ApplicationDbContext context, EmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         public IActionResult Index()
@@ -99,34 +102,36 @@ namespace Code_Vanta_Systems.Controllers
                 .FirstOrDefaultAsync(c => c.Id == id && c.Status == CustomerStatus.Pending);
 
             if (customer == null)
-            {
                 return NotFound("Customer not found or not pending.");
-            }
 
-            // Change status to Active
+            // ✅ Change status to Active
             customer.Status = CustomerStatus.Active;
             _context.Customers.Update(customer);
 
-            // Send notification to the customer
+            await _context.SaveChangesAsync(); // Save the status change first
+
+            // ✅ Send approval email
             if (customer.User != null)
             {
-                _context.Notifications.Add(new Notification
+                try
                 {
-                    RecipientUserId = customer.User.Id,
-                    Title = "Account Approved",
-                    Message = $"Congratulations {customer.ContactName}! Your account '{customer.BusinessName}' has been approved and is now active.",
-                    CreatedAt = DateTime.UtcNow,
-                    IsRead = false,
-                    TargetController = "CustomerDashboard",   // customer goes to their dashboard
-                    TargetAction = "Index"                     // dashboard index
-                });
+                    await _emailService.SendEmailAsync(
+                        customer.User.Email,
+                        "Account Approved - CodeVanta System",
+                        $"Hello {customer.ContactName},<br><br>Your account '{customer.BusinessName}' has been approved. You can now log in to your dashboard.<br><br>Best regards,<br>CodeVanta Team"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    // Log the email failure
+                    Console.WriteLine($"Failed to send email to {customer.User.Email}: {ex.Message}");
+                }
             }
 
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = $"Customer '{customer.BusinessName}' has been approved and notified.";
+            TempData["Success"] = $"Customer '{customer.BusinessName}' has been approved and emailed.";
             return RedirectToAction("ActiveCustomers");
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -137,30 +142,37 @@ namespace Code_Vanta_Systems.Controllers
                 .FirstOrDefaultAsync(c => c.Id == id && c.Status == CustomerStatus.Pending);
 
             if (customer == null)
-            {
                 return NotFound("Customer not found or not pending.");
-            }
 
-            // Change status to Rejected
+            // ✅ Change status to Rejected
             customer.Status = CustomerStatus.Rejected;
             _context.Customers.Update(customer);
 
-            // Send notification
+            await _context.SaveChangesAsync(); // Save status change first
+
+            // ✅ Send rejection email
             if (customer.User != null)
             {
-                _context.Notifications.Add(new Notification
+                try
                 {
-                    RecipientUserId = customer.User.Id,
-                    Message = $"Sorry! Your account has been Rejected",
-                    CreatedAt = DateTime.UtcNow
-                });
+                    await _emailService.SendEmailAsync(
+                        customer.User.Email,
+                        "Account Rejected - CodeVanta Systems",
+                        $"Hello {customer.ContactName},<br><br>We regret to inform you that your account '{customer.BusinessName}' has been rejected.<br>" +
+                        $"Please contact support if you believe this is a mistake or for further assistance.<br><br>Best regards,<br>CodeVanta Team"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    // Log email failure
+                    Console.WriteLine($"Failed to send rejection email to {customer.User.Email}: {ex.Message}");
+                }
             }
 
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = $"Customer '{customer.BusinessName}' has been rejected and notified.";
+            TempData["Success"] = $"Customer '{customer.BusinessName}' has been rejected and emailed.";
             return RedirectToAction("RejectCustomers");
         }
+
         //Esethu 
 
         // GET: Allocate Fridge to Customer

@@ -93,67 +93,110 @@ namespace Code_Vanta_Systems.Controllers
 
         #region PURCHASE REQUESTS
         // 🗂️ Display all purchase requests created by this liaison
-
         public async Task<IActionResult> PurchaseRequests()
         {
-            var purchaseRequests = await _context.PurchaseRequests
+            var PendingRequests = await _context.PurchaseRequests
                 .Include(pr => pr.RequestedBy)
                 .Include(pr => pr.RequestedItems)
-                .Where(pr => pr.Status == RequestStatus.Submitted)
+                .Where(pr => pr.Status == Code_Vanta_Systems.Models.Enums.RequestStatus.Pending)
                 .OrderByDescending(pr => pr.RequestDate)
                 .ToListAsync();
-            ViewBag.SubmitedCount = purchaseRequests.Count;
+
+            ViewBag.PendingCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Pending);
+            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Submitted);
 
             ViewBag.RejectedRequests = await _context.PurchaseRequests
                 .CountAsync(s => s.Status == RequestStatus.Rejected);
 
-            ViewBag.PendingRequestsCount = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Pending);
-
-            ViewBag.CompletedRequestsCount = await _context.PurchaseRequests
+            ViewBag.ApprovedRequestsCount = await _context.PurchaseRequests
                 .CountAsync(s => s.Status == RequestStatus.Approved);
-            return View(purchaseRequests);
+            ViewBag.CompletedRequestsCount = await _context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Completed);
+            return View(PendingRequests);
         }
 
         public async Task<IActionResult> RejectedPurchaseRequests()
         {
             var purchaseRequests = await _context.PurchaseRequests
-                .Include(pr => pr.RequestedBy)
-                .Include(pr => pr.RequestedItems)
-                .Where(pr => pr.Status == RequestStatus.Rejected)
-                .OrderByDescending(pr => pr.RequestDate)
-                .ToListAsync();
+               .Include(pr => pr.RequestedBy)
+               .Include(pr => pr.RequestedItems)
+               .Where(pr => pr.Status == RequestStatus.Rejected)
+               .OrderByDescending(pr => pr.RequestDate)
+               .ToListAsync();
 
+            ViewBag.PendingCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Pending);
+            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Submitted);
+
+            ViewBag.RejectedRequests = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Rejected);
+
+            ViewBag.ApprovedRequestsCount = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Approved);
+            ViewBag.CompletedRequestsCount = await _context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Completed);
             return View(purchaseRequests);
         }
+        public async Task<IActionResult> SubmitedPurchaseRequests()
+        {
+            var SubmitedRequests = await _context.PurchaseRequests
+               .Include(pr => pr.RequestedBy)
+               .Include(pr => pr.RequestedItems)
+               .Where(pr => pr.Status == Code_Vanta_Systems.Models.Enums.RequestStatus.Submitted)
+               .OrderByDescending(pr => pr.RequestDate)
+               .ToListAsync();
 
-        // ✍️ GET: Create new purchase request
+            ViewBag.PendingCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Pending);
+            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Submitted);
+
+            ViewBag.RejectedRequests = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Rejected);
+
+            ViewBag.ApprovedRequestsCount = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Approved);
+            ViewBag.CompletedRequestsCount = await _context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Completed);
+            return View(SubmitedRequests);
+        }
+
+
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-               var items = await _context.ItemCatalogs
-                .Select(i => new SelectListItem { Value = i.Id.ToString(), Text = i.Name })
-                .ToListAsync();
+            // Load available fridges
+            var fridges = await _context.Fridges
+             .Where(f => !f.IsDeleted) // show all fridges, even 0 stock
+             .Select(f => new SelectListItem
+             {
+                 Value = f.Id.ToString(),
+                 Text = $"{f.Model} ({f.StockQuantity} in stock)"
+             })
+             .ToListAsync();
+
 
             var model = new CreatePurchaseRequestViewModel
             {
                 Items = new List<PurchaseRequestItemViewModel>
         {
-            new PurchaseRequestItemViewModel { AvailableItems = items }
+            new PurchaseRequestItemViewModel { AvailableItems = fridges }
         }
             };
 
             return View(model);
         }
 
-        // ✍️ POST: Create new purchase request
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreatePurchaseRequestViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
 
-            // ✅ Validate priority
+            // Validate priority
             if (model.Priority == null)
             {
                 ModelState.AddModelError(nameof(model.Priority), "Priority is required.");
@@ -164,32 +207,28 @@ namespace Code_Vanta_Systems.Controllers
                 ModelState.AddModelError("ExpectedDate", "Expected date cannot be in the past.");
             }
 
-            // ✅ Validate at least one item is selected
-            if (model.Items == null || !model.Items.Any(i => i.ItemCatalogId > 0))
+            // Validate at least one fridge is selected
+            if (model.Items == null || !model.Items.Any(i => i.FridgeId > 0))
             {
-                ModelState.AddModelError("", "You must select at least one item.");
+                ModelState.AddModelError("", "You must select at least one fridge.");
             }
-
             if (!ModelState.IsValid)
             {
-                var allItems = await _context.ItemCatalogs
-                    .Where(i => i.IsActive)
-                    .Select(i => new SelectListItem { Value = i.Id.ToString(), Text = i.Name })
+                var allFridges = await _context.Fridges
+                    .Where(f => !f.IsDeleted)
+                    .Select(f => new SelectListItem { Value = f.Id.ToString(), Text = f.Model })
                     .ToListAsync();
 
-                // Repopulate AvailableItems for all rows
-                if (model.Items != null)
+                foreach (var item in model.Items)
                 {
-                    foreach (var item in model.Items)
-                    {
-                        item.AvailableItems = allItems;
-                    }
+                    item.AvailableItems = allFridges;
                 }
+
+                model.AvailableItems = allFridges; // optional, if you use it in the view
 
                 return View(model);
             }
-
-            // 🛒 Create purchase request
+            // Create purchase request
             var request = new PurchaseRequest
             {
                 RequestedByUserId = user.Id,
@@ -197,26 +236,24 @@ namespace Code_Vanta_Systems.Controllers
                 ExpectedDate = model.ExpectedDate,
                 Priority = model.Priority,
                 Notes = model.Notes,
-                Status=Models.Enums.RequestStatus.Submitted,
-               // RequestedItems = new List<PurchaseRequestItem>() // 👈 IMPORTANT
+                Status = Models.Enums.RequestStatus.Submitted
             };
 
-            // Add request first to generate ID
             _context.PurchaseRequests.Add(request);
-            await _context.SaveChangesAsync(); // now request.Id is available
+            await _context.SaveChangesAsync(); // request.Id is now available
 
-            // 🛒 Map selected items and auto-assign description from catalog
-            foreach (var item in model.Items.Where(i => i.ItemCatalogId > 0))
+            // Map selected fridges to request items
+            foreach (var item in model.Items.Where(i => i.FridgeId > 0))
             {
-                var catalogItem = await _context.ItemCatalogs.FindAsync(item.ItemCatalogId);
-                if (catalogItem != null)
+                var fridge = await _context.Fridges.FindAsync(item.FridgeId);
+                if (fridge != null)
                 {
                     var requestItem = new PurchaseRequestItem
                     {
-                        PurchaseRequestId = request.Id, // explicitly set FK
-                        ItemCatalogId = catalogItem.Id,
-                        ModelRequested = catalogItem.Name,
-                        Description = catalogItem.Description,
+                        PurchaseRequestId = request.Id,
+                        FridgeId = fridge.Id,
+                        ModelRequested = fridge.Model,
+                        Description = fridge.Description,
                         Quantity = item.Quantity
                     };
                     _context.PurchaseRequestItems.Add(requestItem);
@@ -225,23 +262,220 @@ namespace Code_Vanta_Systems.Controllers
 
             await _context.SaveChangesAsync();
 
-            // 🔔 Notify Purchasing Manager
-            var purchasingManager = (await _userManager.GetUsersInRoleAsync("PurchasingManager")).FirstOrDefault();
-            if (purchasingManager != null)
-            {
-                _context.Notifications.Add(new Notification
-                {
-                    RecipientUserId = purchasingManager.Id,
-                    Message = $"New purchase request #{request.Id} submitted by {user.UserName}.",
-                    CreatedAt = DateTime.UtcNow
-                });
+            var purchasemanager = await _userManager.GetUsersInRoleAsync("Purchasing Manager");
+            var liaisonUser = purchasemanager.FirstOrDefault();
 
+            if (liaisonUser != null)
+            {
+                // ✅ 2. Create notification
+                var notification = new Notification
+                {
+                    RecipientUserId = liaisonUser.Id,
+                    Title = "New Purchase Request Sent",
+                    Message = $"A new purchase request #{request.Id} was submitted by {User.Identity.Name}.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
+                    TargetController = "PurchasingManager",
+                    TargetAction = "PurchaseRequests"
+                };
+
+                _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
             }
 
             TempData["Success"] = "Purchase request submitted successfully!";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(PurchaseRequests));
         }
+
+        public async Task<IActionResult> Details(int id)
+        {
+            var request = await _context.PurchaseRequests
+                         .Include(r => r.RequestedBy)
+                         .Include(r => r.RequestedItems)
+                         /*.ThenInclude(i => i.ItemCatalog) */// <--- This is correct for eager loading
+                         .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null) return NotFound();
+
+            return View(request);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ReEditRequest(int id)
+        {
+            // 1. Fetch the existing Purchase Request and its line items
+            var request = await _context.PurchaseRequests
+                .Include(r => r.RequestedItems)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null)
+                return NotFound();
+
+            // 2. Get all active fridges for dropdown lists
+            var fridges = await _context.Fridges
+                 .Where(f => !f.IsDeleted)
+                 .Select(f => new SelectListItem
+                 {
+                     Value = f.Id.ToString(),
+                     Text = $"{f.Model} ({f.StockQuantity} in stock)"
+                 })
+                 .ToListAsync();
+            request.Notes = string.Empty;
+            // 3. Map the entity to the view model
+            var model = new EditPurchaseRequestViewModel
+            {
+                Id = request.Id,
+                ExpectedDate = request.ExpectedDate,
+                Priority = request.Priority,
+                Status = RequestStatus.Pending,
+                Notes = request.Notes,
+                Items = request.RequestedItems.Select(i => new PurchaseRequestItemViewModel
+                {
+                    PurchaseRequestItemId = i.Id,
+                    FridgeId = i.FridgeId,
+                    Quantity = i.Quantity,
+                    AvailableItems = fridges
+                }).ToList()
+            };
+
+            model.Items.Add(new PurchaseRequestItemViewModel { AvailableItems = fridges });
+
+            ViewBag.Fridges = fridges;
+            return View(model);
+        }
+
+        // POST: Handle the form submission for editing
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReEditRequest(EditPurchaseRequestViewModel model)//Reedit purchase request
+        {
+            if (!ModelState.IsValid)
+            { 
+                var fridges = await _context.Fridges
+                     .Where(f => !f.IsDeleted)
+                     .Select(f => new SelectListItem
+                     {
+                         Value = f.Id.ToString(),
+                         Text = $"{f.Model} ({f.StockQuantity} in stock)"
+                     })
+                     .ToListAsync();
+
+                foreach (var item in model.Items)
+                    item.AvailableItems = fridges;
+
+                ViewBag.Fridges = fridges;
+                return View(model);
+            }
+
+            var request = await _context.PurchaseRequests
+                .Include(r => r.RequestedItems)
+                .FirstOrDefaultAsync(r => r.Id == model.Id);
+
+            if (request == null) return NotFound();
+
+            // 3. Update main request fields
+            request.ExpectedDate = model.ExpectedDate;
+            request.Priority = model.Priority;
+            request.Status = Code_Vanta_Systems.Models.Enums.RequestStatus.Pending; // Allows manager to potentially change status
+            request.Notes = model.Notes;
+
+            // 4. Manage line items (Delete, Update, Add)
+
+            // Identify which existing items were removed from the form
+            var itemIdsFromForm = model.Items
+                .Where(i => i.PurchaseRequestItemId.HasValue)
+                .Select(i => i.PurchaseRequestItemId.Value)
+                .ToList();
+            var itemsToRemove = request.RequestedItems
+                .Where(i => !itemIdsFromForm.Contains(i.Id))
+                .ToList();
+            _context.PurchaseRequestItems.RemoveRange(itemsToRemove);
+
+            // Process all items submitted in the form
+            foreach (var itemVm in model.Items.Where(i => i.FridgeId > 0 && i.Quantity >= 1))
+            {
+                // Fetch the details of the selected Fridge (needed for ModelRequested/Description)
+                var fridge = await _context.Fridges.FindAsync(itemVm.FridgeId);
+
+                if (fridge == null) continue;
+
+                if (itemVm.PurchaseRequestItemId.HasValue)
+                {
+                    // A. Update Existing Item
+                    var existingItem = request.RequestedItems.First(i => i.Id == itemVm.PurchaseRequestItemId.Value);
+
+                    existingItem.FridgeId = fridge.Id;
+                    existingItem.ModelRequested = fridge.Model;
+                    existingItem.Description = fridge.Description;
+                    existingItem.Quantity = itemVm.Quantity;
+                }
+                else
+                {
+                    // B. Add New Item
+                    var newItem = new PurchaseRequestItem
+                    {
+                        PurchaseRequestId = request.Id,
+                        FridgeId = fridge.Id,
+                        ModelRequested = fridge.Model,
+                        Description = fridge.Description,
+                        Quantity = itemVm.Quantity
+                    };
+                    _context.PurchaseRequestItems.Add(newItem);
+                }
+            }
+
+            // 5. Save all changes (Request updates, item removals, item updates, item additions)
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"Purchase request #{request.Id} updated successfully!";
+            return RedirectToAction("Details", new { id = request.Id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendRequest(int id)
+        {
+            var request = await _context.PurchaseRequests
+                .Include(r => r.RequestedItems)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null) return NotFound();
+
+            // Only allow sending if status is not already Submitted
+            if (request.Status != Models.Enums.RequestStatus.Submitted)
+            {
+                request.Status = Models.Enums.RequestStatus.Submitted;
+                await _context.SaveChangesAsync();
+            }
+
+            // Notify the Purchasing Manager
+            var purchasemanager = await _userManager.GetUsersInRoleAsync("Purchasing Manager");
+            var liaisonUser = purchasemanager.FirstOrDefault();
+
+            if (liaisonUser != null)
+            {
+                var notification = new Notification
+                {
+                    RecipientUserId = liaisonUser.Id,
+                    Title = "New Purchase Request Sent",
+                    Message = $"Purchase request #{request.Id} was submitted by {User.Identity.Name}.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
+                    TargetController = "PurchasingManager",
+                    TargetAction = "PurchaseRequests"
+                };
+
+                _context.Notifications.Add(notification);
+                await _context.SaveChangesAsync();
+            }
+
+            // ✅ Use TempData for success message
+            TempData["Success"] = $"Purchase request #{request.Id} sent successfully!";
+
+            // Redirect back to the same page (e.g., index or list)
+            return RedirectToAction("SubmitedPurchaseRequests");
+        }
+
 
         #endregion
 

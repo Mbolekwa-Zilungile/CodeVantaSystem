@@ -80,7 +80,7 @@ namespace Code_Vanta_Systems.Controllers
                         return RedirectToAction("Index", "CustomerDashboard");
                     }
                     // Active customers go to dashboard
-                    return RedirectToAction("Rejected", "CustomerDashboard", new { id = customer.Id });
+                    return RedirectToAction("Rejected", "CustomerDashboard");
                 }
 
                 // Customer Liaison
