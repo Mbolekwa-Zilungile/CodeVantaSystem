@@ -1,0 +1,108 @@
+﻿@model List<Code_Vanta_Systems.Models.Notification>
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+
+@{
+    Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
+    ViewData["Title"] = "Notifications";
+    var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+
+<div class="container mt-5">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold mb-0">Notifications</h2>
+        <form method="post" asp-action="MarkAllRead">
+            <input name="__RequestVerificationToken" type="hidden" value="@token" />
+            <button type="submit" class="btn btn-sm btn-success shadow-sm">
+                Mark All as Read
+            </button>
+        </form>
+    </div>
+
+    <!-- Empty State -->
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            You have no notifications at the moment.
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var notification in Model.OrderByDescending(n => n.CreatedAt))
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card shadow-lg @(notification.IsRead ? "bg-light" : "border border-danger") h-100"
+                         data-controller="@notification.TargetController"
+                         data-action="@notification.TargetAction"
+                         style="cursor: pointer;">
+                        <div class="card-body d-flex flex-column">
+                            <p class="card-text mb-3">@notification.Message</p>
+
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <small class="text-muted">@notification.CreatedAt.ToString("g")</small>
+                                <span class="badge @(notification.IsRead ? "bg-secondary" : "bg-danger")">
+                                    @(notification.IsRead ? "Read" : "Unread")
+                                </span>
+                            </div>
+
+                            @if (!notification.IsRead)
+                            {
+                                <button class="btn btn-primary btn-sm mt-3 w-100 shadow-sm mark-read" data-id="@notification.Id">
+                                    <i class="bi bi-envelope-open me-1"></i> Mark as Read
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+            }
+        </div>
+    }
+</div>
+
+<meta name="csrf-token" content="@token" />
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Mark as read functionality
+            $('.mark-read').click(function (e) {
+                e.stopPropagation(); // prevent card click
+                var btn = $(this);
+                var id = btn.data('id');
+                var token = $('meta[name="csrf-token"]').attr('content');
+
+                $.ajax({
+                    url: '/Notification/MarkAsRead/' + id,
+                    type: 'POST',
+                    headers: { 'RequestVerificationToken': token },
+                    success: function () {
+                        btn.closest('.card').removeClass('border border-danger').addClass('bg-light');
+                        btn.closest('.card-body').find('.badge').removeClass('bg-danger').addClass('bg-secondary').text('Read');
+                        btn.remove();
+
+                        // Update notification badge
+                        var badge = $('#notificationBadge');
+                        var count = parseInt(badge.text() || '0') - 1;
+                        if (count > 0) badge.text(count);
+                        else badge.hide();
+                    },
+                    error: function (xhr) {
+                        alert('Failed to mark notification as read: ' + xhr.statusText);
+                    }
+                });
+            });
+
+            // Navigate on card click
+            $('.card').click(function () {
+                var controller = $(this).data('controller');
+                var action = $(this).data('action');
+                if (controller && action) {
+                    window.location.href = '/' + controller + '/' + action;
+                }
+            });
+        });
+    </script>
+}

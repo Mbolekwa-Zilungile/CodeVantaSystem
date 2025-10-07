@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 namespace Code_Vanta_Systems.Models
 {
@@ -10,6 +11,7 @@ namespace Code_Vanta_Systems.Models
         public int Id { get; set; }
 
         // The message content of the notification
+        public string Title { get; set; }
         [Required]
         public string Message { get; set; }
 
@@ -25,7 +27,10 @@ namespace Code_Vanta_Systems.Models
 
         // Navigation property for the recipient user
         public ApplicationUser RecipientUser { get; set; }
-       // public string UserId { get; set; }
+        // public string UserId { get; set; }
+
+        public string TargetController { get; set; } = "Home"; //prefered controller
+        public string TargetAction { get; set; } = "Index"; // action
 
     }
 }

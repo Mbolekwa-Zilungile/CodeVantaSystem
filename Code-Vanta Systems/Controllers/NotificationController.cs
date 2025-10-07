@@ -8,54 +8,67 @@ namespace Code_Vanta_Systems.Controllers
 {
     public class NotificationController : Controller
     {
-        private readonly UserManager<ApplicationUser> userManager;
-        private readonly RoleManager<IdentityRole> roleManager;
-        private readonly ApplicationDbContext context;
+        private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public NotificationController(
-            UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager,
-            ApplicationDbContext context)
+        public NotificationController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
-            this.userManager = userManager;
-            this.roleManager = roleManager;
-            this.context = context;
+            _context = context;
+            _userManager = userManager;
         }
-        public IActionResult Index()
-        {
-            return View();
-        }
-        //notifications
 
-        // 📬 Show dashboard with new notifications
-        public async Task<IActionResult> Notifications()
+        // GET: /Notification
+        public async Task<IActionResult> Index()
         {
-            var user = await userManager.GetUserAsync(User);
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return RedirectToAction("Login", "Account");
 
-            var notifications = await context.Notifications
-                .Where(n => n.RecipientUserId == user.Id)
+            var notifications = await _context.Notifications
+                .Where(n => n.RecipientUserId == user.Id)  // <-- Only show current user’s notifications
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
-
-            var unreadCount = notifications.Count(n => !n.IsRead);
-
-            ViewBag.UnreadNotifications = unreadCount;
 
             return View(notifications);
         }
 
-        // ✅ Mark notification as read
+        // GET: /Notification/UnreadCount
+        [HttpGet]
+        public async Task<IActionResult> UnreadCount()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Json(0);
+
+            var count = await _context.Notifications
+                .CountAsync(n => n.RecipientUserId == user.Id && !n.IsRead);
+
+            return Json(count);
+        }
+
+        // POST: /Notification/MarkAsRead/5
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAsRead(int id)
         {
-            var notification = await context.Notifications.FindAsync(id);
-            if (notification != null)
-            {
-                notification.IsRead = true;
-                await context.SaveChangesAsync();
-            }
-            return RedirectToAction(nameof(Notifications));
+            var notification = await _context.Notifications.FindAsync(id);
+            if (notification == null)
+                return NotFound();
+
+            notification.IsRead = true;
+            await _context.SaveChangesAsync();
+            return Ok();
         }
-       
+
+        // POST: /Notification/MarkAllRead
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAllRead()
+        {
+            var unread = await _context.Notifications.Where(n => !n.IsRead).ToListAsync();
+            foreach (var n in unread)
+                n.IsRead = true;
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Index");
+        }
     }
 }

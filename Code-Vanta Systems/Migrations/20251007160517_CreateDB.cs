@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateDb : Migration
+    public partial class CreateDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -250,10 +250,13 @@ namespace Code_Vanta_Systems.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Message = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsRead = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RecipientUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    RecipientUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TargetController = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TargetAction = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -350,9 +353,11 @@ namespace Code_Vanta_Systems.Migrations
                     BusinessType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     PhysicalAddress = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
                     LocationId = table.Column<int>(type: "int", nullable: false),
+                    BusinessDocumentPath = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    TechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    TechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -361,8 +366,7 @@ namespace Code_Vanta_Systems.Migrations
                         name: "FK_Customers_AspNetUsers_TechnicianId",
                         column: x => x.TechnicianId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Customers_AspNetUsers_UserId",
                         column: x => x.UserId,
@@ -449,7 +453,14 @@ namespace Code_Vanta_Systems.Migrations
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PurchaseDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
-                    LocationId = table.Column<int>(type: "int", nullable: false)
+                    LocationId = table.Column<int>(type: "int", nullable: false),
+                    Category = table.Column<int>(type: "int", nullable: false),
+                    ImageUrl = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RentalPricePerMonth = table.Column<decimal>(type: "decimal(10,1)", precision: 10, scale: 1, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    StockQuantity = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {

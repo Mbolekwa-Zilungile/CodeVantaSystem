@@ -391,7 +391,8 @@ namespace Code_Vanta_Systems.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("RentalPricePerMonth")
-                        .HasColumnType("decimal(18,2)");
+                        .HasPrecision(10, 1)
+                        .HasColumnType("decimal(10,1)");
 
                     b.Property<string>("SerialNumber")
                         .IsRequired()
@@ -752,6 +753,18 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<string>("RecipientUserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("TargetAction")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TargetController")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

@@ -113,8 +113,12 @@ namespace Code_Vanta_Systems.Controllers
                 _context.Notifications.Add(new Notification
                 {
                     RecipientUserId = customer.User.Id,
-                    Message = $"Congratulations! Your account has been approved and is now active.",
-                    CreatedAt = DateTime.UtcNow
+                    Title = "Account Approved",
+                    Message = $"Congratulations {customer.ContactName}! Your account '{customer.BusinessName}' has been approved and is now active.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
+                    TargetController = "CustomerDashboard",   // customer goes to their dashboard
+                    TargetAction = "Index"                     // dashboard index
                 });
             }
 

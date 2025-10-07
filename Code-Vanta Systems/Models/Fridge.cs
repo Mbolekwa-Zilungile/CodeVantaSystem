@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Code_Vanta_Systems.Models.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace Code_Vanta_Systems.Models
 {
@@ -47,6 +48,7 @@ namespace Code_Vanta_Systems.Models
 
         [Required(ErrorMessage = "Rental Price is required")]
         [Range(0, double.MaxValue, ErrorMessage = "Rental Price must be positive")]
+        [Precision(10,1)]
         public decimal RentalPricePerMonth { get; set; }
 
         [StringLength(500)]

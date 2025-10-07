@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+
 
 namespace Code_Vanta_Systems.Controllers
 {
@@ -63,10 +65,10 @@ namespace Code_Vanta_Systems.Controllers
             if (document == null || document.Length == 0)
             {
                 TempData["Error"] = "Please select a file to upload.";
-                return RedirectToAction("PendingPage"); // redirect ensures TempData survives
+                return RedirectToAction("PendingPage");
             }
 
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userId = _userManager.GetUserId(User);
 
             var customer = await _context.Customers
                 .FirstOrDefaultAsync(c => c.UserId == userId &&
@@ -78,14 +80,14 @@ namespace Code_Vanta_Systems.Controllers
                 return RedirectToAction("PendingPage");
             }
 
-            // ✅ If the customer was rejected, reset status back to Pending
+            // ✅ Reset status if rejected
             if (customer.Status == CustomerStatus.Rejected)
             {
                 customer.Status = CustomerStatus.Pending;
                 TempData["Info"] = "Your account status has been reset to Pending for review.";
             }
 
-            // 📁 Save the uploaded file
+            // 📁 Save uploaded document
             var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads/business_docs");
             Directory.CreateDirectory(uploadsFolder);
 
@@ -97,15 +99,38 @@ namespace Code_Vanta_Systems.Controllers
                 await document.CopyToAsync(fileStream);
             }
 
-            // 📄 Update the business document path
+            // 📄 Update customer record
             customer.BusinessDocumentPath = $"/uploads/business_docs/{uniqueFileName}";
             _context.Customers.Update(customer);
             await _context.SaveChangesAsync();
 
+            // ✅ 1. Get the "Customer Liaison" user(s) properly
+            var liaisonUsers = await _userManager.GetUsersInRoleAsync("Customer Liaison");
+            var liaisonUser = liaisonUsers.FirstOrDefault();
+
+            if (liaisonUser != null)
+            {
+                // ✅ 2. Create notification
+                var notification = new Notification
+                {
+                    RecipientUserId = liaisonUser.Id,
+                    Title="New Customer registered",
+                    Message = $"Customer '{customer.BusinessName}' has uploaded a new business document for verification.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
+                    TargetController = "CustomerLiaison",
+                    TargetAction = "PendingCustomers"
+                };
+
+                _context.Notifications.Add(notification);
+                await _context.SaveChangesAsync();
+            }
+
             TempData["Success"] = "Your business document has been uploaded successfully! You will be notified when your account is approved or rejected.";
 
-            return RedirectToAction("PendingPage"); // redirect to show success message
+            return RedirectToAction("PendingPage");
         }
+
 
 
         public async Task<IActionResult> ActiveCustomers()
