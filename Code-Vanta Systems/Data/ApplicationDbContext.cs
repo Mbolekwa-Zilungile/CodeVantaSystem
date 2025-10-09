@@ -39,6 +39,10 @@ namespace Code_Vanta_Systems.Data
         public DbSet<ItemCatalog> ItemCatalogs { get; set; }
         public DbSet<PurchaseRequestItem> PurchaseRequestItems { get; set; }
 
+        public DbSet<RentalOrder> RentalOrders { get; set; }
+        public DbSet<RentalRequest> RentalRequests { get; set; }
+        public DbSet<RentedFridge> RentedFridges { get; set; }
+
         // Note: The DbSet for SensorReading and TechnicianSchedule (mentioned in overview) 
         // were not included in the original DbContext code, but are listed in the model overview.
 

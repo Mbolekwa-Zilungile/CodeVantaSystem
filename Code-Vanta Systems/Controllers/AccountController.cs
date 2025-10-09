@@ -72,15 +72,15 @@ namespace Code_Vanta_Systems.Controllers
                     if (customer != null && customer.Status == CustomerStatus.Pending)
                     {
                         // Pending customers go to PendingPage to upload document
-                        return RedirectToAction("PendingPage", "CustomerDashboard");
+                        return RedirectToAction("PendingPage", "Customer");
                     }
                     if (customer != null && customer.Status == CustomerStatus.Active)
                     {
                         // Pending customers go to PendingPage to upload document
-                        return RedirectToAction("Index", "CustomerDashboard");
+                        return RedirectToAction("Index", "Customer");
                     }
                     // Active customers go to dashboard
-                    return RedirectToAction("Rejected", "CustomerDashboard");
+                    return RedirectToAction("Rejected", "Customer");
                 }
 
                 // Customer Liaison
@@ -89,7 +89,7 @@ namespace Code_Vanta_Systems.Controllers
 
                 // Inventory Liaison
                 if (await _userManager.IsInRoleAsync(user, Roles.InventoryLiaison))
-                    return RedirectToAction("Dashboard", "InventoryLiaison");
+                    return RedirectToAction("Index", "InventoryLiaison");
 
                 // Service Technician
                 if (await _userManager.IsInRoleAsync(user, Roles.ServiceTechnician))
@@ -183,7 +183,7 @@ namespace Code_Vanta_Systems.Controllers
                 await _context.SaveChangesAsync();
 
                 await _signInManager.SignInAsync(user, isPersistent: false);
-                return RedirectToAction("PendingPage", "CustomerDashboard");
+                return RedirectToAction("PendingPage", "Customer");
             }
 
             foreach (var error in result.Errors)

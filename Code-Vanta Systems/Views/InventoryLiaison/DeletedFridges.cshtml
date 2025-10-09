@@ -1,0 +1,203 @@
+﻿@model IEnumerable<Code_Vanta_Systems.ViewModels.CreateFridgeViewModel>
+
+@{
+    Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
+
+    var categories = ViewBag.Categories as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
+    var statuses = ViewBag.Statuses as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
+    var suppliers = ViewBag.Suppliers as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
+    var locations = ViewBag.Locations as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
+
+    string selectedModel = Context.Request.Query["searchModel"];
+    string selectedCategory = Context.Request.Query["category"];
+    string selectedStatus = Context.Request.Query["status"];
+    string selectedSupplier = Context.Request.Query["supplier"];
+    string selectedLocation = Context.Request.Query["location"];
+}
+
+<div class="container py-4">
+    <h2 class="mb-4 text-danger d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-trash"></i> Deleted Fridges</span>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("CreateFridge", "InventoryLiaison")" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Add Fridge
+            </a>
+            <a href="@Url.Action("Index", "InventoryLiaison")" class="btn btn-primary">
+                <i class="bi bi-box-seam"></i> Active Fridges
+            </a>
+        </div>
+    </h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle-fill"></i> These fridges are deleted. You can restore them if needed.
+    </div>
+
+    <form id="filterForm" method="get" class="row g-3 mb-4 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">Model</label>
+            <input type="text" name="searchModel" class="form-control" placeholder="Search by Model" value="@selectedModel" />
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-select auto-submit">
+                <option value="">-- All Categories --</option>
+                @foreach (var cat in categories)
+                {
+                    if (cat.Value == selectedCategory)
+                    {
+                        <text>
+                        <option value="@cat.Value" selected>@cat.Text</option>
+                        </text>
+                    }
+                    else
+                    {
+                        <text>
+                        <option value="@cat.Value">@cat.Text</option>
+                        </text>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select auto-submit">
+                <option value="">-- All Statuses --</option>
+                @foreach (var cat in statuses)
+                {
+                    if (cat.Value == selectedStatus)
+                    {
+                        <text>
+                        <option value="@cat.Value" selected>@cat.Text</option>
+                        </text>
+                    }
+                    else
+                    {
+                        <text>
+                        <option value="@cat.Value">@cat.Text</option>
+                        </text>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label">Supplier</label>
+            <select name="supplier" class="form-select auto-submit">
+                <option value="">-- All Suppliers --</option>
+                @foreach (var cat in suppliers)
+                {
+                    if (cat.Value == selectedSupplier)
+                    {
+                        <text>
+                        <option value="@cat.Value" selected>@cat.Text</option>
+                        </text>
+                    }
+                    else
+                    {
+                        <text>
+                        <option value="@cat.Value">@cat.Text</option>
+                        </text>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label">Location</label>
+            <select name="location" class="form-select auto-submit">
+                <option value="">-- All Locations --</option>
+                @foreach (var cat in locations)
+                {
+                    if (cat.Value == selectedLocation)
+                    {
+                        <text>
+                        <option value="@cat.Value" selected>@cat.Text</option>
+                        </text>
+                    }
+                    else
+                    {
+                        <text>
+                        <option value="@cat.Value">@cat.Text</option>
+                        </text>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-1 d-flex gap-1">
+            <button type="submit" class="btn btn-primary w-100" title="Filter">
+                <i class="bi bi-funnel"></i> Filter
+            </button>
+            <a href="@Url.Action("DeletedFridges", "InventoryLiaison")" class="btn btn-secondary w-100" title="Clear Filters">
+                <i class="bi bi-x-circle"></i> Clear
+            </a>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-light text-center">
+                <tr>
+                    <th>Image</th>
+                    <th>Model</th>
+                    <th>Serial #</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Supplier</th>
+                    <th>Location</th>
+                    <th>Price/Month</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-center">
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var fridge in Model)
+                    {
+                        <tr class="table-danger">
+                            <td>
+                                <img src="@(string.IsNullOrEmpty(fridge.ImageUrl) ? "/images/fridges/placeholder.png" : fridge.ImageUrl)"
+                                     class="img-thumbnail" style="max-height:120px;" alt="Fridge Image" />
+                            </td>
+                            <td>@fridge.Model</td>
+                            <td>@fridge.SerialNumber</td>
+                            <td>@fridge.Category</td>
+                            <td>@fridge.Status</td>
+                            <td>@suppliers.FirstOrDefault(s => s.Value == fridge.SupplierId.ToString())?.Text</td>
+                            <td>@locations.FirstOrDefault(l => l.Value == fridge.LocationId.ToString())?.Text</td>
+                            <td>@fridge.RentalPricePerMonth.ToString("C")</td>
+                            <td>@fridge.StockQuantity</td>
+                            <td>
+                                <form asp-action="RestoreFridge" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@fridge.Id" />
+                                    <button type="submit" class="btn btn-sm btn-success mb-1"
+                                            onclick="return confirm('Are you sure you want to restore this fridge?');">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="10" class="text-center">No deleted fridges found.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+

@@ -42,6 +42,6 @@ namespace Code_Vanta_Systems.ViewModels
         public string ExistingImageUrl { get; set; } // Show current image
 
         [Required]
-        public string StockQuantity { get; set; }
+        public int StockQuantity { get; set; }
     }
 }

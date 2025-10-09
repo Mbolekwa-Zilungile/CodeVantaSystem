@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Drawing;
 
 namespace Code_Vanta_Systems.Controllers
 {
@@ -29,66 +30,81 @@ namespace Code_Vanta_Systems.Controllers
         }
 
 
+        #region Index / Dashboards With Filters
+
+        public IActionResult Index(string searchModel, int? category, int? status, int? supplier, int? location)
+        {
+            var allFridges = _context.Fridges.AsQueryable();
+
+            var fridges = allFridges.Where(f => !f.IsDeleted);
+
+            if (!string.IsNullOrEmpty(searchModel))
+                fridges = fridges.Where(f => f.Model.Contains(searchModel));
+
+            if (category.HasValue)
+                fridges = fridges.Where(f => (int)f.Category == category.Value);
+
+            if (status.HasValue)
+                fridges = fridges.Where(f => (int)f.Status == status.Value);
+
+            if (supplier.HasValue)
+                fridges = fridges.Where(f => f.SupplierId == supplier.Value);
+
+            if (location.HasValue)
+                fridges = fridges.Where(f => f.LocationId == location.Value);
+
+            // Filters
+            ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory)).Cast<FridgeCategory>()
+                .Select(c => new SelectListItem { Value = ((int)c).ToString(), Text = c.ToString() }).ToList();
+
+            ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus)).Cast<FridgeStatus>()
+                .Select(s => new SelectListItem { Value = ((int)s).ToString(), Text = s.ToString() }).ToList();
+
+            ViewBag.Suppliers = _context.Suppliers.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name }).ToList();
+            ViewBag.Locations = _context.Locations.Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description }).ToList();
+
+
+            ViewBag.TotalFridges = allFridges.Count();
+            ViewBag.ActiveFridges = allFridges.Count(f => !f.IsDeleted);
+            ViewBag.DeletedFridges = allFridges.Count(f => f.IsDeleted);
+            ViewBag.AvailableFridges = allFridges.Count(f => !f.IsDeleted && f.StockQuantity > 0);
+            ViewBag.OutOfStockFridges = allFridges.Count(f => !f.IsDeleted && f.StockQuantity == 0);
+            ViewBag.TotalSuppliers = _context.Suppliers.Count();
+            ViewBag.TotalFridges = _context.Fridges.Count();
+            ViewBag.AvailableFridges = _context.Fridges.Count(f => f.Status == FridgeStatus.Available && !f.IsDeleted);
+            ViewBag.DeletedFridges = _context.Fridges.Count(f => f.IsDeleted);
+            ViewBag.InRepairFridges = _context.Fridges.Count(f => f.Status == FridgeStatus.InRepair && !f.IsDeleted);
+            ViewBag.RetiredFridges = _context.Fridges.Count(f => f.Status == FridgeStatus.Retired && !f.IsDeleted);
+            ViewBag.OutOfStockFridges = _context.Fridges.Count(f => f.StockQuantity == 0 && !f.IsDeleted);
+            ViewBag.TotalSuppliers = _context.Suppliers.Count();
+
+
+            var vmList = fridges.Select(f => new CreateFridgeViewModel
+            {
+                Id = f.Id,
+                Model = f.Model,
+                SerialNumber = f.SerialNumber,
+                Category = f.Category,
+                Status = f.Status,
+                SupplierId = f.SupplierId,
+                LocationId = f.LocationId,
+                RentalPricePerMonth = f.RentalPricePerMonth,
+                StockQuantity = f.StockQuantity,
+                Description = f.Description,
+                ImageUrl = f.ImageUrl
+            }).ToList();
+
+
+
+            return View(vmList);
+        }
+
+        #endregion
+
         // Dashboard..
 
-        public async Task<IActionResult> Dashboard()
-        {
-            var fridges = await _context.Fridges.ToListAsync();
+ 
 
-            // Soft-deleted
-            var deletedStock = fridges.Count(f => f.IsDeleted);
-
-            // Active fridges
-            var activeFridges = fridges.Where(f => !f.IsDeleted).ToList();
-            var totalStock = activeFridges.Count;
-
-            // Count by status
-            var statusCounts = activeFridges
-                .GroupBy(f => f.Status)
-                .ToDictionary(g => g.Key, g => g.Count());
-
-            // Group by category & model
-            var groupedStock = activeFridges
-                .GroupBy(f => new { f.Category, f.Model })
-                .Select(g => new GroupedStockViewModel
-                {
-                    Category = g.Key.Category.ToString(),
-                    Model = g.Key.Model,
-                    Count = g.Count(),
-                    StockLevel = g.Count() < 5 ? "Low" : g.Count() < 10 ? "Average" : "High"
-                })
-                .ToList();
-
-            var model = new DashboardViewModel
-            {
-                TotalStock = totalStock,
-                DeletedStock = deletedStock,
-                StatusCounts = statusCounts,
-                GroupedStock = groupedStock
-            };
-
-            return View(model);
-        }
-
-        // Example action for sending stock emails
-        public IActionResult SendStockEmail(string category, string model)
-        {
-            // TODO: Implement email sending logic
-            TempData["Message"] = $"Stock email sent for {category} - {model}!";
-            return RedirectToAction("Dashboard");
-        }
-
-        public async Task<IActionResult> Index()
-        {
-            var fridges = await _context.Fridges
-            .Where(f => !f.IsDeleted)
-            .Include(f => f.Supplier)
-            .Include(f => f.Location)
-            .OrderByDescending(f => f.PurchaseDate)
-            .ToListAsync();
-
-            return View(fridges);
-        }
 
 
         #region PURCHASE REQUESTS
@@ -482,258 +498,337 @@ namespace Code_Vanta_Systems.Controllers
 
         #region CREATE FRIDGE
 
-        private void PopulateDropdowns()
-        {
-            Console.WriteLine("PopulateDropdowns() called");
-
-            ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory))
-                .Cast<FridgeCategory>()
-                .Select(c => new SelectListItem { Value = c.ToString(), Text = GetDisplayName(c) });
-
-            ViewBag.Suppliers = _context.Suppliers
-                .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name });
-
-            ViewBag.Locations = _context.Locations
-                .Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description });
-
-            ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
-            .Cast<FridgeStatus>()
-            .Select(s => new SelectListItem { Value = s.ToString(), Text = s.ToString() });
-
-            // Debug: counts
-            var categories = ViewBag.Categories as IEnumerable<SelectListItem>;
-            var suppliers = ViewBag.Suppliers as IEnumerable<SelectListItem>;
-            var locations = ViewBag.Locations as IEnumerable<SelectListItem>;
-            var statuses = ViewBag.Statuses as IEnumerable<SelectListItem>;
-
-            Console.WriteLine($"Categories Loaded: {categories?.Count() ?? 0}");
-            Console.WriteLine($"Suppliers Loaded: {suppliers?.Count() ?? 0}");
-            Console.WriteLine($"Locations Loaded: {locations?.Count() ?? 0}");
-            Console.WriteLine($"Statuses Loaded: {statuses?.Count() ?? 0}");
-        }
-
-        // GET
         public IActionResult CreateFridge()
         {
-            Console.WriteLine("GET CreateFridge called");
-            PopulateDropdowns();
-            return View();
+            var model = new CreateFridgeViewModel();
+            PopulateDropdowns(model);
+            return View(model);
         }
 
-        // POST
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateFridge(CreateFridgeViewModel newFridge)
+        public async Task<IActionResult> CreateFridge(CreateFridgeViewModel vm)
         {
-            Console.WriteLine("POST CreateFridge called");
-            Console.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
 
-            foreach (var key in Request.Form.Keys)
-                Console.WriteLine($"{key} = {Request.Form[key]}");
+            PopulateDropdowns(vm);
 
             if (!ModelState.IsValid)
             {
-                Console.WriteLine("ModelState invalid:");
-                foreach (var key in ModelState.Keys)
-                {
-                    var state = ModelState[key];
-                    foreach (var error in state.Errors)
-                        Console.WriteLine($" - {key}: {error.ErrorMessage}");
-                }
-
-                PopulateDropdowns();
-                return View(newFridge);
+                DebuggerNotify("ModelState invalid.");
+                return View(vm);
             }
 
-            string imageUrl = null;
-            if (newFridge.ImageFile != null)
+            string imageUrl = "/images/fridges/placeholder.png";
+
+            if (vm.ImageFile != null && vm.ImageFile.Length > 0)
             {
-                Console.WriteLine($"Uploading image: {newFridge.ImageFile.FileName}");
-                string uploadsFolder = Path.Combine(_environment.WebRootPath, "images/fridges");
+                DebuggerNotify($"Uploading image: {vm.ImageFile.FileName}");
+                string uploadsFolder = Path.Combine(_environment.WebRootPath, "images", "fridges");
                 Directory.CreateDirectory(uploadsFolder);
 
-                string uniqueFileName = Guid.NewGuid() + Path.GetExtension(newFridge.ImageFile.FileName);
+                string uniqueFileName = Guid.NewGuid() + Path.GetExtension(vm.ImageFile.FileName);
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                await using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    await newFridge.ImageFile.CopyToAsync(fileStream);
+                    await vm.ImageFile.CopyToAsync(fileStream);
                 }
 
                 imageUrl = "/images/fridges/" + uniqueFileName;
-                Console.WriteLine($"Image saved to: {imageUrl}");
+                DebuggerNotify($"Image saved to: {imageUrl}");
             }
 
             var fridge = new Fridge
             {
-                Category = newFridge.Category,
-                Model = newFridge.Model,
-                SerialNumber = newFridge.SerialNumber,
-                SupplierId = newFridge.SupplierId,
-                LocationId = newFridge.LocationId,
-                Status = FridgeStatus.Available,
+                Model = vm.Model,
+                SerialNumber = vm.SerialNumber,
+                Category = vm.Category,
+                Status = vm.Status,
+                SupplierId = vm.SupplierId,
+                LocationId = vm.LocationId,
+                RentalPricePerMonth = vm.RentalPricePerMonth,
+                StockQuantity = vm.StockQuantity,
+                Description = vm.Description,
                 ImageUrl = imageUrl,
-                PurchaseDate = newFridge.PurchaseDate,
-                Description = newFridge.Description,
-                RentalPricePerMonth = newFridge.RentalPricePerMonth,
-                StockQuantity = newFridge.StockQuantity,
+                PurchaseDate = DateTime.Now,
+                IsDeleted = false
             };
 
             _context.Fridges.Add(fridge);
-            await _context.SaveChangesAsync();
 
-            Console.WriteLine("Fridge saved successfully");
-            return RedirectToAction("Index");
-        }
-
-        // AJAX: Get Models by Category
-        [HttpGet]
-        public JsonResult GetModels(string category)
-        {
-            Console.WriteLine($"GetModels called for category: {category}");
-            if (Enum.TryParse(category, out FridgeCategory parsedCategory))
+            try
             {
-                var models = parsedCategory.GetModels(); // make sure GetModels() returns List<string>
-                Console.WriteLine($"Returning {models.Count} models");
-                return Json(models);
+                await _context.SaveChangesAsync();
+                DebuggerNotify("Fridge saved successfully.");
+            }
+            catch (Exception ex)
+            {
+                DebuggerNotify("Error saving fridge: " + ex.Message);
+                ModelState.AddModelError("", "Unable to save fridge. Check server logs.");
+                return View(vm);
             }
 
-            Console.WriteLine("Invalid category, returning empty list");
-            return Json(new List<string>());
+            TempData["SuccessMessage"] = "Fridge added successfully!";
+            return RedirectToAction(nameof(Index));
+        }
+
+
+        private void PopulateDropdowns(CreateFridgeViewModel vm)
+        {
+            vm.Suppliers = _context.Suppliers
+                .Select(s => new CreateFridgeViewModel.SupplierDropdownViewModel { Id = s.Id, Name = s.Name })
+                .ToList();
+
+            vm.Locations = _context.Locations
+                .Select(l => new CreateFridgeViewModel.LocationDropdownViewModel { Id = l.Id, Name = l.Description })
+                .ToList();
         }
 
         #endregion
 
 
 
-        #region UPDATE FRIDGE
+        #region EDIT FRIDGE
 
-        // GET: Edit Fridge
+
+        [HttpGet]
         public async Task<IActionResult> EditFridge(int id)
         {
-            Console.WriteLine($"=== GET EditFridge HIT === Id: {id}");
+            var fridge = await _context.Fridges.FindAsync(id);
+            if (fridge == null) return NotFound();
 
-            var fridge = await _context.Fridges
-                .FirstOrDefaultAsync(f => f.Id == id && !f.IsDeleted);
-
-            if (fridge == null)
-            {
-                Console.WriteLine("Fridge not found or deleted.");
-                return NotFound();
-            }
-
-            var updateFridge = new EditFridgeViewModel
+            var vm = new CreateFridgeViewModel
             {
                 Id = fridge.Id,
-                Category = fridge.Category,
                 Model = fridge.Model,
                 SerialNumber = fridge.SerialNumber,
+                Category = fridge.Category,
+                Status = fridge.Status,
                 SupplierId = fridge.SupplierId,
                 LocationId = fridge.LocationId,
-                PurchaseDate = fridge.PurchaseDate,
-                Status = fridge.Status,
                 RentalPricePerMonth = fridge.RentalPricePerMonth,
+                StockQuantity = fridge.StockQuantity,
                 Description = fridge.Description,
-                ExistingImageUrl = fridge.ImageUrl,
-                StockQuantity = fridge.StockQuantity
+                ImageUrl = fridge.ImageUrl
             };
 
-            Console.WriteLine($"Loaded Fridge: {fridge.Model} ({fridge.SerialNumber})");
-            PopulateDropdowns();
+            PopulateDropdowns(vm);
 
-            ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
-                                   .Cast<FridgeStatus>()
-                                   .Select(s => new SelectListItem { Value = s.ToString(), Text = s.ToString() });
-
-            return View(updateFridge);
+            return View(vm);
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditFridge(EditFridgeViewModel updateFridge)
+        public async Task<IActionResult> EditFridge(CreateFridgeViewModel vm)
         {
-            Console.WriteLine("=== POST EditFridge HIT ===");
-            Console.WriteLine($"Id: {updateFridge.Id}, Model: {updateFridge.Model}, Category: {updateFridge.Category}");
-            Console.WriteLine($"Serial: {updateFridge.SerialNumber}, Supplier: {updateFridge.SupplierId}, Location: {updateFridge.LocationId}");
-            Console.WriteLine($"PurchaseDate: {updateFridge.PurchaseDate}, Status: {updateFridge.Status}, Rental: {updateFridge.RentalPricePerMonth}");
-            Console.WriteLine($"Description: {updateFridge.Description}, ExistingImageUrl: {updateFridge.ExistingImageUrl}");
+
+            PopulateDropdowns(vm);
 
             if (!ModelState.IsValid)
             {
-                PopulateDropdowns();
-                ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
-                                       .Cast<FridgeStatus>()
-                                       .Select(s => new SelectListItem { Value = s.ToString(), Text = s.ToString() });
-                Console.WriteLine("ModelState invalid, returning view...");
-                return View(updateFridge);
+                DebuggerNotify("ModelState invalid.");
+                return View(vm);
             }
 
-            var fridge = await _context.Fridges.FirstOrDefaultAsync(f => f.Id == updateFridge.Id && !f.IsDeleted);
+            var fridge = await _context.Fridges.FindAsync(vm.Id);
             if (fridge == null) return NotFound();
 
-            // Update Image if new file uploaded
-            if (updateFridge.ImageFile != null)
+            fridge.Model = vm.Model;
+            fridge.SerialNumber = vm.SerialNumber;
+            fridge.Category = vm.Category;
+            fridge.Status = vm.Status;
+            fridge.SupplierId = vm.SupplierId;
+            fridge.LocationId = vm.LocationId;
+            fridge.RentalPricePerMonth = vm.RentalPricePerMonth;
+            fridge.StockQuantity = vm.StockQuantity;
+            fridge.Description = vm.Description;
+
+
+            if (vm.ImageFile != null && vm.ImageFile.Length > 0)
             {
-                // Upload new image
-                string uploadsFolder = Path.Combine(_environment.WebRootPath, "images/fridges");
+                string uploadsFolder = Path.Combine(_environment.WebRootPath, "images", "fridges");
                 Directory.CreateDirectory(uploadsFolder);
 
-                string uniqueFileName = Guid.NewGuid() + Path.GetExtension(updateFridge.ImageFile.FileName);
+                string uniqueFileName = Guid.NewGuid() + Path.GetExtension(vm.ImageFile.FileName);
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                await using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    await updateFridge.ImageFile.CopyToAsync(fileStream);
+                    await vm.ImageFile.CopyToAsync(fileStream);
+                }
+
+
+                if (!string.IsNullOrEmpty(fridge.ImageUrl) && fridge.ImageUrl != "/images/fridges/placeholder.png")
+                {
+                    var oldImagePath = Path.Combine(_environment.WebRootPath, fridge.ImageUrl.TrimStart('/').Replace("/", "\\"));
+                    if (System.IO.File.Exists(oldImagePath))
+                        System.IO.File.Delete(oldImagePath);
                 }
 
                 fridge.ImageUrl = "/images/fridges/" + uniqueFileName;
-                Console.WriteLine("New image uploaded: " + fridge.ImageUrl);
             }
-            else
+
+            try
             {
-                // Keep existing image
-                fridge.ImageUrl = updateFridge.ExistingImageUrl;
-                Console.WriteLine("No new image, keeping existing: " + fridge.ImageUrl);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Fridge updated successfully!";
+                DebuggerNotify("Fridge updated successfully.");
+                return RedirectToAction("Index");
             }
-
-            // Update all other fields
-            fridge.Category = updateFridge.Category;
-            fridge.Model = updateFridge.Model;
-            fridge.SerialNumber = updateFridge.SerialNumber;
-            fridge.SupplierId = updateFridge.SupplierId;
-            fridge.LocationId = updateFridge.LocationId;
-            fridge.PurchaseDate = updateFridge.PurchaseDate;
-            fridge.Status = updateFridge.Status;
-            fridge.RentalPricePerMonth = updateFridge.RentalPricePerMonth;
-            fridge.Description = updateFridge.Description;
-            fridge.StockQuantity = updateFridge.StockQuantity;
-
-            await _context.SaveChangesAsync();
-            Console.WriteLine("Fridge updated successfully.");
-
-            return RedirectToAction("Index");
+            catch (Exception ex)
+            {
+                DebuggerNotify("Error updating fridge: " + ex.Message);
+                ModelState.AddModelError("", "Unable to update fridge. Check server logs.");
+                return View(vm);
+            }
         }
-
 
         #endregion
 
 
+        #region DELETED FRIDGES
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteFridge(int id)
+        public IActionResult DeletedFridges(string searchModel, int? category, int? status, int? supplier, int? location)
         {
-            var fridge = await _context.Fridges.FirstOrDefaultAsync(f => f.Id == id && !f.IsDeleted);
-            if (fridge == null) return NotFound();
+            var fridges = _context.Fridges
+                .Where(f => f.IsDeleted)
+                .AsQueryable();
+
+
+            if (!string.IsNullOrEmpty(searchModel))
+                fridges = fridges.Where(f => f.Model.Contains(searchModel));
+
+            if (category.HasValue)
+                fridges = fridges.Where(f => (int)f.Category == category.Value);
+
+            if (status.HasValue)
+                fridges = fridges.Where(f => (int)f.Status == status.Value);
+
+            if (supplier.HasValue)
+                fridges = fridges.Where(f => f.SupplierId == supplier.Value);
+
+            if (location.HasValue)
+                fridges = fridges.Where(f => f.LocationId == location.Value);
+
+
+            var vmList = fridges
+                .Select(f => new CreateFridgeViewModel
+                {
+                    Id = f.Id,
+                    Model = f.Model,
+                    SerialNumber = f.SerialNumber,
+                    Category = f.Category,
+                    Status = f.Status,
+                    SupplierId = f.SupplierId,
+                    LocationId = f.LocationId,
+                    RentalPricePerMonth = f.RentalPricePerMonth,
+                    StockQuantity = f.StockQuantity,
+                    Description = f.Description,
+                    ImageUrl = f.ImageUrl,
+                    Suppliers = _context.Suppliers
+                        .Select(s => new CreateFridgeViewModel.SupplierDropdownViewModel { Id = s.Id, Name = s.Name })
+                        .ToList(),
+                    Locations = _context.Locations
+                        .Select(l => new CreateFridgeViewModel.LocationDropdownViewModel { Id = l.Id, Name = l.Description })
+                        .ToList()
+                })
+                .ToList();
+
+
+            ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory))
+                .Cast<FridgeCategory>()
+                .Select(c => new SelectListItem
+                {
+                    Value = ((int)c).ToString(),
+                    Text = c.ToString()
+                })
+                .ToList();
+
+            ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
+                .Cast<FridgeStatus>()
+                .Select(s => new SelectListItem
+                {
+                    Value = ((int)s).ToString(),
+                    Text = s.ToString()
+                })
+                .ToList();
+
+            ViewBag.SelectedModel = searchModel;
+            ViewBag.SelectedCategory = category?.ToString();
+            ViewBag.SelectedStatus = status?.ToString();
+            ViewBag.SelectedSupplier = supplier?.ToString();
+            ViewBag.SelectedLocation = location?.ToString();
+
+            ViewBag.Suppliers = _context.Suppliers
+                .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name })
+                .ToList();
+
+            ViewBag.Locations = _context.Locations
+                .Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description })
+                .ToList();
+
+            return View(vmList);
+        }
+
+        #endregion
+
+        #region SOFT HEAD DELETE
+
+        // DeleteConfirmation/5
+        public async Task<IActionResult> DeleteConfirmation(int id)
+        {
+            var fridge = await _context.Fridges
+                .Include(f => f.Supplier)
+                .Include(f => f.Location)
+                .Include(f => f.Maintenances)
+                .Include(f => f.UsageLogs)
+                .Include(f => f.Faults)
+                .Include(f => f.Allocations)
+                .Include(f => f.SensorReadings)
+                .FirstOrDefaultAsync(f => f.Id == id);
+
+            if (fridge == null)
+                return NotFound();
+
+            return View(fridge);
+        }
+
+        // POST: SoftDelete
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SoftDelete(int id)
+        {
+            var fridge = await _context.Fridges.FindAsync(id);
+            if (fridge == null)
+                return NotFound();
 
             fridge.IsDeleted = true;
             fridge.DeletedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
-
-            return RedirectToAction("Index");
+            TempData["SuccessMessage"] = "Fridge deleted successfully (soft delete).";
+            return RedirectToAction(nameof(Index));
         }
 
+        #endregion
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RestoreFridge(int id)
+        {
+            var fridge = _context.Fridges.FirstOrDefault(f => f.Id == id && f.IsDeleted);
+            if (fridge == null)
+                return NotFound();
+
+            fridge.IsDeleted = false;
+            fridge.DeletedAt = null;
+
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = "Fridge restored successfully!";
+            return RedirectToAction("DeletedFridges");
+        }
 
         #region #Details Fridge
         public async Task<IActionResult> DetailsFridge(int id)
@@ -769,6 +864,15 @@ namespace Code_Vanta_Systems.Controllers
 
 
 
+        #region ERROR_IDENTIFIES
+
+        public void DebuggerNotify(string bug)
+        {
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine(bug);
+        }
+
+        #endregion
 
     }
 }

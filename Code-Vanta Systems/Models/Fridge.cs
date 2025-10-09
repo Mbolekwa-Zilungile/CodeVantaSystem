@@ -55,7 +55,7 @@ namespace Code_Vanta_Systems.Models
         public string Description { get; set; }
 
         [Required]
-        public string StockQuantity { get; set; }
+        public int StockQuantity { get; set; }
 
         public Fridge()
         {
