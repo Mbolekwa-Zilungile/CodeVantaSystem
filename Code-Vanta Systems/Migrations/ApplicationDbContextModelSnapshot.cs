@@ -403,18 +403,23 @@ namespace Code_Vanta_Systems.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("StockQuantity")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("StockQuantity")
+                        .HasColumnType("int");
 
                     b.Property<int>("SupplierId")
                         .HasColumnType("int");
+
+                    b.Property<string>("TechnicianUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("LocationId");
 
                     b.HasIndex("SupplierId");
+
+                    b.HasIndex("TechnicianUserId");
 
                     b.ToTable("Fridges");
                 });
@@ -470,8 +475,8 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.Property<string>("FaultDescription")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<int>("FridgeId")
                         .HasColumnType("int");
@@ -480,8 +485,8 @@ namespace Code_Vanta_Systems.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime?>("ResolutionDate")
-                        .HasColumnType("datetime2");
+                    b.Property<int>("Severity")
+                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -519,6 +524,11 @@ namespace Code_Vanta_Systems.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("MaintenanceDescription")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PartsUsed")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -714,20 +724,31 @@ namespace Code_Vanta_Systems.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<int>("FridgeId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("NextServiceDate")
+                    b.Property<DateTime>("ScheduledDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Notes")
+                    b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("TechnicianId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("FridgeId");
+
+                    b.HasIndex("TechnicianId");
 
                     b.ToTable("MaintenanceSchedules");
                 });
@@ -962,6 +983,139 @@ namespace Code_Vanta_Systems.Migrations
                     b.ToTable("QuotationItem");
                 });
 
+            modelBuilder.Entity("Code_Vanta_Systems.Models.RentalOrder", b =>
+                {
+                    b.Property<int?>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int?>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("DeliveryFee")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("VAT")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RentalOrders");
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.RentalOrderItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RentalOrderId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RentalOrderId");
+
+                    b.ToTable("RentalOrderItem");
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.RentalRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AllocationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FridgeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RequestedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AllocationId");
+
+                    b.HasIndex("FridgeId");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.ToTable("RentalRequests");
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.RentedFridge", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FridgeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RentedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FridgeId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RentedFridges");
+                });
+
             modelBuilder.Entity("Code_Vanta_Systems.Models.RequestQuotation", b =>
                 {
                     b.Property<int>("RequestQuotationId")
@@ -1022,6 +1176,43 @@ namespace Code_Vanta_Systems.Migrations
                     b.HasIndex("FridgeId");
 
                     b.ToTable("SensorReading");
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.ServiceRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DateOfService")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("FaultId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FridgeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ServiceDetails")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("TechnicianUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FaultId");
+
+                    b.HasIndex("FridgeId");
+
+                    b.HasIndex("TechnicianUserId");
+
+                    b.ToTable("ServiceRecords");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Supplier", b =>
@@ -1389,9 +1580,17 @@ namespace Code_Vanta_Systems.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "Technician")
+                        .WithMany()
+                        .HasForeignKey("TechnicianUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Location");
 
                     b.Navigation("Supplier");
+
+                    b.Navigation("Technician");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.FridgeAllocation", b =>
@@ -1548,7 +1747,15 @@ namespace Code_Vanta_Systems.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "Technician")
+                        .WithMany()
+                        .HasForeignKey("TechnicianId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Fridge");
+
+                    b.Navigation("Technician");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Notification", b =>
@@ -1675,6 +1882,59 @@ namespace Code_Vanta_Systems.Migrations
                     b.Navigation("Quotation");
                 });
 
+            modelBuilder.Entity("Code_Vanta_Systems.Models.RentalOrderItem", b =>
+                {
+                    b.HasOne("Code_Vanta_Systems.Models.RentalOrder", null)
+                        .WithMany("Items")
+                        .HasForeignKey("RentalOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.RentalRequest", b =>
+                {
+                    b.HasOne("Code_Vanta_Systems.Models.FridgeAllocation", "Allocation")
+                        .WithMany()
+                        .HasForeignKey("AllocationId");
+
+                    b.HasOne("Code_Vanta_Systems.Models.Fridge", "Fridge")
+                        .WithMany()
+                        .HasForeignKey("FridgeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "RequestedByUser")
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Allocation");
+
+                    b.Navigation("Fridge");
+
+                    b.Navigation("RequestedByUser");
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.RentedFridge", b =>
+                {
+                    b.HasOne("Code_Vanta_Systems.Models.Fridge", "Fridge")
+                        .WithMany()
+                        .HasForeignKey("FridgeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Fridge");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Code_Vanta_Systems.Models.RequestQuotation", b =>
                 {
                     b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "RequestedBy")
@@ -1703,6 +1963,31 @@ namespace Code_Vanta_Systems.Migrations
                         .IsRequired();
 
                     b.Navigation("Fridge");
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.ServiceRecord", b =>
+                {
+                    b.HasOne("Code_Vanta_Systems.Models.FridgeFault", "Fault")
+                        .WithMany()
+                        .HasForeignKey("FaultId");
+
+                    b.HasOne("Code_Vanta_Systems.Models.Fridge", "Fridge")
+                        .WithMany()
+                        .HasForeignKey("FridgeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "Technician")
+                        .WithMany()
+                        .HasForeignKey("TechnicianUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Fault");
+
+                    b.Navigation("Fridge");
+
+                    b.Navigation("Technician");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Supplier", b =>
@@ -1877,6 +2162,11 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Quotation", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.RentalOrder", b =>
                 {
                     b.Navigation("Items");
                 });

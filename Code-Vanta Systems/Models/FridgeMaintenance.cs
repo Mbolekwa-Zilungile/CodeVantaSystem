@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Code_Vanta_Systems.Models.Enums;
+using System;
 using System.ComponentModel.DataAnnotations;
-using Code_Vanta_Systems.Models.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Code_Vanta_Systems.Models
 {
@@ -11,27 +12,28 @@ namespace Code_Vanta_Systems.Models
 
         [Required]
         public int FridgeId { get; set; }
-        public virtual Fridge Fridge { get; set; }
+
+        [ForeignKey("FridgeId")]
+        public Fridge Fridge { get; set; }
 
         [Required]
         public string TechnicianId { get; set; }
-        public virtual ApplicationUser Technician { get; set; }
 
-        // 🛠️ ADDED: Audit timestamp for when the record was created
-        [Required]
-        public DateTime CreatedDate { get; set; }
+        [ForeignKey("TechnicianId")]
+        public ApplicationUser Technician { get; set; }
 
-        [Required]
-        public DateTime MaintenanceDate { get; set; } // The scheduled date
-
-        // 🛠️ ADDED: Actual completion date (Nullable until work is finished)
+        // FIX for 'DatePerformed' error
         public DateTime? ActualCompletionDate { get; set; }
 
-        [Required, StringLength(500)]
+        // FIX for 'Description' error
+        [MaxLength(1000)]
         public string MaintenanceDescription { get; set; }
 
-        [Required]
-        public MaintenanceStatus Status { get; set; }
+        [MaxLength(500)]
+        public string PartsUsed { get; set; }
 
+        public MaintenanceStatus Status { get; set; }
+        public DateTime MaintenanceDate { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
 }

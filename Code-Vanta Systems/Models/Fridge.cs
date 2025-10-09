@@ -1,6 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Code_Vanta_Systems.Models.Enums;
+﻿using Code_Vanta_Systems.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Code_Vanta_Systems.Models
 {
@@ -19,6 +20,12 @@ namespace Code_Vanta_Systems.Models
         public FridgeStatus Status { get; set; }
 
         public DateTime PurchaseDate { get; set; }
+
+        // Foreign Key for the assigned technician (must be named exactly this way)
+        public string TechnicianUserId { get; set; }
+
+        [ForeignKey("TechnicianUserId")]
+        public ApplicationUser Technician { get; set; }
 
         [Required]
         public int SupplierId { get; set; }

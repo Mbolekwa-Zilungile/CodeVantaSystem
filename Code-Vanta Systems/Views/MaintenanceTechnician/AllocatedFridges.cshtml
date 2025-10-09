@@ -1,0 +1,61 @@
+﻿@model IEnumerable<Code_Vanta_Systems.ViewModels.MaintenanceFridgeListViewModel>
+
+@{
+    ViewData["Title"] = "Allocated Fridges";
+    Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4 text-primary"><i class="bi bi-list-columns-reverse"></i> All Allocated Fridges</h2>
+    <p class="text-muted">Below is the list of all fridges allocated to the customers you manage.</p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Serial Number</th>
+                            <th>Model</th>
+                            <th>Status</th>
+                            <th>Customer</th>
+                            <th>Address</th>
+                            <th>Next Service</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td><a asp-action="FridgeDetails" asp-route-id="@item.FridgeId" class="text-primary">@item.SerialNumber</a></td>
+                                <td>@item.Model</td>
+                                <td><span class="badge bg-success">@item.FridgeStatus</span></td>
+                                <td>@item.CustomerBusinessName</td>
+                                <td>@item.CustomerAddress</td>
+                                <td>
+                                    @(item.NextScheduledVisit?.ToString("yyyy-MM-dd") ?? "N/A")
+                                </td>
+                                <td>
+                                    <a asp-action="FridgeDetails" asp-route-id="@item.FridgeId" class="btn btn-sm btn-outline-info me-2">
+                                        <i class="bi bi-info-circle"></i> Details
+                                    </a>
+                                    <a asp-action="ScheduleVisit" asp-route-fridgeId="@item.FridgeId" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-calendar-plus"></i> Schedule
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="alert alert-warning text-center mt-3" role="alert">
+                    No fridges are currently allocated to your customers.
+                </div>
+            }
+        </div>
+    </div>
+</div>

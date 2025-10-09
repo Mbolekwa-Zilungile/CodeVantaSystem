@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using static Azure.Core.HttpHeader;
 
 namespace Code_Vanta_Systems.Models
 {
@@ -8,18 +8,32 @@ namespace Code_Vanta_Systems.Models
     {
         [Key]
         public int Id { get; set; }
-        // Foreign key referencing the fridge scheduled for maintenance
+
         [Required]
         public int FridgeId { get; set; }
-        // Navigation property for the fridge
-        public virtual Fridge Fridge { get; set; }
 
-        // Date when the next maintenance is scheduled
+        [ForeignKey("FridgeId")]
+        public Fridge Fridge { get; set; }
+
+        // FIX: Must be present. Used for when the maintenance is planned.
         [Required]
-        public DateTime NextServiceDate { get; set; }
+        public DateTime ScheduledDate { get; set; }
 
-        //notes about the maintenance schedule
-        [StringLength(200)]
-        public string Notes { get; set; }
+        // FIX: Must be present. Used for the service task notes.
+        [Required]
+        [MaxLength(500)]
+        public string Description { get; set; }
+
+        // FIX: Must be present. References the ApplicationUser who is assigned.
+        [Required]
+        public string TechnicianId { get; set; }
+
+        [ForeignKey("TechnicianId")]
+        public ApplicationUser Technician { get; set; }
+
+        // FIX: Must be present. Status of the scheduled task (e.g Scheduled, Completed, Cancelled)
+        [Required]
+        [MaxLength(20)]
+        public string Status { get; set; }
     }
 }

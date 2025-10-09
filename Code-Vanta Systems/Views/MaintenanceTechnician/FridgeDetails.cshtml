@@ -1,0 +1,151 @@
+﻿@using Code_Vanta_Systems.ViewModels
+@model MaintenanceFridgeDetailsViewModel
+
+@{
+    ViewData["Title"] = $"Details for {Model.FridgeSummary.SerialNumber}";
+    Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4 text-primary"><i class="bi bi-info-circle"></i> Fridge Details: @Model.FridgeSummary.SerialNumber</h2>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="badge bg-secondary me-2">Model: @Model.FridgeSummary.Model</span>
+            <span class="badge bg-success">Status: @Model.FridgeSummary.FridgeStatus</span>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a asp-action="ScheduleVisit" asp-route-fridgeId="@Model.FridgeSummary.FridgeId" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-calendar-plus"></i> Schedule Visit
+            </a>
+            <a asp-action="CreateServiceRecord" asp-route-fridgeId="@Model.FridgeSummary.FridgeId" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-tools"></i> Log Service
+            </a>
+            <a asp-action="CreateFaultReport" asp-route-fridgeId="@Model.FridgeSummary.FridgeId" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-exclamation-triangle"></i> Report Fault
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4 border-info">
+                <div class="card-header bg-info text-white"><i class="bi bi-person-circle"></i> Customer Information</div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Business:</strong> @Model.FridgeSummary.CustomerBusinessName</p>
+                    <p class="mb-1"><strong>Address:</strong> @Model.FridgeSummary.CustomerAddress</p>
+                    <p class="mb-0 text-muted"><small>Allocated Since: @Model.FridgeSummary.AllocationDate.ToShortDateString()</small></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4 border-warning">
+                <div class="card-header bg-warning text-dark"><i class="bi bi-clock-history"></i> Upcoming Visits (@Model.UpcomingSchedules.Count())</div>
+                <ul class="list-group list-group-flush">
+                    @if (Model.UpcomingSchedules.Any())
+                    {
+                        @foreach (var schedule in Model.UpcomingSchedules)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>@schedule.ScheduledDate.ToString("MMM dd, yyyy @ HH:mm")</strong><br />
+                                    <small class="text-muted">@schedule.Description</small>
+                                </div>
+                                <a asp-action="CreateServiceRecord" asp-route-fridgeId="@schedule.FridgeId" asp-route-scheduleId="@schedule.Id" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-check"></i> Action
+                                </a>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <li class="list-group-item text-muted text-center">No upcoming maintenance scheduled.</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-header p-0">
+            <ul class="nav nav-tabs card-header-tabs" id="historyTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="service-tab" data-bs-toggle="tab" data-bs-target="#service-history" type="button" role="tab" aria-controls="service-history" aria-selected="true">
+                        <i class="bi bi-tools"></i> Service History (@Model.ServiceHistory.Count())
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="fault-tab" data-bs-toggle="tab" data-bs-target="#fault-history" type="button" role="tab" aria-controls="fault-history" aria-selected="false">
+                        <i class="bi bi-exclamation-octagon"></i> Fault History (@Model.FaultHistory.Count())
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="historyTabContent">
+
+                <div class="tab-pane fade show active" id="service-history" role="tabpanel" aria-labelledby="service-tab">
+                    @if (Model.ServiceHistory.Any())
+                    {
+                        <table class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width:15%">Date Performed</th>
+                                    <th style="width:55%">Service Report</th>
+                                    <th style="width:30%">Parts Used</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var service in Model.ServiceHistory)
+                                {
+                                    <tr>
+                                        <td>@service.ActualCompletionDate?.ToShortDateString()</td>
+                                        <td>@service.MaintenanceDescription</td>
+                                        <td>@service.PartsUsed</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning text-center">No service records found for this fridge.</div>
+                    }
+                </div>
+
+                <div class="tab-pane fade" id="fault-history" role="tabpanel" aria-labelledby="fault-tab">
+                    @if (Model.FaultHistory.Any())
+                    {
+                        <table class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width:15%">Report Date</th>
+                                    <th style="width:45%">Description</th>
+                                    <th style="width:15%">Status</th>
+                                    <th style="width:15%">Severity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var fault in Model.FaultHistory)
+                                {
+                                    <tr>
+                                        <td>@fault.DateReported.ToShortDateString()</td>
+                                        <td>@fault.FaultDescription</td>
+                                        <td><span class="badge bg-danger">@fault.Status</span></td>
+                                        <td><span class="badge bg-secondary">@fault.Severity</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success text-center">No fault reports have been filed for this fridge.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

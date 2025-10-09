@@ -1,1 +1,72 @@
-﻿<h1>Maintenance Technician</h1>
+﻿@* @model MaintenanceTechnicianDashboardViewModel (Use a ViewModel if your dashboard becomes complex) *@
+
+@{
+    Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
+    ViewData["Title"] = "Dashboard";
+
+    // Safely retrieve the count, defaulting to 0 if not set
+    // This value is passed by the MaintenanceTechnicianController.Index() action.
+    int allocatedFridgesCount = ViewBag.AllocatedFridgesCount ?? 0;
+}
+
+<div class="container-fluid">
+    <h1 class="mb-4 text-success"><i class="bi bi-gear-fill"></i> Maintenance Technician Dashboard</h1>
+
+    <div class="alert alert-info" role="alert">
+        Welcome to your maintenance portal. You are allocated **@allocatedFridgesCount** customer fridges.
+        @if (allocatedFridgesCount > 0)
+        {
+            <a asp-action="AllocatedFridges" class="alert-link">View your fridges.</a>
+        }
+    </div>
+
+    @* NOTE: The original crash occurred if any code here (or in a partial view) 
+       tried to access Model properties without checking for null. 
+       We must assume any list iteration needs a null check if no model is passed.*@
+
+    @* Example Dashboard Card Structure *@
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title text-info">Allocated Fridges</h5>
+                            <p class="card-text fs-2 fw-bold">@allocatedFridgesCount</p>
+                        </div>
+                        <i class="bi bi-box-seam display-4 text-info"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a asp-action="AllocatedFridges" class="text-info small stretched-link">View Details <i class="bi bi-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-danger h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title text-danger">Open Faults</h5>
+                            <p class="card-text fs-2 fw-bold">@(ViewBag.OpenFaultsCount ?? 0)</p>
+                        </div>
+                        <i class="bi bi-exclamation-octagon display-4 text-danger"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a asp-action="FaultReports" class="text-danger small stretched-link">View Reports <i class="bi bi-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+
+        @* Any list or iteration in this view or a partial view must now be wrapped: *@
+        @* Example safe check for a list called Model: *@
+        @* @if (Model != null && Model.Any()) 
+        {
+             // Render the list items here
+        }
+        *@
+
+    </div>
+</div>
