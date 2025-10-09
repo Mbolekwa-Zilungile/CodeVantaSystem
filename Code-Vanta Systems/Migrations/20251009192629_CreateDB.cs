@@ -68,6 +68,25 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RentalOrders",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CustomerName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Subtotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    VAT = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DeliveryFee = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Total = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentalOrders", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -443,6 +462,28 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RentalOrderItem",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RentalOrderId = table.Column<int>(type: "int", nullable: false),
+                    Model = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentalOrderItem", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentalOrderItem_RentalOrders_RentalOrderId",
+                        column: x => x.RentalOrderId,
+                        principalTable: "RentalOrders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Fridges",
                 columns: table => new
                 {
@@ -460,7 +501,7 @@ namespace Code_Vanta_Systems.Migrations
                     DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RentalPricePerMonth = table.Column<decimal>(type: "decimal(10,1)", precision: 10, scale: 1, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    StockQuantity = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    StockQuantity = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -777,6 +818,33 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RentedFridges",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FridgeId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    RentedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentedFridges", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentedFridges_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RentedFridges_Fridges_FridgeId",
+                        column: x => x.FridgeId,
+                        principalTable: "Fridges",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SensorReading",
                 columns: table => new
                 {
@@ -892,6 +960,42 @@ namespace Code_Vanta_Systems.Migrations
                         principalTable: "Suppliers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RentalRequests",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FridgeId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RequestedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    AllocationId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentalRequests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentalRequests_AspNetUsers_RequestedByUserId",
+                        column: x => x.RequestedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RentalRequests_FridgeAllocations_AllocationId",
+                        column: x => x.AllocationId,
+                        principalTable: "FridgeAllocations",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_RentalRequests_Fridges_FridgeId",
+                        column: x => x.FridgeId,
+                        principalTable: "Fridges",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1208,6 +1312,36 @@ namespace Code_Vanta_Systems.Migrations
                 column: "SupplierId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RentalOrderItem_RentalOrderId",
+                table: "RentalOrderItem",
+                column: "RentalOrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentalRequests_AllocationId",
+                table: "RentalRequests",
+                column: "AllocationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentalRequests_FridgeId",
+                table: "RentalRequests",
+                column: "FridgeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentalRequests_RequestedByUserId",
+                table: "RentalRequests",
+                column: "RequestedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentedFridges_FridgeId",
+                table: "RentedFridges",
+                column: "FridgeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentedFridges_UserId",
+                table: "RentedFridges",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RequestQuotations_RequestedByUserId",
                 table: "RequestQuotations",
                 column: "RequestedByUserId");
@@ -1277,9 +1411,6 @@ namespace Code_Vanta_Systems.Migrations
                 name: "Employees");
 
             migrationBuilder.DropTable(
-                name: "FridgeAllocations");
-
-            migrationBuilder.DropTable(
                 name: "FridgeFaults");
 
             migrationBuilder.DropTable(
@@ -1304,6 +1435,15 @@ namespace Code_Vanta_Systems.Migrations
                 name: "QuotationItem");
 
             migrationBuilder.DropTable(
+                name: "RentalOrderItem");
+
+            migrationBuilder.DropTable(
+                name: "RentalRequests");
+
+            migrationBuilder.DropTable(
+                name: "RentedFridges");
+
+            migrationBuilder.DropTable(
                 name: "SensorReading");
 
             migrationBuilder.DropTable(
@@ -1314,9 +1454,6 @@ namespace Code_Vanta_Systems.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
-
-            migrationBuilder.DropTable(
-                name: "Customers");
 
             migrationBuilder.DropTable(
                 name: "InventoryItems");
@@ -1331,16 +1468,25 @@ namespace Code_Vanta_Systems.Migrations
                 name: "Quotations");
 
             migrationBuilder.DropTable(
-                name: "ItemCatalogs");
+                name: "RentalOrders");
 
             migrationBuilder.DropTable(
-                name: "Fridges");
+                name: "FridgeAllocations");
+
+            migrationBuilder.DropTable(
+                name: "ItemCatalogs");
 
             migrationBuilder.DropTable(
                 name: "PurchaseRequests");
 
             migrationBuilder.DropTable(
                 name: "RequestQuotations");
+
+            migrationBuilder.DropTable(
+                name: "Customers");
+
+            migrationBuilder.DropTable(
+                name: "Fridges");
 
             migrationBuilder.DropTable(
                 name: "Locations");

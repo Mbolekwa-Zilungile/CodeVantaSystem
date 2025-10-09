@@ -36,16 +36,26 @@ namespace Code_Vanta_Systems.Controllers
         {
             var allFridges = _context.Fridges.AsQueryable();
 
+            // Only active fridges
             var fridges = allFridges.Where(f => !f.IsDeleted);
 
+            // Filter by search
             if (!string.IsNullOrEmpty(searchModel))
                 fridges = fridges.Where(f => f.Model.Contains(searchModel));
 
+            // Filter by category (compare string enum)
             if (category.HasValue)
-                fridges = fridges.Where(f => (int)f.Category == category.Value);
+            {
+                var categoryString = ((FridgeCategory)category.Value).ToString();
+                fridges = fridges.Where(f => f.Category.ToString() == categoryString);
+            }
 
+            // Filter by status (compare string enum)
             if (status.HasValue)
-                fridges = fridges.Where(f => (int)f.Status == status.Value);
+            {
+                var statusString = ((FridgeStatus)status.Value).ToString();
+                fridges = fridges.Where(f => f.Status.ToString() == statusString);
+            }
 
             if (supplier.HasValue)
                 fridges = fridges.Where(f => f.SupplierId == supplier.Value);
@@ -53,32 +63,36 @@ namespace Code_Vanta_Systems.Controllers
             if (location.HasValue)
                 fridges = fridges.Where(f => f.LocationId == location.Value);
 
-            // Filters
-            ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory)).Cast<FridgeCategory>()
-                .Select(c => new SelectListItem { Value = ((int)c).ToString(), Text = c.ToString() }).ToList();
+            // Dropdowns
+            ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory))
+                .Cast<FridgeCategory>()
+                .Select(c => new SelectListItem { Value = ((int)c).ToString(), Text = c.ToString() })
+                .ToList();
 
-            ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus)).Cast<FridgeStatus>()
-                .Select(s => new SelectListItem { Value = ((int)s).ToString(), Text = s.ToString() }).ToList();
+            ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
+                .Cast<FridgeStatus>()
+                .Select(s => new SelectListItem { Value = ((int)s).ToString(), Text = s.ToString() })
+                .ToList();
 
-            ViewBag.Suppliers = _context.Suppliers.Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name }).ToList();
-            ViewBag.Locations = _context.Locations.Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description }).ToList();
+            ViewBag.Suppliers = _context.Suppliers
+                .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name })
+                .ToList();
 
+            ViewBag.Locations = _context.Locations
+                .Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description })
+                .ToList();
 
+            // Counts
             ViewBag.TotalFridges = allFridges.Count();
             ViewBag.ActiveFridges = allFridges.Count(f => !f.IsDeleted);
             ViewBag.DeletedFridges = allFridges.Count(f => f.IsDeleted);
-            ViewBag.AvailableFridges = allFridges.Count(f => !f.IsDeleted && f.StockQuantity > 0);
-            ViewBag.OutOfStockFridges = allFridges.Count(f => !f.IsDeleted && f.StockQuantity == 0);
-            ViewBag.TotalSuppliers = _context.Suppliers.Count();
-            ViewBag.TotalFridges = _context.Fridges.Count();
-            ViewBag.AvailableFridges = _context.Fridges.Count(f => f.Status == FridgeStatus.Available && !f.IsDeleted);
-            ViewBag.DeletedFridges = _context.Fridges.Count(f => f.IsDeleted);
-            ViewBag.InRepairFridges = _context.Fridges.Count(f => f.Status == FridgeStatus.InRepair && !f.IsDeleted);
-            ViewBag.RetiredFridges = _context.Fridges.Count(f => f.Status == FridgeStatus.Retired && !f.IsDeleted);
-            ViewBag.OutOfStockFridges = _context.Fridges.Count(f => f.StockQuantity == 0 && !f.IsDeleted);
+            ViewBag.AvailableFridges = allFridges.Count(f => f.Status == FridgeStatus.Available && !f.IsDeleted);
+            ViewBag.OutOfStockFridges = allFridges.Count(f => f.StockQuantity == 0 && !f.IsDeleted);
+            ViewBag.InRepairFridges = allFridges.Count(f => f.Status == FridgeStatus.InRepair && !f.IsDeleted);
+            ViewBag.RetiredFridges = allFridges.Count(f => f.Status == FridgeStatus.Retired && !f.IsDeleted);
             ViewBag.TotalSuppliers = _context.Suppliers.Count();
 
-
+            // Map to ViewModel
             var vmList = fridges.Select(f => new CreateFridgeViewModel
             {
                 Id = f.Id,
@@ -94,16 +108,15 @@ namespace Code_Vanta_Systems.Controllers
                 ImageUrl = f.ImageUrl
             }).ToList();
 
-
-
             return View(vmList);
         }
+
 
         #endregion
 
         // Dashboard..
 
- 
+
 
 
 
@@ -498,6 +511,7 @@ namespace Code_Vanta_Systems.Controllers
 
         #region CREATE FRIDGE
 
+        [HttpGet]
         public IActionResult CreateFridge()
         {
             var model = new CreateFridgeViewModel();
@@ -583,6 +597,7 @@ namespace Code_Vanta_Systems.Controllers
                 .Select(l => new CreateFridgeViewModel.LocationDropdownViewModel { Id = l.Id, Name = l.Description })
                 .ToList();
         }
+
 
         #endregion
 
