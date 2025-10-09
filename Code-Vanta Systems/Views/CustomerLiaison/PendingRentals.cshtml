@@ -1,0 +1,51 @@
+﻿@model IEnumerable<Code_Vanta_Systems.Models.RentalRequest>
+
+@{
+    ViewData["Title"] = "Pending Rentals";
+    Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
+}
+
+<h2 class="mb-4 text-primary"><i class="bi bi-hourglass-split me-2"></i> Pending Rentals</h2>
+
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Fridge</th>
+            <th>Quantity</th>
+            <th>Requested By</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="rentalList">
+        @foreach (var r in Model)
+        {
+            <tr id="rental-@r.Id">
+                <td>@r.Fridge.Model</td>
+                <td>@r.Quantity</td>
+                <td>@r.RequestedByUser.UserName</td>
+                <td>@r.CreatedAt.ToLocalTime().ToString("g")</td>
+                <td>
+                    <button class="btn btn-success btn-sm" onclick="approve(@r.Id)">Approve</button>
+                    <button class="btn btn-danger btn-sm" onclick="reject(@r.Id)">Reject</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        function approve(id) {
+            if (!confirm('Approve this rental?')) return;
+            $.post('@Url.Action("ApproveRental")', { id: id })
+             .done(res => { if(res.success){ $('#rental-' + id).remove(); alert(res.message); } else alert(res.message); });
+        }
+
+        function reject(id) {
+            if (!confirm('Reject this rental?')) return;
+            $.post('@Url.Action("RejectRental")', { id: id })
+             .done(res => { if(res.success){ $('#rental-' + id).remove(); alert(res.message); } else alert(res.message); });
+        }
+    </script>
+}

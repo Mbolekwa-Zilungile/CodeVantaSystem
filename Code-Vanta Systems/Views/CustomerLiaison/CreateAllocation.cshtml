@@ -1,0 +1,27 @@
+﻿@model Code_Vanta_Systems.ViewModels.AllocationViewModel
+
+@{
+    ViewData["Title"] = "Create Allocation";
+    Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
+}
+
+<h2 class="mb-4 text-success"><i class="bi bi-plus-circle me-2"></i> Create New Allocation</h2>
+
+<form asp-action="CreateAllocation" method="post">
+    <div class="mb-3">
+        <label asp-for="CustomerId" class="form-label">Customer</label>
+        <select asp-for="CustomerId" class="form-select" asp-items="ViewBag.Customers"></select>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="FridgeId" class="form-label">Fridge</label>
+        <select asp-for="FridgeId" class="form-select" asp-items="ViewBag.Fridges"></select>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Quantity" class="form-label">Quantity</label>
+        <input asp-for="Quantity" type="number" min="1" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Allocate</button>
+</form>

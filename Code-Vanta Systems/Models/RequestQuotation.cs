@@ -13,6 +13,10 @@ namespace Code_Vanta_Systems.Models
         public DateTime RequestDate { get; set; } = DateTime.Now;
 
         [Required]
+        [StringLength(50)]
+        public string RFQId { get; set; } // <-- Add this property
+
+        [Required]
         public string RequestedByUserId { get; set; }
         [ForeignKey("RequestedByUserId")]
         public ApplicationUser RequestedBy { get; set; }

@@ -313,7 +313,7 @@ namespace Code_Vanta_Systems.Controllers
             }
 
             TempData["Success"] = "Purchase request submitted successfully!";
-            return RedirectToAction(nameof(PurchaseRequests));
+            return RedirectToAction(nameof(SubmitedPurchaseRequests));
         }
 
         public async Task<IActionResult> Details(int id)

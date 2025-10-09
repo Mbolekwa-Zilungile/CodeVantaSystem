@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Code_Vanta_Systems.Controllers
 {
@@ -574,6 +575,125 @@ namespace Code_Vanta_Systems.Controllers
             TempData["Success"] = $"Purchase request #{request.Id} rejected successfully!";
             return RedirectToAction("PurchaseRequests");
         }
+
+        #region RFQ
+
+        // GET: Create RFQ page
+        public async Task<IActionResult> CreateRFQ(int id)
+        {
+            var purchaseRequest = await context.PurchaseRequests
+                .Include(r => r.RequestedItems)
+                    .ThenInclude(ri => ri.Fridge)  // Load the Fridge entity for each requested item
+                .Include(r => r.RequestedBy)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (purchaseRequest == null)
+                return NotFound();
+
+            var suppliers = await context.Suppliers
+                .Include(s => s.User)
+                .Where(s => s.IsActive)
+                .ToListAsync();
+
+            var viewModel = new RQFViewModel
+            {
+                PurchaseRequestId = purchaseRequest.Id,
+                PurchaseRequestNotes = purchaseRequest.Notes,
+                RequestDate = purchaseRequest.RequestDate,
+                ExpectedDate = purchaseRequest.ExpectedDate,
+                Status = purchaseRequest.Status,
+                Priority = purchaseRequest.Priority,
+                Suppliers = suppliers,
+                SelectedSupplierIds = new List<int>(),
+
+                PurchaseRequestItems = purchaseRequest.RequestedItems.Select(item => new PurchaseRequestItemViewModel
+                {
+                    FridgeId = item.FridgeId,
+                    Quantity = item.Quantity,
+                    FridgeModel = item.Fridge?.Model ?? "Unknown"  // <-- Assign fridge model here safely
+                }).ToList()
+            };
+
+            return View(viewModel);
+        }
+
+
+        // POST: Handle RFQ submission
+        // POST: Handle RFQ submission
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateRFQ(RQFViewModel model)
+        {
+            if (!ModelState.IsValid || model.SelectedSupplierIds == null || !model.SelectedSupplierIds.Any())
+            {
+                // Reload suppliers
+                model.Suppliers = await context.Suppliers
+                    .Include(s => s.User)
+                    .Where(s => s.IsActive)
+                    .ToListAsync();
+
+                // Reload fridges for dropdowns
+                var allFridges = await context.Fridges
+                    .Where(f => !f.IsDeleted)
+                    .Select(f => new SelectListItem
+                    {
+                        Value = f.Id.ToString(),
+                        Text = $"{f.Model} ({f.StockQuantity} in stock)"
+                    })
+                    .ToListAsync();
+
+                foreach (var item in model.PurchaseRequestItems)
+                {
+                    item.AvailableItems = allFridges;
+                }
+
+                ModelState.AddModelError(string.Empty, "Please select at least one supplier.");
+                return View(model);
+            }
+
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            foreach (var supplierId in model.SelectedSupplierIds)
+            {
+                // Generate RFQ ID
+                string lastRFQId = await context.RequestQuotations
+                    .OrderByDescending(r => r.RequestQuotationId)
+                    .Select(r => r.RFQId)
+                    .FirstOrDefaultAsync();
+
+                int nextNumber = 1;
+                if (!string.IsNullOrEmpty(lastRFQId))
+                {
+                    var parts = lastRFQId.Split('-'); // e.g., "RFQ-2025-001"
+                    if (parts.Length == 3 && int.TryParse(parts[2], out int lastNum))
+                    {
+                        nextNumber = lastNum + 1;
+                    }
+                }
+
+                string newRFQId = $"RFQ-{DateTime.Now.Year}-{nextNumber:000}";
+
+                // Create new RFQ
+                var requestQuotation = new RequestQuotation
+                {
+                    RFQId = newRFQId,
+                    RequestDate = DateTime.Now,
+                    RequestedByUserId = currentUserId,
+                    SupplierId = supplierId,
+                    Notes = model.Notes ?? ""
+                };
+
+                context.RequestQuotations.Add(requestQuotation);
+            }
+
+            await context.SaveChangesAsync();
+
+            return RedirectToAction("Details", "PurchaseRequests", new { id = model.PurchaseRequestId });
+        }
+
+
+
+        #endregion RFQ
     }
 
 }

@@ -22,7 +22,10 @@ namespace Code_Vanta_Systems.Models
 
         public DateTime? DeallocationDate { get; set; }
 
-        // Who created the allocation (Customer Liaison)
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
+        public int Quantity { get; set; }
+
         public string CreatedByUserId { get; set; }
         public virtual ApplicationUser CreatedBy { get; set; }
     }

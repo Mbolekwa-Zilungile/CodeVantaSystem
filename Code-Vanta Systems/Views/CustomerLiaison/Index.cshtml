@@ -1,12 +1,110 @@
 ﻿@{
+    ViewData["Title"] = "Dashboard";
     Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
-    ViewData["Title"] = "Customer Liaison";
 
+    var notifications = ViewBag.Notifications as List<Code_Vanta_Systems.Models.Notification> ?? new List<Code_Vanta_Systems.Models.Notification>();
 }
-<h1>Customer Liaison </h1>
-<h1>👋 Welcome to Your Fridge Management System!</h1>
 
-<p>Track what’s in your fridge, get expiry reminders, and reduce food waste.</p>
+<div class="container py-4">
+    <h2 class="mb-4 fw-bold text-primary">
+        <i class="bi bi-speedometer2 me-2"></i> Customer Liaison Dashboard
+    </h2>
 
-<p>Use the menu to start managing your fridge items.</p>"
+    <div class="row g-4">
+        <!-- Customers -->
+        <div class="col-md-4 col-sm-6">
+            <div class="card shadow-sm border-0 text-center h-100">
+                <div class="card-body py-4">
+                    <div class="display-4 text-primary mb-3"><i class="bi bi-people-fill"></i></div>
+                    <h5 class="card-title fw-semibold">Customers</h5>
+                    <p class="text-muted">Manage customer information and details.</p>
+                    <a asp-controller="CustomerLiaison" asp-action="ActiveCustomers" class="btn btn-primary">
+                        <i class="bi bi-arrow-right-circle"></i> View Customers
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Allocations -->
+        <div class="col-md-4 col-sm-6">
+            <div class="card shadow-sm border-0 text-center h-100">
+                <div class="card-body py-4">
+                    <div class="display-4 text-success mb-3"><i class="bi bi-box2-heart"></i></div>
+                    <h5 class="card-title fw-semibold">Fridge Allocations</h5>
+                    <p class="text-muted">Allocate or reassign fridges to customers.</p>
+                    <a asp-controller="CustomerLiaison" asp-action="Allocations" class="btn btn-success">
+                        <i class="bi bi-arrow-right-circle"></i> Manage Allocations
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fridge Tracking -->
+        <div class="col-md-4 col-sm-6">
+            <div class="card shadow-sm border-0 text-center h-100">
+                <div class="card-body py-4">
+                    <div class="display-4 text-warning mb-3"><i class="bi bi-map"></i></div>
+                    <h5 class="card-title fw-semibold">Fridge Tracking</h5>
+                    <p class="text-muted">View and monitor fridge locations and statuses.</p>
+                    <a asp-controller="CustomerLiaison" asp-action="FridgeTracking" class="btn btn-warning text-white">
+                        <i class="bi bi-arrow-right-circle"></i> Track Fridges
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Requests -->
+        <div class="col-md-4 col-sm-6">
+            <div class="card shadow-sm border-0 text-center h-100">
+                <div class="card-body py-4">
+                    <div class="display-4 text-info mb-3"><i class="bi bi-envelope-paper"></i></div>
+                    <h5 class="card-title fw-semibold">Requests</h5>
+                    <p class="text-muted">View and manage rental requests.</p>
+                    <a asp-controller="CustomerLiaison" asp-action="Requests" class="btn btn-info text-white">
+                        <i class="bi bi-arrow-right-circle"></i> View Requests
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports -->
+        <div class="col-md-4 col-sm-6">
+            <div class="card shadow-sm border-0 text-center h-100">
+                <div class="card-body py-4">
+                    <div class="display-4 text-danger mb-3"><i class="bi bi-bar-chart-line"></i></div>
+                    <h5 class="card-title fw-semibold">Reports</h5>
+                    <p class="text-muted">Generate fridge allocation and customer reports.</p>
+                    <a asp-controller="Reports" asp-action="CustomerReports" class="btn btn-danger text-white">
+                        <i class="bi bi-arrow-right-circle"></i> View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    @if (notifications.Any())
+    {
+        <div class="mt-4">
+            <h5>Unread Notifications</h5>
+            <ul class="list-group">
+                @foreach (var n in notifications)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <i class="bi bi-bell-fill text-warning me-2"></i> @n.Message
+                        <span class="badge bg-primary rounded-pill">@n.CreatedAt.ToLocalTime().ToString("g")</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mouseenter', () => card.classList.add('shadow-lg'));
+            card.addEventListener('mouseleave', () => card.classList.remove('shadow-lg'));
+        });
+    </script>
 }

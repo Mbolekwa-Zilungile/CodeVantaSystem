@@ -442,6 +442,9 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<int>("FridgeId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedByUserId");
@@ -1106,6 +1109,11 @@ namespace Code_Vanta_Systems.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RFQId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("RequestDate")
                         .HasColumnType("datetime2");

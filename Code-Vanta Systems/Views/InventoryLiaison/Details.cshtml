@@ -82,3 +82,7 @@
 <form asp-action="SendRequest" asp-route-id="@Model.Id" method="post" class="d-inline">
     <button type="submit" class="btn btn-success">Re-send</button>
 </form>
+<a asp-action="PurchaseRequests" asp-route-id="@Model.Id" class="btn btn-primary me-2">
+    <i class="bi bi-arrow-left-short"></i> Back
+</a>
+
