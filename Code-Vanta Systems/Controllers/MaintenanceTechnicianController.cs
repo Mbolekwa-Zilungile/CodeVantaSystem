@@ -44,17 +44,46 @@ namespace Code_Vanta_Systems.Controllers
         }
 
         // GET: MaintenanceTechnician/AllocatedFridges (View list of allocated fridges)
-        public IActionResult AllocatedFridges()
+        public async Task<IActionResult> AllocatedFridges()
         {
-            // The full implementation here would fetch the list of fridges assigned to the user
-            return View();
+            var currentUserId = _userManager.GetUserId(User);
+
+            var fridges = await _context.Fridges
+                .Where(f => f.TechnicianUserId == currentUserId && f.Status == FridgeStatus.Allocated)
+                .Include(f => f.Customer)
+                .Include(f => f.MaintenanceSchedules) // <-- FIXED: Changed Schedules to MaintenanceSchedules
+                .Select(f => new MaintenanceFridgeListViewModel
+                {
+                    FridgeId = f.Id,
+                    SerialNumber = f.SerialNumber,
+                    Model = f.Model,
+                    FridgeStatus = f.Status.ToString(),
+                    CustomerBusinessName = f.Customer.BusinessName,
+                    CustomerAddress = f.Customer.PhysicalAddress,
+                    NextScheduledVisit = f.MaintenanceSchedules // <-- FIXED: Changed Schedules to MaintenanceSchedules
+                                             .Where(s => s.ScheduledDate > DateTime.Now)
+                                             .OrderBy(s => s.ScheduledDate)
+                                             .Select(s => (DateTime?)s.ScheduledDate)
+                                             .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            return View(fridges);
         }
 
         // GET: MaintenanceTechnician/FaultReports (View list of assigned faults)
-        public IActionResult FaultReports()
+        public async Task<IActionResult> FaultReports()
         {
-            // The full implementation here would fetch the list of faults assigned to the user
-            return View();
+            var currentUserId = _userManager.GetUserId(User);
+
+            var faults = await _context.FridgeFaults
+                .Where(ff => ff.AssignedTechnicianId == currentUserId && ff.Status != FaultStatus.Resolved)
+                .Include(ff => ff.Fridge) // Include Fridge for Serial Number
+                .Include(ff => ff.ReportedBy) // Include User for Reporter's Name
+                .OrderByDescending(ff => ff.DateReported)
+                .ToListAsync();
+
+            return View(faults);
         }
 
         // ------------------------------------------------------------------------

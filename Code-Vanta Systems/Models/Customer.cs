@@ -57,6 +57,7 @@ namespace Code_Vanta_Systems.Models
         // Navigation collections
         public virtual ICollection<FridgeAllocation> Allocations { get; set; }
         public virtual ICollection<FridgeRequest> FridgeRequests { get; set; }
+        public ICollection<Fridge> Fridges { get; set; }
 
         public Customer()
         {

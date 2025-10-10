@@ -363,6 +363,9 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<int>("Category")
                         .HasColumnType("int");
 
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
@@ -414,6 +417,8 @@ namespace Code_Vanta_Systems.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("LocationId");
 
@@ -1568,6 +1573,12 @@ namespace Code_Vanta_Systems.Migrations
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Fridge", b =>
                 {
+                    b.HasOne("Code_Vanta_Systems.Models.Customer", "Customer")
+                        .WithMany("Fridges")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Code_Vanta_Systems.Models.Location", "Location")
                         .WithMany("Fridges")
                         .HasForeignKey("LocationId")
@@ -1585,6 +1596,8 @@ namespace Code_Vanta_Systems.Migrations
                         .HasForeignKey("TechnicianUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Customer");
 
                     b.Navigation("Location");
 
@@ -2112,6 +2125,8 @@ namespace Code_Vanta_Systems.Migrations
                     b.Navigation("Allocations");
 
                     b.Navigation("FridgeRequests");
+
+                    b.Navigation("Fridges");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Fridge", b =>

@@ -1,7 +1,7 @@
 ﻿using Code_Vanta_Systems.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema; // Still needed for [Precision]
 
 namespace Code_Vanta_Systems.Models
 {
@@ -24,7 +24,7 @@ namespace Code_Vanta_Systems.Models
         // Foreign Key for the assigned technician (must be named exactly this way)
         public string TechnicianUserId { get; set; }
 
-        [ForeignKey("TechnicianUserId")]
+        // REMOVED [ForeignKey("TechnicianUserId")]: Now relies on FridgeConfiguration.cs
         public ApplicationUser Technician { get; set; }
 
         [Required]
@@ -35,13 +35,24 @@ namespace Code_Vanta_Systems.Models
         public int LocationId { get; set; }
         public virtual Location Location { get; set; }
 
+        // Add these properties to your Fridge.cs file
+        public int CustomerId { get; set; }
+
+        [ForeignKey("CustomerId")]
+        public Customer Customer { get; set; }
+
         // Added for completeness
         public virtual ICollection<FridgeFault> Faults { get; set; }
         public virtual ICollection<FridgeMaintenance> Maintenances { get; set; }
         public virtual ICollection<FridgeAllocation> Allocations { get; set; }
         public virtual ICollection<FridgeUsageLog> UsageLogs { get; set; }
-        public virtual ICollection<MaintenanceSchedule> MaintenanceSchedules { get; set; }
         public virtual ICollection<SensorReading> SensorReadings { get; set; }
+
+        // FIX: REMOVED the conflicting "Schedules" property
+
+        // The single, correct property used by MaintenanceScheduleConfiguration.cs
+        public ICollection<MaintenanceSchedule> MaintenanceSchedules { get; set; } = new List<MaintenanceSchedule>();
+
 
         // Added New Fridge Props
         [Required]
@@ -55,7 +66,7 @@ namespace Code_Vanta_Systems.Models
 
         [Required(ErrorMessage = "Rental Price is required")]
         [Range(0, double.MaxValue, ErrorMessage = "Rental Price must be positive")]
-        [Precision(10,1)]
+        [Precision(10, 1)]
         public decimal RentalPricePerMonth { get; set; }
 
         [StringLength(500)]

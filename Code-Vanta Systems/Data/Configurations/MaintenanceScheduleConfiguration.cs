@@ -8,6 +8,7 @@ namespace Code_Vanta_Systems.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<MaintenanceSchedule> builder)
         {
+            // This explicit configuration resolves the shadow property warning:
             builder.HasOne(ms => ms.Fridge)
                    .WithMany(f => f.MaintenanceSchedules)
                    .HasForeignKey(ms => ms.FridgeId)
