@@ -297,7 +297,10 @@ namespace Code_Vanta_Systems.Controllers
         [HttpGet]
         public async Task<IActionResult> CreateAllocation()
         {
+              
             ViewBag.Customers = await _context.Customers
+                 .Include(c => c.Location)
+               .Where(c => c.Status == CustomerStatus.Active)
                 .Select(c => new SelectListItem { Text = c.BusinessName, Value = c.Id.ToString() })
                 .ToListAsync();
 

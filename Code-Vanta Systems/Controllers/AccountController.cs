@@ -79,8 +79,13 @@ namespace Code_Vanta_Systems.Controllers
                         // Pending customers go to PendingPage to upload document
                         return RedirectToAction("Index", "Customer");
                     }
+                    if (customer != null && customer.Status == CustomerStatus.Rejected)
+                    {
+                        // Pending customers go to PendingPage to upload document
+                        return RedirectToAction("Rejected", "Customer");
+                    }
                     // Active customers go to dashboard
-                    return RedirectToAction("Rejected", "Customer");
+                    return RedirectToAction("Register", "AccountController");
                 }
 
                 // Customer Liaison
