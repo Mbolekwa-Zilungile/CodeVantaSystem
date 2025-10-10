@@ -28,6 +28,8 @@ namespace Code_Vanta_Systems.Controllers
             this.roleManager = roleManager;
             this.context = context;
         }
+
+        #region Suppliers
         // SUPPLIERS
         public async Task<IActionResult> Index()
         {
@@ -307,7 +309,9 @@ namespace Code_Vanta_Systems.Controllers
             TempData["SuccessMessage"] = $"Supplier '{user.Email}' has been successfully reactivated.";
             return RedirectToAction(nameof(Suppliers)); // Adjust to your active suppliers list
         }
+        #endregion
 
+        #region Purchase Request
         //PURCHASE REQUEST
         // Optional: list all purchase requests for current user or all (for manager)
         public async Task<IActionResult> PurchaseRequests()
@@ -576,7 +580,33 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction("PurchaseRequests");
         }
 
+        #endregion
+
         #region RFQ
+
+        public async Task<IActionResult> RFQ()
+        {
+            var rfqs = await context.RequestQuotations
+                .Include(r => r.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(r => r.RequestedBy)
+                .OrderByDescending(r => r.RequestDate)
+                .ToListAsync();
+
+            var vm = rfqs.Select(r => new RFQListItemViewModel
+            {
+                RFQId = r.RFQId,
+                RequestQuotationId = r.RequestQuotationId,
+                RequestDate = r.RequestDate,
+                SupplierName = r.Supplier?.Name,
+                SupplierEmail = r.Supplier?.User?.Email,
+                RequestedBy = r.RequestedBy?.UserName ?? "Unknown",
+                Notes = r.Notes
+            }).ToList();
+
+            return View(vm);
+        }
+
 
         // GET: Create RFQ page
         public async Task<IActionResult> CreateRFQ(int id)
@@ -619,20 +649,25 @@ namespace Code_Vanta_Systems.Controllers
 
 
         // POST: Handle RFQ submission
-        // POST: Handle RFQ submission
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateRFQ(RQFViewModel model)
         {
-            if (!ModelState.IsValid || model.SelectedSupplierIds == null || !model.SelectedSupplierIds.Any())
+            // Validate supplier selection
+            if (model.SelectedSupplierIds == null || !model.SelectedSupplierIds.Any())
             {
-                // Reload suppliers
+                ModelState.AddModelError(nameof(model.SelectedSupplierIds), "Please select at least one supplier.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // Reload suppliers list
                 model.Suppliers = await context.Suppliers
                     .Include(s => s.User)
                     .Where(s => s.IsActive)
                     .ToListAsync();
 
-                // Reload fridges for dropdowns
+                // Reload fridge dropdown items
                 var allFridges = await context.Fridges
                     .Where(f => !f.IsDeleted)
                     .Select(f => new SelectListItem
@@ -647,33 +682,34 @@ namespace Code_Vanta_Systems.Controllers
                     item.AvailableItems = allFridges;
                 }
 
-                ModelState.AddModelError(string.Empty, "Please select at least one supplier.");
                 return View(model);
             }
 
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            // ✅ Get the latest RFQ number once
+            string lastRFQId = await context.RequestQuotations
+                .OrderByDescending(r => r.RequestQuotationId)
+                .Select(r => r.RFQId)
+                .FirstOrDefaultAsync();
+
+            int nextNumber = 1;
+
+            if (!string.IsNullOrEmpty(lastRFQId))
+            {
+                var parts = lastRFQId.Split('-'); // e.g., "RFQ-2025-004"
+                if (parts.Length == 3 && int.TryParse(parts[2], out int lastNum))
+                {
+                    nextNumber = lastNum + 1;
+                }
+            }
+
+            // ✅ Loop through suppliers and increment RFQ number for each
             foreach (var supplierId in model.SelectedSupplierIds)
             {
-                // Generate RFQ ID
-                string lastRFQId = await context.RequestQuotations
-                    .OrderByDescending(r => r.RequestQuotationId)
-                    .Select(r => r.RFQId)
-                    .FirstOrDefaultAsync();
-
-                int nextNumber = 1;
-                if (!string.IsNullOrEmpty(lastRFQId))
-                {
-                    var parts = lastRFQId.Split('-'); // e.g., "RFQ-2025-001"
-                    if (parts.Length == 3 && int.TryParse(parts[2], out int lastNum))
-                    {
-                        nextNumber = lastNum + 1;
-                    }
-                }
-
                 string newRFQId = $"RFQ-{DateTime.Now.Year}-{nextNumber:000}";
+                nextNumber++; // increment for next supplier
 
-                // Create new RFQ
                 var requestQuotation = new RequestQuotation
                 {
                     RFQId = newRFQId,
@@ -688,8 +724,10 @@ namespace Code_Vanta_Systems.Controllers
 
             await context.SaveChangesAsync();
 
-            return RedirectToAction("Details", "PurchaseRequests", new { id = model.PurchaseRequestId });
+            return RedirectToAction("RQF", "PurchaseRequests", new { id = model.PurchaseRequestId });
         }
+
+
 
 
 

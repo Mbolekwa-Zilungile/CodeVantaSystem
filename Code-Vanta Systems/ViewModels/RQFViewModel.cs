@@ -18,15 +18,19 @@ namespace Code_Vanta_Systems.ViewModels
 
         public PriorityLevel Priority { get; set; }
 
-        public List<Supplier> Suppliers { get; set; }
+        // Initialize list to avoid null reference
+        public List<Supplier> Suppliers { get; set; } = new List<Supplier>();
+
         [Required(ErrorMessage = "Please select at least one supplier.")]
-        public List<int> SelectedSupplierIds { get; set; } = new();
+        [MinLength(1, ErrorMessage = "Please select at least one supplier.")]
+        public List<int> SelectedSupplierIds { get; set; } = new List<int>();
 
         [MaxLength(500)]
         public string? Notes { get; set; }
 
         public string? ContactPersonName { get; set; }
 
+        // Initialize list to avoid null reference
         public List<PurchaseRequestItemViewModel> PurchaseRequestItems { get; set; } = new List<PurchaseRequestItemViewModel>();
     }
 }

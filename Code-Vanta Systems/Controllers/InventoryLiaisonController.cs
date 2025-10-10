@@ -231,33 +231,57 @@ namespace Code_Vanta_Systems.Controllers
                 ModelState.AddModelError(nameof(model.Priority), "Priority is required.");
             }
 
+            // Validate expected date
             if (model.ExpectedDate.HasValue && model.ExpectedDate.Value.Date < DateTime.Now.Date)
             {
                 ModelState.AddModelError("ExpectedDate", "Expected date cannot be in the past.");
             }
 
-            // Validate at least one fridge is selected
+            // Validate fridge selection
             if (model.Items == null || !model.Items.Any(i => i.FridgeId > 0))
             {
                 ModelState.AddModelError("", "You must select at least one fridge.");
             }
+
+            // **Remove ModelState errors for FridgeModel fields**
+            var keysToRemove = ModelState.Keys.Where(k => k.EndsWith("FridgeModel")).ToList();
+            foreach (var key in keysToRemove)
+            {
+                ModelState.Remove(key);
+            }
+
             if (!ModelState.IsValid)
             {
                 var allFridges = await _context.Fridges
                     .Where(f => !f.IsDeleted)
-                    .Select(f => new SelectListItem { Value = f.Id.ToString(), Text = f.Model })
+                    .Select(f => new SelectListItem
+                    {
+                        Value = f.Id.ToString(),
+                        Text = $"{f.Model} ({f.StockQuantity} in stock)"
+                    })
                     .ToListAsync();
 
                 foreach (var item in model.Items)
                 {
                     item.AvailableItems = allFridges;
+
+                    // Set FridgeModel for display if fridge is selected
+                    if (item.FridgeId > 0)
+                    {
+                        var fridge = await _context.Fridges.FirstOrDefaultAsync(f => f.Id == item.FridgeId);
+                        if (fridge != null)
+                        {
+                            item.FridgeModel = fridge.Model;
+                        }
+                    }
                 }
 
-                model.AvailableItems = allFridges; // optional, if you use it in the view
+                model.AvailableItems = allFridges;
 
                 return View(model);
             }
-            // Create purchase request
+
+            // Continue with purchase request creation as you had it...
             var request = new PurchaseRequest
             {
                 RequestedByUserId = user.Id,
@@ -265,17 +289,20 @@ namespace Code_Vanta_Systems.Controllers
                 ExpectedDate = model.ExpectedDate,
                 Priority = model.Priority,
                 Notes = model.Notes,
-                Status = Models.Enums.RequestStatus.Submitted
+                Status = RequestStatus.Submitted
             };
 
             _context.PurchaseRequests.Add(request);
-            await _context.SaveChangesAsync(); // request.Id is now available
+            await _context.SaveChangesAsync();
 
-            // Map selected fridges to request items
+            var fridgeIds = model.Items.Where(i => i.FridgeId > 0).Select(i => i.FridgeId).Distinct();
+            var fridgesDict = await _context.Fridges
+                .Where(f => fridgeIds.Contains(f.Id))
+                .ToDictionaryAsync(f => f.Id);
+
             foreach (var item in model.Items.Where(i => i.FridgeId > 0))
             {
-                var fridge = await _context.Fridges.FindAsync(item.FridgeId);
-                if (fridge != null)
+                if (fridgesDict.TryGetValue(item.FridgeId, out var fridge))
                 {
                     var requestItem = new PurchaseRequestItem
                     {
@@ -285,23 +312,24 @@ namespace Code_Vanta_Systems.Controllers
                         Description = fridge.Description,
                         Quantity = item.Quantity
                     };
+
                     _context.PurchaseRequestItems.Add(requestItem);
                 }
             }
 
             await _context.SaveChangesAsync();
 
-            var purchasemanager = await _userManager.GetUsersInRoleAsync("Purchasing Manager");
-            var liaisonUser = purchasemanager.FirstOrDefault();
+            // Notify Purchasing Manager
+            var purchasingManagers = await _userManager.GetUsersInRoleAsync("Purchasing Manager");
+            var liaisonUser = purchasingManagers.FirstOrDefault();
 
             if (liaisonUser != null)
             {
-                // ✅ 2. Create notification
                 var notification = new Notification
                 {
                     RecipientUserId = liaisonUser.Id,
                     Title = "New Purchase Request Sent",
-                    Message = $"A new purchase request #{request.Id} was submitted by {User.Identity.Name}.",
+                    Message = $"A new purchase request #{request.Id} was submitted by {User.Identity?.Name ?? "Unknown User"}.",
                     CreatedAt = DateTime.UtcNow,
                     IsRead = false,
                     TargetController = "PurchasingManager",
@@ -315,6 +343,7 @@ namespace Code_Vanta_Systems.Controllers
             TempData["Success"] = "Purchase request submitted successfully!";
             return RedirectToAction(nameof(SubmitedPurchaseRequests));
         }
+
 
         public async Task<IActionResult> Details(int id)
         {
@@ -363,7 +392,7 @@ namespace Code_Vanta_Systems.Controllers
                     PurchaseRequestItemId = i.Id,
                     FridgeId = i.FridgeId,
                     Quantity = i.Quantity,
-                    AvailableItems = fridges
+                    AvailableItems = fridges,
                 }).ToList()
             };
 
@@ -378,6 +407,11 @@ namespace Code_Vanta_Systems.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReEditRequest(EditPurchaseRequestViewModel model)//Reedit purchase request
         {
+            var keysToRemove = ModelState.Keys.Where(k => k.EndsWith("FridgeModel")).ToList();
+            foreach (var key in keysToRemove)
+            {
+                ModelState.Remove(key);
+            } 
             if (!ModelState.IsValid)
             { 
                 var fridges = await _context.Fridges

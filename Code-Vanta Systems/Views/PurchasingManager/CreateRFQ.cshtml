@@ -57,8 +57,6 @@
             <h5 class="mb-0">Select Suppliers <span class="text-danger">*</span></h5>
         </div>
 
-        <input type="hidden" name="SelectedSupplierIds" value="0" />
-
         <div class="card-body p-0">
             <table class="table table-hover mb-0">
                 <thead class="table-light">
@@ -73,15 +71,18 @@
                 <tbody>
                     @foreach (var supplier in Model.Suppliers)
                     {
+                        var checkboxId = "supplier_" + supplier.Id;
                         <tr>
                             <td class="align-middle text-center">
                                 <input type="checkbox"
+                                       id="@checkboxId"
                                        name="SelectedSupplierIds"
                                        value="@supplier.Id"
                                        class="form-check-input"
-                                @(Model.SelectedSupplierIds.Contains(supplier.Id) ? "checked" : "") />
+                                       aria-describedby="selectedSupplierIdsError"
+                                       @(Model.SelectedSupplierIds.Contains(supplier.Id) ? "checked" : "") />
                             </td>
-                            <td class="align-middle">@supplier.Name</td>
+                            <td class="align-middle"><label for="@checkboxId" class="mb-0">@supplier.Name</label></td>
                             <td class="align-middle"><a href="mailto:@supplier.User.Email">@supplier.User.Email</a></td>
                             <td class="align-middle">@supplier.Phone</td>
                             <td class="align-middle">@supplier.Address</td>
@@ -90,9 +91,10 @@
                 </tbody>
             </table>
 
-            <span asp-validation-for="SelectedSupplierIds" class="text-danger ms-3 mt-2 d-block"></span>
+            <span id="selectedSupplierIdsError" asp-validation-for="SelectedSupplierIds" class="text-danger ms-3 mt-2 d-block"></span>
         </div>
     </div>
+
     <!-- Additional Notes -->
     <div class="mb-4">
         <label asp-for="Notes" class="form-label fw-bold">Additional Notes</label>
@@ -107,8 +109,6 @@
 </form>
 
 <hr class="my-5" />
-
-
 
 @section Scripts {
     <script>
