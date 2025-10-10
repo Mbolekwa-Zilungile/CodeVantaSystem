@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateDB : Migration
+    public partial class @new : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -579,6 +579,7 @@ namespace Code_Vanta_Systems.Migrations
                     RequestQuotationId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     RequestDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RFQId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     RequestedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false)
@@ -646,6 +647,7 @@ namespace Code_Vanta_Systems.Migrations
                     CustomerId = table.Column<int>(type: "int", nullable: false),
                     AllocationDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DeallocationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
                     CreatedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>

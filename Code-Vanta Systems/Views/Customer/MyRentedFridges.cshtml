@@ -1,0 +1,25 @@
+﻿@model IEnumerable<Code_Vanta_Systems.Models.RentalRequest>
+
+@{
+    Layout = "~/Views/Shared/_CustomerLayout.cshtml";
+    ViewData["Title"] = "My Rented Fridges";
+}
+
+<h2>My Active Rented Fridges</h2>
+
+<div class="row">
+    @foreach (var r in Model)
+    {
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <img src="@r.Fridge.ImageUrl" class="card-img-top" style="height:200px; object-fit:cover;" />
+                <div class="card-body">
+                    <h5 class="card-title">@r.Fridge.Model</h5>
+                    <p><strong>Quantity:</strong> @r.Quantity</p>
+                    <p><strong>Rented On:</strong> @r.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</p>
+                    <a asp-controller="Customer" asp-action="LogFault" asp-route-id="@r.Id" class="btn btn-warning">Report Issue</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
