@@ -21,6 +21,7 @@ namespace Code_Vanta_Systems.ViewModels
         public int? PurchaseRequestItemId { get; set; }
 
         // ✅ Add this so you can display fridge model in RFQ views
+        [BindNever]
         public string FridgeModel { get; set; }
     }
 }
