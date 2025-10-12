@@ -98,6 +98,11 @@
             <i class="bi bi-shop me-2"></i>Customers
         </a>
 
+        <a class="sidebar-link @(currentAction == "Suppliers" ? "active" : "")"
+           asp-controller="Admin" asp-action="Suppliers">
+            <i class="bi bi-shop me-2"></i>Suppliers
+        </a>
+
         @* 🚨 FIX: Highlight User Roles link for ManageRoles and EditUserRoles actions *@
         <a class="sidebar-link @(currentAction == "ManageRoles" || currentAction == "EditUserRoles" ? "active" : "")"
            asp-controller="Admin" asp-action="ManageRoles">

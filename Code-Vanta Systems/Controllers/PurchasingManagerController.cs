@@ -1,6 +1,7 @@
 ﻿using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
+using Code_Vanta_Systems.Services;
 using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Code_Vanta_Systems.Controllers
 {
@@ -18,15 +20,17 @@ namespace Code_Vanta_Systems.Controllers
         private readonly UserManager<ApplicationUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly ApplicationDbContext context;
+        private readonly EmailService emailService;
 
         public PurchasingManagerController(
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            ApplicationDbContext context)
+            ApplicationDbContext context, EmailService emailService)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
             this.context = context;
+            this.emailService = emailService;
         }
 
         #region Suppliers
@@ -37,6 +41,12 @@ namespace Code_Vanta_Systems.Controllers
             .ToListAsync();
             ViewBag.ActiveSupplierCount = activeSuppliers.Count;
             ViewBag.RequestCount = await context.PurchaseRequests.CountAsync();
+
+            var notifications = await context.Notifications
+        .OrderByDescending(n => n.CreatedAt) // assuming you have CreatedAt
+        .Take(5)
+        .ToListAsync();
+            ViewBag.LatestNotifications = notifications;
             return View();
         }
   
@@ -78,11 +88,8 @@ namespace Code_Vanta_Systems.Controllers
         public async Task<IActionResult> Create(RegisterSupplierViewModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
-            // 1. Create ApplicationUser without password
             var user = new ApplicationUser
             {
                 UserName = model.Email,
@@ -91,12 +98,14 @@ namespace Code_Vanta_Systems.Controllers
                 EmailConfirmed = true,
                 PhoneNumber = model.Phone
             };
+            // Use a strong default password
+            var result = await userManager.CreateAsync(user, "Supplier@123!");
 
-            var userCreationResult = await userManager.CreateAsync(user);
-
-            if (userCreationResult.Succeeded)
+            if (result.Succeeded)
             {
-                // 2. Check role exists and assign "Supplier" role
+                user.EmailConfirmed = true;
+                await userManager.UpdateAsync(user);
+
                 var roleExists = await context.Roles.AnyAsync(r => r.Name == "Supplier");
                 if (!roleExists)
                 {
@@ -121,6 +130,7 @@ namespace Code_Vanta_Systems.Controllers
                     await context.Suppliers.AddAsync(supplier);
                     await context.SaveChangesAsync();
 
+
                     TempData["SuccessMessage"] = $"Supplier '{model.CompanyName}' created successfully.";
                     return RedirectToAction("Suppliers"); // Adjust this action to your supplier list page
                 }
@@ -131,11 +141,11 @@ namespace Code_Vanta_Systems.Controllers
             }
             else
             {
-                foreach (var error in userCreationResult.Errors)
+                foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
-            }
+            } 
 
             return View(model);
         }
@@ -620,21 +630,24 @@ namespace Code_Vanta_Systems.Controllers
             if (purchaseRequest == null)
                 return NotFound();
 
+           
             var suppliers = await context.Suppliers
                 .Include(s => s.User)
                 .Where(s => s.IsActive)
                 .ToListAsync();
+            var company = await context.Company.FirstOrDefaultAsync();
 
             var viewModel = new RQFViewModel
             {
                 PurchaseRequestId = purchaseRequest.Id,
                 PurchaseRequestNotes = purchaseRequest.Notes,
-                RequestDate = purchaseRequest.RequestDate,
+                RequestedDate = DateTime.Now,
                 ExpectedDate = purchaseRequest.ExpectedDate,
                 Status = purchaseRequest.Status,
                 Priority = purchaseRequest.Priority,
                 Suppliers = suppliers,
                 SelectedSupplierIds = new List<int>(),
+                Company = company,
 
                 PurchaseRequestItems = purchaseRequest.RequestedItems.Select(item => new PurchaseRequestItemViewModel
                 {
@@ -687,14 +700,13 @@ namespace Code_Vanta_Systems.Controllers
 
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // ✅ Get the latest RFQ number once
+            // Get the latest RFQ number once
             string lastRFQId = await context.RequestQuotations
                 .OrderByDescending(r => r.RequestQuotationId)
                 .Select(r => r.RFQId)
                 .FirstOrDefaultAsync();
 
             int nextNumber = 1;
-
             if (!string.IsNullOrEmpty(lastRFQId))
             {
                 var parts = lastRFQId.Split('-'); // e.g., "RFQ-2025-004"
@@ -704,12 +716,13 @@ namespace Code_Vanta_Systems.Controllers
                 }
             }
 
-            // ✅ Loop through suppliers and increment RFQ number for each
+            // Loop through suppliers and create RFQs + notifications
             foreach (var supplierId in model.SelectedSupplierIds)
             {
                 string newRFQId = $"RFQ-{DateTime.Now.Year}-{nextNumber:000}";
-                nextNumber++; // increment for next supplier
+                nextNumber++;
 
+                // Create RFQ
                 var requestQuotation = new RequestQuotation
                 {
                     RFQId = newRFQId,
@@ -720,17 +733,46 @@ namespace Code_Vanta_Systems.Controllers
                 };
 
                 context.RequestQuotations.Add(requestQuotation);
+
+                // Create Notification for Supplier
+                var supplier = await context.Suppliers
+                    .Include(s => s.User)
+                    .FirstOrDefaultAsync(s => s.Id == supplierId);
+
+                if (supplier != null && supplier.User != null)
+                {
+                    var notification = new Notification
+                    {
+                        RecipientUserId = supplier.User.Id,  // Use correct property
+                        Title = "New RFQ Created",
+                        Message = $"A new RFQ ({newRFQId}) has been created for you. Please respond.",
+                        TargetController = "RFQ",
+                        TargetAction = "Details" // Replace with actual action for viewing RFQ
+                    };
+                    context.Notifications.Add(notification);
+
+                    try
+                    {
+                        string subject = $"New RFQ Created: {newRFQId}";
+                        string body = $@"
+                    <p>Hello {supplier.Name},</p>
+                    <p>A new RFQ (<strong>{newRFQId}</strong>) has been created for you. Please log in to your dashboard to view and respond.</p>
+                    <p>Best regards,<br/>CodeVanta Team</p>";
+
+                        await emailService.SendEmailAsync(supplier.User.Email, subject, body);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the email failure
+                        Console.WriteLine($"Failed to send email to {supplier.User.Email}: {ex.Message}");
+                    }
+                }
             }
 
             await context.SaveChangesAsync();
 
-            return RedirectToAction("RQF", "PurchaseRequests", new { id = model.PurchaseRequestId });
+            return RedirectToAction("RFQ", "PurchasingManager", new { id = model.PurchaseRequestId });
         }
-
-
-
-
-
         #endregion RFQ
     }
 

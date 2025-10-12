@@ -1,0 +1,67 @@
+﻿@model Code_Vanta_Systems.ViewModels.RFQDetailViewModel
+
+@{
+    ViewData["Title"] = "RFQ Details";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Adjust if you have a supplier-specific layout
+}
+
+<h2 class="mb-4">RFQ Details</h2>
+
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h4>RFQ Information</h4>
+    </div>
+    <div class="card-body">
+        <p><strong>RFQ ID:</strong> @Model.RFQId</p>
+        <p><strong>Request ID:</strong> @Model.RequestQuotationId</p>
+        <p><strong>Request Date:</strong> @Model.RequestDate.ToString("yyyy-MM-dd")</p>
+        <p><strong>Supplier Name:</strong> @Model.SupplierName</p>
+        <p><strong>Supplier Email:</strong> @Model.SupplierEmail</p>
+        <p><strong>Requested By:</strong> @Model.RequestedBy</p>
+        <p><strong>Notes:</strong> @Model.Notes</p>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-secondary text-white">
+        <h4>Quotation Items</h4>
+    </div>
+    <div class="card-body">
+        @if (Model.Items != null && Model.Items.Any())
+        {
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Item Name</th>
+                        <th>Requested Quantity</th>
+                        <th>Quoted Quantity</th>
+                        <th>Quoted Unit Price</th>
+                        <th>Total Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Items.Count; i++)
+                    {
+                        var item = Model.Items.ElementAt(i);
+                        <tr>
+                            <td>@(i + 1)</td>
+                            <td>@item.PurchaseRequestItem?.ModelRequested ?? "N/A"</td>
+                            <td>@item.PurchaseRequestItem?.Quantity ?? 0</td>
+                            <td>@item.QuotedQuantity</td>
+                            <td>@item.QuotedUnitPrice.ToString("C")</td>
+                            <td>@(item.QuotedQuantity * item.QuotedUnitPrice).ToString("C")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No quotation items found for this RFQ.</p>
+        }
+    </div>
+</div>
+
+<a asp-action="RFQ" class="btn btn-secondary mt-3">Back to RFQ List</a>
+

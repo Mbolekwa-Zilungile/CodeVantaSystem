@@ -115,3 +115,39 @@
 
 </div>
 
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Latest Notifications</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Title</th>
+                    <th>Message</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (ViewBag.LatestNotifications != null && ((List<Code_Vanta_Systems.Models.Notification>)ViewBag.LatestNotifications).Any())
+                {
+                    foreach (var notification in (List<Code_Vanta_Systems.Models.Notification>)ViewBag.LatestNotifications)
+                    {
+                        <tr>
+                            <td>@notification.Title</td>
+                            <td>@notification.Message</td>
+                            <td>@notification.CreatedAt.ToString("dd MMM yyyy HH:mm")</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3" class="text-center">No notifications available.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
