@@ -1,0 +1,56 @@
+﻿@model List<Code_Vanta_Systems.Models.FridgeFault>
+@using Code_Vanta_Systems.Models.Enums // Assuming FaultStatus is here
+@* NOTE: You will need a helper class (e.g., FaultStatusHelper.GetStatusColor) 
+   to map the status enum to a Bootstrap color (bg-primary, bg-success, etc.). *@
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Manage Faults";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">@ViewBag.ListTitle</h3>
+    <a asp-action="Faults" asp-route-statusFilter="Open" class="btn btn-sm @(ViewBag.ActiveStatus == "Open" ? "btn-primary" : "btn-outline-secondary")">Open (@ViewBag.OpenCount)</a>
+    <a asp-action="Faults" asp-route-statusFilter="Resolved" class="btn btn-sm @(ViewBag.ActiveStatus == "Resolved" ? "btn-success" : "btn-outline-secondary")">Resolved (@ViewBag.ResolvedCount)</a>
+    <a asp-action="Faults" asp-route-statusFilter="" class="btn btn-sm @(string.IsNullOrEmpty(ViewBag.ActiveStatus) ? "btn-info" : "btn-outline-secondary")">Total (@ViewBag.TotalCount)</a>
+</div>
+
+<hr />
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No @ViewBag.ListTitle found.</div>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Fridge Serial</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Reported</th>
+                <th>Assigned Tech</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var fault in Model)
+            {
+                <tr>
+                    <td>@fault.Id</td>
+                    <td>@fault.Fridge.SerialNumber</td>
+                    <td>@fault.Fridge.Customer?.BusinessName</td>
+                    @* Use a helper method or switch statement to display status color *@
+                    <td><span class="badge bg-primary">@fault.Status</span></td>
+                    <td>@fault.DateReported.ToShortDateString()</td>
+                    <td>@(fault.AssignedTechnician?.FullName ?? "Unassigned")</td>
+                    <td>
+                        <a asp-action="FaultDetails" asp-route-id="@fault.Id" class="btn btn-sm btn-info">Details</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

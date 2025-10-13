@@ -1,0 +1,37 @@
+﻿@model Code_Vanta_Systems.Models.FridgeFault
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = $"Fault Details: {Model.Id}";
+}
+
+<div class="container mt-4">
+    <h3>Fault Details (ID: @Model.Id)</h3>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-6">
+            <dl class="row">
+                <dt class="col-sm-4">Status:</dt>
+                <dd class="col-sm-8"><span class="badge bg-primary">@Model.Status</span></dd>
+
+                <dt class="col-sm-4">Reported By:</dt>
+                @* FIX: Use @Model.ReportedBy.FullName instead of @Model.ReportedByCustomer?.BusinessName *@
+                <dd class="col-sm-8">@Model.ReportedBy?.FullName</dd>
+
+                <dt class="col-sm-4">Date Reported:</dt>
+                <dd class="col-sm-8">@Model.DateReported.ToShortDateString()</dd>
+
+                <dt class="col-sm-4">Assigned Tech:</dt>
+                <dd class="col-sm-8">@(Model.AssignedTechnician?.FullName ?? "Unassigned")</dd>
+            </dl>
+        </div>
+        <div class="col-md-6">
+            <h4>Fault Description</h4>
+            @* FIX: Use @Model.FaultDescription instead of @Model.Description *@
+            <p>@Model.FaultDescription</p>
+        </div>
+    </div>
+
+    @* ... rest of the view content ... *@
+</div>

@@ -2,8 +2,9 @@
 
 using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
-using Code_Vanta_Systems.ViewModels;
+using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Services;
+using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -995,6 +996,115 @@ namespace Code_Vanta_Systems.Controllers
                 })
                 .ToListAsync();
             return View(model);
+        }
+
+        //---------------------------------------------------------
+        // FAULT & MAINTENANCE MANAGEMENT (ADMIN)
+        //---------------------------------------------------------
+
+        // --- FAULT MANAGEMENT ---
+
+        // GET: Admin/Faults
+        public async Task<IActionResult> Faults(string statusFilter = "Open")
+        {
+            // Query for all faults, including related entities for display
+            var faultsQuery = context.FridgeFaults
+                .Include(ff => ff.Fridge)
+                    .ThenInclude(f => f.Customer) // Include Customer via Fridge
+                .Include(ff => ff.AssignedTechnician)
+                .AsQueryable();
+
+            ViewBag.ActiveStatus = statusFilter;
+
+            // Filter by status (e.g., Open, InProgress, Resolved)
+            if (!string.IsNullOrEmpty(statusFilter) && Enum.TryParse<FaultStatus>(statusFilter, true, out var status))
+            {
+                faultsQuery = faultsQuery.Where(ff => ff.Status == status);
+                ViewBag.ListTitle = $"{statusFilter} Faults";
+            }
+            else
+            {
+                ViewBag.ListTitle = "All Faults";
+            }
+
+            // Order by DateReported (most recent first)
+            var faults = await faultsQuery
+                .OrderByDescending(ff => ff.DateReported)
+                .ToListAsync();
+
+            // Calculate counts for dashboard cards/filter tabs
+            ViewBag.OpenCount = await context.FridgeFaults.CountAsync(ff => ff.Status == FaultStatus.Reported);
+            ViewBag.ResolvedCount = await context.FridgeFaults.CountAsync(ff => ff.Status == FaultStatus.Resolved);
+            ViewBag.TotalCount = await context.FridgeFaults.CountAsync();
+
+            return View(faults);
+        }
+
+        // GET: Admin/FaultDetails/5
+        public async Task<IActionResult> FaultDetails(int id)
+        {
+            var fault = await context.FridgeFaults
+                .Include(ff => ff.Fridge)
+                    .ThenInclude(f => f.Customer)
+                .Include(ff => ff.AssignedTechnician)
+                .FirstOrDefaultAsync(ff => ff.Id == id);
+
+            if (fault == null)
+            {
+                TempData["ErrorMessage"] = "Fault record not found.";
+                return RedirectToAction(nameof(Faults));
+            }
+
+            // Get associated maintenance/service records for context
+            var serviceRecords = await context.ServiceRecords // Assuming a ServiceRecord model for completed work
+                .Include(sr => sr.Technician)
+                .Where(sr => sr.FaultId == id)
+                .OrderByDescending(sr => sr.DateOfService)
+                .ToListAsync();
+
+            ViewBag.ServiceRecords = serviceRecords;
+            ViewData["Title"] = $"Fault Details: {fault.Id}";
+            return View(fault);
+        }
+
+        // --- MAINTENANCE MANAGEMENT ---
+
+        // GET: Admin/MaintenanceRecords (List of all completed service records)
+        public async Task<IActionResult> MaintenanceRecords()
+        {
+            // Using ServiceRecords model based on MaintenanceTechnicianController logic
+            var maintenanceRecords = await context.ServiceRecords
+                .Include(sr => sr.Fridge)
+                    .ThenInclude(f => f.Customer)
+                .Include(sr => sr.Technician)
+                .OrderByDescending(sr => sr.DateOfService)
+                .ToListAsync();
+
+            // Calculate total maintenance count for dashboard card
+            ViewBag.TotalRecordsCount = maintenanceRecords.Count;
+            ViewData["ListTitle"] = "All Maintenance Records (Service Records)";
+
+            return View(maintenanceRecords);
+        }
+
+        // GET: Admin/MaintenanceDetails/5
+        public async Task<IActionResult> MaintenanceDetails(int id)
+        {
+            var maintenanceRecord = await context.ServiceRecords
+                .Include(sr => sr.Fridge)
+                    .ThenInclude(f => f.Customer)
+                .Include(sr => sr.Technician)
+                .Include(sr => sr.Fault) // Include the related fault, if any
+                .FirstOrDefaultAsync(sr => sr.Id == id);
+
+            if (maintenanceRecord == null)
+            {
+                TempData["ErrorMessage"] = "Maintenance record not found.";
+                return RedirectToAction(nameof(MaintenanceRecords));
+            }
+
+            ViewData["Title"] = $"Service Record: {maintenanceRecord.Id}";
+            return View(maintenanceRecord);
         }
     }
 }

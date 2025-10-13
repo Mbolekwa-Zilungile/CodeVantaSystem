@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Code_Vanta_Systems.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251010103535_CreateDb")]
-    partial class CreateDb
+    [Migration("20251010135311_addedQuantity")]
+    partial class addedQuantity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -366,7 +366,7 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<int>("Category")
                         .HasColumnType("int");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("DeletedAt")
@@ -416,7 +416,6 @@ namespace Code_Vanta_Systems.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("TechnicianUserId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -454,6 +453,9 @@ namespace Code_Vanta_Systems.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<int>("FridgeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -1578,9 +1580,7 @@ namespace Code_Vanta_Systems.Migrations
                 {
                     b.HasOne("Code_Vanta_Systems.Models.Customer", "Customer")
                         .WithMany("Fridges")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CustomerId");
 
                     b.HasOne("Code_Vanta_Systems.Models.Location", "Location")
                         .WithMany("Fridges")
@@ -1597,8 +1597,7 @@ namespace Code_Vanta_Systems.Migrations
                     b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "Technician")
                         .WithMany()
                         .HasForeignKey("TechnicianUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Customer");
 

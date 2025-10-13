@@ -609,10 +609,10 @@ namespace Code_Vanta_Systems.Migrations
                     SerialNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PurchaseDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    TechnicianUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TechnicianUserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
                     LocationId = table.Column<int>(type: "int", nullable: false),
-                    CustomerId = table.Column<int>(type: "int", nullable: false),
+                    CustomerId = table.Column<int>(type: "int", nullable: true),
                     Category = table.Column<int>(type: "int", nullable: false),
                     ImageUrl = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
@@ -634,8 +634,7 @@ namespace Code_Vanta_Systems.Migrations
                         name: "FK_Fridges_Customers_CustomerId",
                         column: x => x.CustomerId,
                         principalTable: "Customers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Fridges_Locations_LocationId",
                         column: x => x.LocationId,

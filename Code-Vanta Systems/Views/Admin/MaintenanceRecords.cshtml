@@ -1,0 +1,59 @@
+﻿@model List<Code_Vanta_Systems.Models.ServiceRecord>
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Service Records";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">@ViewData["ListTitle"]</h3>
+    <span class="badge bg-primary fs-5">Total Records: @ViewBag.TotalRecordsCount</span>
+</div>
+
+<hr />
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No service records found.</div>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date of Service</th>
+                <th>Fridge Serial</th>
+                <th>Customer</th>
+                <th>Technician</th>
+                <th>Fault Linked</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in Model)
+            {
+                <tr>
+                    <td>@record.Id</td>
+                    <td>@record.DateOfService.ToShortDateString()</td>
+                    <td>@record.Fridge.SerialNumber</td>
+                    <td>@record.Fridge.Customer?.BusinessName</td>
+                    <td>@record.Technician.FullName</td>
+                    <td>
+                        @if (record.FaultId.HasValue)
+                        {
+                            <a asp-action="FaultDetails" asp-route-id="@record.FaultId.Value">Fault ID @record.FaultId.Value</a>
+                        }
+                        else
+                        {
+                            <span>N/A</span>
+                        }
+                    </td>
+                    <td>
+                        <a asp-action="MaintenanceDetails" asp-route-id="@record.Id" class="btn btn-sm btn-info">Details</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

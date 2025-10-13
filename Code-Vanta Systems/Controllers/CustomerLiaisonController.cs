@@ -2,9 +2,12 @@
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Services;
+using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Code_Vanta_Systems.Controllers
 {
@@ -20,11 +23,17 @@ namespace Code_Vanta_Systems.Controllers
             _emailService = emailService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            ViewBag.Notifications = await _context.Notifications
+                .Where(n => n.RecipientUserId == userId && !n.IsRead)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+
             return View();
         }
-
+        #region Customers
         // GET: Customer/Pending
         public async Task<IActionResult> PendingCustomers()
         {
@@ -172,67 +181,220 @@ namespace Code_Vanta_Systems.Controllers
             TempData["Success"] = $"Customer '{customer.BusinessName}' has been rejected and emailed.";
             return RedirectToAction("RejectCustomers");
         }
-
+        #endregion
         //Esethu 
 
-        // GET: Allocate Fridge to Customer
-        public async Task<IActionResult> AllocateFridge(int customerId)
+
+
+        public async Task<IActionResult> PendingRentals()
         {
-            var customer = await _context.Customers
-                .Include(c => c.Location)
-                .FirstOrDefaultAsync(c => c.Id == customerId);
-
-            if (customer == null)
-                return NotFound("Customer not found.");
-
-            // Get all available fridges
-            var availableFridges = await _context.Fridges
-                .Where(f => f.Status == FridgeStatus.Available)
+            var rentals = await _context.RentalRequests
+                .Include(r => r.Fridge)
+                .Include(r => r.RequestedByUser)
+                .Where(r => r.Status == "Pending")
+                .OrderBy(r => r.CreatedAt)
                 .ToListAsync();
 
-            ViewBag.Fridges = availableFridges;
-            ViewBag.CustomerName = customer.BusinessName;
-            return View(new FridgeAllocation { CustomerId = customerId });
+            return View(rentals);
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AllocateFridge(FridgeAllocation allocation)
+        public async Task<IActionResult> ApproveRental(int id)
         {
-            if (!ModelState.IsValid)
+            var rental = await _context.RentalRequests
+                .Include(r => r.Fridge)
+                .Include(r => r.RequestedByUser)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (rental == null) return Json(new { success = false, message = "Rental not found." });
+
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == rental.RequestedByUserId);
+            if (customer == null) return Json(new { success = false, message = "Customer not found." });
+
+            if (rental.Fridge.StockQuantity < rental.Quantity)
+                return Json(new { success = false, message = "Not enough stock to approve." });
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                ViewBag.Fridges = await _context.Fridges
-                    .Where(f => f.Status == FridgeStatus.Available)
-                    .ToListAsync();
-                return View(allocation);
+                rental.Fridge.StockQuantity -= rental.Quantity;
+                rental.Status = "Approved";
+                rental.UpdatedAt = DateTime.UtcNow;
+
+                var allocation = new FridgeAllocation
+                {
+                    CustomerId = customer.Id,
+                    FridgeId = rental.FridgeId,
+                    Quantity = rental.Quantity,
+                    AllocationDate = DateTime.UtcNow,
+                    CreatedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                };
+                await _context.FridgeAllocations.AddAsync(allocation);
+                await _context.SaveChangesAsync();
+
+                rental.AllocationId = allocation.Id;
+
+                var notification = new Notification
+                {
+                    RecipientUserId = rental.RequestedByUserId,
+                    Message = $"Your rental request for {rental.Fridge.Model} ({rental.Quantity}) has been approved.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false
+                };
+                await _context.Notifications.AddAsync(notification);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Json(new { success = true, message = "Rental approved!", rentalId = rental.Id });
             }
-
-            var fridge = await _context.Fridges.FindAsync(allocation.FridgeId);
-            var customer = await _context.Customers.FindAsync(allocation.CustomerId);
-
-            if (fridge == null || customer == null)
-                return NotFound("Invalid fridge or customer.");
-
-            if (fridge.Status != FridgeStatus.Available)
+            catch
             {
-                TempData["Error"] = "This fridge is no longer available.";
-                return RedirectToAction("ActiveCustomers");
+                await transaction.RollbackAsync();
+                return Json(new { success = false, message = "Failed to approve rental." });
             }
-
-            // Create allocation record
-            allocation.AllocationDate = DateTime.UtcNow;
-            _context.FridgeAllocations.Add(allocation);
-
-            // Update fridge status
-            fridge.Status = FridgeStatus.Allocated;
-            _context.Fridges.Update(fridge);
-
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = $"Fridge '{fridge.SerialNumber}' successfully allocated to {customer.BusinessName}.";
-            return RedirectToAction("ViewCustomer", new { id = allocation.CustomerId });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> RejectRental(int id)
+        {
+            var rental = await _context.RentalRequests
+                .Include(r => r.Fridge)
+                .Include(r => r.RequestedByUser)
+                .FirstOrDefaultAsync(r => r.Id == id);
 
+            if (rental == null) return Json(new { success = false, message = "Rental not found." });
+
+            rental.Status = "Rejected";
+            rental.UpdatedAt = DateTime.UtcNow;
+
+            var notification = new Notification
+            {
+                RecipientUserId = rental.RequestedByUserId,
+                Message = $"Your rental request for {rental.Fridge.Model} has been rejected.",
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            };
+            await _context.Notifications.AddAsync(notification);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Rental rejected!", rentalId = rental.Id });
+        }
+
+        // Allocations
+        public async Task<IActionResult> Allocations()
+        {
+            var allocations = await _context.FridgeAllocations
+                .Include(a => a.Fridge)
+                .Include(a => a.Customer)
+                .Include(a => a.CreatedBy)
+                .OrderByDescending(a => a.AllocationDate)
+                .ToListAsync();
+
+            return View(allocations);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CreateAllocation()
+        {
+            ViewBag.Customers = await _context.Customers
+                .Select(c => new SelectListItem { Text = c.BusinessName, Value = c.Id.ToString() })
+                .ToListAsync();
+
+            ViewBag.Fridges = await _context.Fridges
+                .Select(f => new SelectListItem { Text = f.Model, Value = f.Id.ToString() })
+                .ToListAsync();
+
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateAllocation(AllocationViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var fridge = await _context.Fridges.FindAsync(model.FridgeId);
+            if (fridge == null) { ModelState.AddModelError("", "Fridge not found."); return View(model); }
+            if (fridge.StockQuantity < model.Quantity) { ModelState.AddModelError("", "Not enough stock."); return View(model); }
+
+            fridge.StockQuantity -= model.Quantity;
+
+            var allocation = new FridgeAllocation
+            {
+                CustomerId = model.CustomerId,
+                FridgeId = model.FridgeId,
+                Quantity = model.Quantity,
+                AllocationDate = DateTime.UtcNow,
+                CreatedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            };
+
+            await _context.FridgeAllocations.AddAsync(allocation);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Allocations");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditAllocation(int id)
+        {
+            var allocation = await _context.FridgeAllocations.FindAsync(id);
+            if (allocation == null) return NotFound();
+
+            ViewBag.Customers = await _context.Customers
+                .Select(c => new SelectListItem { Text = c.BusinessName, Value = c.Id.ToString() })
+                .ToListAsync();
+
+            ViewBag.Fridges = await _context.Fridges
+                .Select(f => new SelectListItem { Text = f.Model, Value = f.Id.ToString() })
+                .ToListAsync();
+
+            return View(allocation);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditAllocation(int id, AllocationViewModel model)
+        {
+            var allocation = await _context.FridgeAllocations.FindAsync(id);
+            if (allocation == null) return NotFound();
+
+            var fridge = await _context.Fridges.FindAsync(model.FridgeId);
+            if (fridge == null) { ModelState.AddModelError("", "Fridge not found."); return View(model); }
+
+            fridge.StockQuantity += allocation.Quantity; // return old
+            if (fridge.StockQuantity < model.Quantity) { ModelState.AddModelError("", "Not enough stock."); return View(model); }
+            fridge.StockQuantity -= model.Quantity;
+
+            allocation.CustomerId = model.CustomerId;
+            allocation.FridgeId = model.FridgeId;
+            allocation.Quantity = model.Quantity;
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Allocations");
+        }
+
+        // Fridge Tracking
+        public async Task<IActionResult> FridgeTracking()
+        {
+            var trackedFridges = await _context.FridgeAllocations
+                .Include(a => a.Fridge)
+                .Include(a => a.Customer)
+                .Include(a => a.CreatedBy)
+                .OrderByDescending(a => a.AllocationDate)
+                .ToListAsync();
+
+            return View(trackedFridges);
+        }
+
+        // Requests
+        public async Task<IActionResult> Requests()
+        {
+            var requests = await _context.RentalRequests
+                .Include(r => r.Fridge)
+                .Include(r => r.RequestedByUser)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            return View(requests);
+        }
     }
 }
