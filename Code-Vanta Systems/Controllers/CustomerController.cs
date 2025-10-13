@@ -1,12 +1,11 @@
 ﻿using Code_Vanta_Systems.Data;
-using Code_Vanta_Systems.Models;
-using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.ViewModels;
+using Code_Vanta_Systems.Models.Enums;
+using Code_Vanta_Systems.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Code_Vanta_Systems.Controllers
 {
@@ -36,144 +35,6 @@ namespace Code_Vanta_Systems.Controllers
             if (customer == null) return NotFound("Customer profile not found.");
 
             return View(customer);
-        }
-
-        //=========================================================
-        // FAULT MANAGEMENT (CUSTOMER)
-        //=========================================================
-
-        // GET: CustomerPortal/Faults
-        public async Task<IActionResult> Faults()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            var customerFaults = await _context.FridgeFaults
-                .Include(ff => ff.Fridge)
-                .Where(ff => ff.ReportedByUserId == userId)
-                .OrderByDescending(ff => ff.DateReported)
-                // NOTE: Map to a simple FaultListViewModel if necessary
-                .ToListAsync();
-
-            return View(customerFaults);
-        }
-
-        // GET: CustomerPortal/CreateFault
-        public async Task<IActionResult> CreateFault()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            // Fetch the customer's allocated fridges for the dropdown
-            var customerFridges = await _context.Fridges
-                .Include(f => f.Customer)
-                .Where(f => f.Customer.UserId == userId && f.Status == FridgeStatus.Allocated)
-                .ToListAsync();
-
-            if (!customerFridges.Any())
-            {
-                TempData["Warning"] = "You must have an allocated fridge to report a fault.";
-                return RedirectToAction(nameof(Faults));
-            }
-
-            ViewBag.AvailableFridges = new SelectList(
-                customerFridges,
-                "Id",
-                "SerialNumber"
-            );
-            ViewBag.SeverityOptions = new SelectList(System.Enum.GetNames(typeof(FaultSeverity)));
-
-            return View(new CreateFaultReportViewModel()); // Assuming this ViewModel exists
-        }
-
-        // POST: CustomerPortal/CreateFault
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateFault(CreateFaultReportViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                var userId = _userManager.GetUserId(User);
-
-                var newFault = new FridgeFault
-                {
-                    FridgeId = model.FridgeId,
-                    DateReported = System.DateTime.Now,
-                    FaultDescription = model.Description,
-                    Severity = model.Severity,
-                    Status = FaultStatus.Reported, // Initial status
-                    ReportedByUserId = userId,
-                    // AssignedTechnicianId will be set by the Customer Liaison or system later
-                };
-
-                _context.FridgeFaults.Add(newFault);
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] = "Fault reported successfully! A technician will be assigned soon.";
-                return RedirectToAction(nameof(Faults));
-            }
-
-            // Repopulate dropdowns on failure
-            await CreateFault();
-            return View(model);
-        }
-
-        //=========================================================
-        // FRIDGE REQUEST MANAGEMENT (CUSTOMER)
-        //=========================================================
-
-        // GET: CustomerPortal/Requests
-        public async Task<IActionResult> Requests()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            var requests = await _context.FridgeRequests
-                .Where(r => r.RequestedByUserId == userId)
-                .OrderByDescending(r => r.CreatedAt)
-                .ToListAsync();
-
-            // NOTE: Map to a simple RequestListViewModel if necessary
-            return View(requests);
-        }
-
-        // GET: CustomerPortal/CreateRequest
-        public IActionResult CreateRequest()
-        {
-            // FridgeRequestStatus and other necessary options can be populated here
-            return View(new CreateFridgeRequestViewModel()); // Assuming this ViewModel exists
-        }
-
-        // POST: CustomerPortal/CreateRequest
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateRequest(CreateFridgeRequestViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                var userId = _userManager.GetUserId(User);
-                var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == userId);
-
-                if (customer == null)
-                {
-                    ModelState.AddModelError("", "Could not find customer profile linked to your account.");
-                    return View(model);
-                }
-
-                var newRequest = new FridgeRequest
-                {
-                    RequestedByUserId = userId,
-                    CustomerId = customer.Id,
-                    CreatedAt = System.DateTime.Now,
-                    RequestType = model.RequestType, // e.g., RequestType.NewAllocation or RequestType.Replacement
-                    Notes = model.Notes,
-                    Status = RequestStatus.Pending,
-                };
-
-                _context.FridgeRequests.Add(newRequest);
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] = "Fridge request submitted successfully. A Customer Liaison will review it shortly.";
-                return RedirectToAction(nameof(Requests));
-            }
-            return View(model);
         }
 
 
@@ -415,5 +276,94 @@ namespace Code_Vanta_Systems.Controllers
             return View(rentals);
         }
 
+        // GET: Customer/MyFridges
+        // Lists all fridges allocated to the logged-in customer
+        public async Task<IActionResult> MyFridges()
+        {
+            var customerId = GetCustomerId(); // Assuming a helper method to get the current customer's ID
+
+            var allocatedFridges = await _context.Fridges
+                .Include(f => f.Location)
+                .Include(f => f.Customer)
+                .Include(f => f.MaintenanceSchedules) // Include schedules to find the next visit
+                .Where(f => f.CustomerId == customerId)
+                .Select(f => new MaintenanceFridgeListViewModel // Re-use the Technician's list ViewModel
+                {
+                    FridgeId = f.Id,
+                    SerialNumber = f.SerialNumber,
+                    Model = f.Model,
+                    FridgeStatus = f.Status.ToString(),
+                    CustomerBusinessName = f.Customer.BusinessName,
+                    CustomerAddress = f.Location.Address,
+
+                    // Calculate the next scheduled visit
+                    NextScheduledVisit = f.MaintenanceSchedules
+                        .Where(ms => ms.ScheduledDate >= DateTime.Now)
+                        .OrderBy(ms => ms.ScheduledDate)
+                        .Select(ms => (DateTime?)ms.ScheduledDate)
+                        .FirstOrDefault()
+                })
+                .ToListAsync();
+
+            return View(allocatedFridges);
+        }
+
+        // GET: Customer/FridgeHistory/5
+        // Shows detailed history for a specific fridge
+        public async Task<IActionResult> FridgeHistory(int id)
+        {
+            var customerId = GetCustomerId();
+
+            var fridge = await _context.Fridges
+                .Include(f => f.Location)
+                .Include(f => f.Customer)
+
+                // History Includes
+                .Include(f => f.Faults.OrderByDescending(ff => ff.DateReported))
+                    .ThenInclude(ff => ff.AssignedTechnician)
+                .Include(f => f.ServiceRecords.OrderByDescending(sr => sr.DateOfService))
+                    .ThenInclude(sr => sr.Technician)
+
+                // Upcoming Schedules
+                .Include(f => f.MaintenanceSchedules.Where(ms => ms.ScheduledDate >= DateTime.Now).OrderBy(ms => ms.ScheduledDate))
+
+                // Filter: Ensure the fridge belongs to the logged-in customer
+                .FirstOrDefaultAsync(f => f.Id == id && f.CustomerId == customerId);
+
+            if (fridge == null)
+            {
+                TempData["Error"] = "Fridge not found or not allocated to your account.";
+                return RedirectToAction(nameof(MyFridges));
+            }
+
+            // Map data to the CustomerFridgeDetailsViewModel
+            var viewModel = new CustomerFridgeDetailsViewModel
+            {
+                FridgeSummary = new MaintenanceFridgeListViewModel // Re-use summary details
+                {
+                    FridgeId = fridge.Id,
+                    SerialNumber = fridge.SerialNumber,
+                    Model = fridge.Model,
+                    FridgeStatus = fridge.Status.ToString(),
+                    CustomerBusinessName = fridge.Customer.BusinessName,
+                    CustomerAddress = fridge.Location.Address
+                },
+                FaultHistory = fridge.Faults.ToList(),
+                ServiceHistory = fridge.ServiceRecords.ToList(),
+                UpcomingSchedules = fridge.MaintenanceSchedules.ToList()
+            };
+
+            return View(viewModel);
+        }
+
+        private int GetCustomerId()
+        {
+            var userId = _userManager.GetUserId(User);
+
+            // Use the correct foreign key property: 'UserId'
+            var customer = _context.Customers.FirstOrDefault(c => c.UserId == userId);
+
+            return customer?.Id ?? 0;
+        }
     }
 }

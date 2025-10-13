@@ -1,0 +1,104 @@
+﻿@model Code_Vanta_Systems.ViewModels.CustomerFridgeDetailsViewModel
+
+@{
+    ViewData["Title"] = $"History for {Model.FridgeSummary?.SerialNumber}";
+    Layout = "~/Views/Shared/_CustomerLayout.cshtml";
+}
+
+<h2 class="mb-4 text-primary"><i class="bi bi-clock-history"></i> Fridge History</h2>
+<h4 class="mb-4">Serial Number: @Model.FridgeSummary.SerialNumber (@Model.FridgeSummary.Model)</h4>
+
+<a asp-action="MyFridges" class="btn btn-outline-secondary mb-4">
+    <i class="bi bi-arrow-left"></i> Back to Fridge List
+</a>
+
+<div class="row">
+    <div class="col-md-12">
+        <h3 class="text-success"><i class="bi bi-calendar-check"></i> Upcoming Maintenance Visits</h3>
+        @if (Model.UpcomingSchedules.Any())
+        {
+            <ul class="list-group mb-4">
+                @foreach (var schedule in Model.UpcomingSchedules)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>@schedule.ScheduledDate.ToString("yyyy-MM-dd HH:mm")</strong>
+                            <p class="mb-0 text-muted">@schedule.Description</p>
+                        </div>
+                        <span class="badge bg-info">@schedule.Status</span>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <div class="alert alert-success">No upcoming maintenance visits scheduled.</div>
+        }
+    </div>
+
+    <div class="col-md-12">
+        <h3 class="text-danger mt-4"><i class="bi bi-exclamation-triangle"></i> Fault History</h3>
+        @if (Model.FaultHistory.Any())
+        {
+            <table class="table table-sm table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date Reported</th>
+                        <th>Description</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                        <th>Assigned Technician</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var fault in Model.FaultHistory)
+                    {
+                        <tr>
+                            <td>@fault.DateReported.ToString("yyyy-MM-dd")</td>
+                            <td>@fault.FaultDescription</td>
+                            <td><span class="badge bg-danger">@fault.Severity</span></td>
+                            <td><span class="badge bg-warning">@fault.Status</span></td>
+                            <td>@(fault.AssignedTechnician?.UserName ?? "Unassigned")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-success">No fault reports found for this fridge.</div>
+        }
+    </div>
+
+    <div class="col-md-12">
+        <h3 class="text-info mt-4"><i class="bi bi-tools"></i> Service History</h3>
+        @if (Model.ServiceHistory.Any())
+        {
+            <table class="table table-sm table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date of Service</th>
+                        <th>Details</th>
+                        <th>Technician</th>
+                        <th>Fault Resolved</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var service in Model.ServiceHistory)
+                    {
+                        <tr>
+                            <td>@service.DateOfService.ToString("yyyy-MM-dd")</td>
+                            <td>@service.ServiceDetails</td>
+                            <td>@service.Technician.UserName</td>
+                            <td>@(service.FaultId.HasValue ? $"Yes (Fault ID: {service.FaultId})" : "No")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-success">No service records found for this fridge.</div>
+        }
+    </div>
+</div>

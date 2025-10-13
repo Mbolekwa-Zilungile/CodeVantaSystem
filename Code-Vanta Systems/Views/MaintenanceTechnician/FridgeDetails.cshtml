@@ -2,7 +2,7 @@
 @model MaintenanceFridgeDetailsViewModel
 
 @{
-    ViewData["Title"] = $"Details for {Model.FridgeSummary.SerialNumber}";
+    ViewData["Title"] = $"Details for {Model.FridgeSummary?.SerialNumber ?? "Unknown Fridge"}";
     Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
 }
 

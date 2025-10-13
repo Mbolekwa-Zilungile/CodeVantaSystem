@@ -754,6 +754,7 @@ namespace Code_Vanta_Systems.Migrations
                     CustomerId = table.Column<int>(type: "int", nullable: false),
                     AllocationDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DeallocationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
                     CreatedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
@@ -1058,7 +1059,8 @@ namespace Code_Vanta_Systems.Migrations
                     DateOfService = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TechnicianUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ServiceDetails = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    FaultId = table.Column<int>(type: "int", nullable: true)
+                    FaultId = table.Column<int>(type: "int", nullable: true),
+                    PartsUsed = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
