@@ -42,11 +42,18 @@ namespace Code_Vanta_Systems.Controllers
             ViewBag.ActiveSupplierCount = activeSuppliers.Count;
             ViewBag.RequestCount = await context.PurchaseRequests.CountAsync();
 
-            var notifications = await context.Notifications
-        .OrderByDescending(n => n.CreatedAt) // assuming you have CreatedAt
-        .Take(5)
-        .ToListAsync();
-            ViewBag.LatestNotifications = notifications;
+            if (User.IsInRole("Purchasing Manager"))
+            {
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                var notifications = await context.Notifications
+                    .Where(n => n.RecipientUserId == currentUserId) // filter by logged-in user
+                    .OrderByDescending(n => n.CreatedAt)
+                    .Take(5)
+                    .ToListAsync();
+
+                ViewBag.LatestNotifications = notifications;
+            }
             return View();
         }
   
@@ -352,6 +359,29 @@ namespace Code_Vanta_Systems.Controllers
                 .Include(pr => pr.RequestedBy)
                 .Include(pr => pr.RequestedItems)
                 .Where(pr => pr.Status == RequestStatus.Rejected)
+                .OrderByDescending(pr => pr.RequestDate)
+                .ToListAsync();
+
+            ViewBag.PendingCount = ViewBag.RejectedRequests = await context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Pending);
+            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Submitted);
+
+            ViewBag.RejectedRequests = await context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Rejected);
+
+            ViewBag.ApprovedRequestsCount = await context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Approved);
+            ViewBag.CompletedRequestsCount = await context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Completed);
+            return View(purchaseRequests);
+        }
+        public async Task<IActionResult> ApprovedPurchaseRequests()
+        {
+            var purchaseRequests = await context.PurchaseRequests
+                .Include(pr => pr.RequestedBy)
+                .Include(pr => pr.RequestedItems)
+                .Where(pr => pr.Status == RequestStatus.Approved)
                 .OrderByDescending(pr => pr.RequestDate)
                 .ToListAsync();
 
@@ -700,6 +730,16 @@ namespace Code_Vanta_Systems.Controllers
 
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            var purchaseRequest = await context.PurchaseRequests
+       .FirstOrDefaultAsync(r => r.Id == model.PurchaseRequestId);
+
+            if (purchaseRequest != null)
+            {
+                purchaseRequest.Status = RequestStatus.Approved; // enum or string
+                context.PurchaseRequests.Update(purchaseRequest);
+            }
+
+
             // Get the latest RFQ number once
             string lastRFQId = await context.RequestQuotations
                 .OrderByDescending(r => r.RequestQuotationId)
@@ -746,8 +786,8 @@ namespace Code_Vanta_Systems.Controllers
                         RecipientUserId = supplier.User.Id,  // Use correct property
                         Title = "New RFQ Created",
                         Message = $"A new RFQ ({newRFQId}) has been created for you. Please respond.",
-                        TargetController = "RFQ",
-                        TargetAction = "Details" // Replace with actual action for viewing RFQ
+                        TargetController = "Supplier",
+                        TargetAction = "RFQ" // Replace with actual action for viewing RFQ
                     };
                     context.Notifications.Add(notification);
 
@@ -773,6 +813,8 @@ namespace Code_Vanta_Systems.Controllers
 
             return RedirectToAction("RFQ", "PurchasingManager", new { id = model.PurchaseRequestId });
         }
+
+       
         #endregion RFQ
     }
 

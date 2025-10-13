@@ -1041,7 +1041,6 @@ namespace Code_Vanta_Systems.Controllers
             return View();
         }
 
-        // POST: Supplier/CreateSupplier
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateSupplier(RegisterSupplierViewModel model)
@@ -1058,7 +1057,7 @@ namespace Code_Vanta_Systems.Controllers
                 PhoneNumber = model.Phone
             };
             // Use a strong default password
-            var result = await userManager.CreateAsync(user, "Supplier@123");
+            var result = await userManager.CreateAsync(user, "Supplier@123!");
 
             if (result.Succeeded)
             {

@@ -69,45 +69,7 @@ namespace Code_Vanta_Systems.Controllers
             return View(vm);
         }
 
-        public async Task<IActionResult> RFQDetails(int? id)
-        {
-            if (id == null)
-                return BadRequest();
-
-            var rfq = await context.RequestQuotations
-                .Include(r => r.Supplier)
-                    .ThenInclude(s => s.User)
-                .Include(r => r.RequestedBy)
-                .Include(r => r.Quotations)
-                    .ThenInclude(q => q.Items)
-                        .ThenInclude(qi => qi.PurchaseRequestItem)
-                .FirstOrDefaultAsync(r => r.RequestQuotationId == id);
-
-            if (rfq == null)
-                return NotFound();
-
-            // Ensure supplier can only view their own RFQs
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (rfq.Supplier?.User?.Id != userId)
-                return Forbid();
-
-            // Map to view model
-            var vm = new RFQDetailViewModel
-            {
-                RFQId = rfq.RFQId,
-                RequestQuotationId = rfq.RequestQuotationId,
-                RequestDate = rfq.RequestDate,
-                SupplierName = rfq.Supplier?.Name,
-                SupplierEmail = rfq.Supplier?.User?.Email,
-                RequestedBy = rfq.RequestedBy?.UserName ?? "Unknown",
-                Notes = rfq.Notes,
-                Items = rfq.Quotations
-                            .SelectMany(q => q.Items) // <-- use Items now
-                            .ToList()
-            };
-
-            return View(vm);
-        }
+     
         #endregion
     }
 }
