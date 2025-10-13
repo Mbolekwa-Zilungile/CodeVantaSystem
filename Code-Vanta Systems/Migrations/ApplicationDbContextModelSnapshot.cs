@@ -1202,6 +1202,10 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<int>("FridgeId")
                         .HasColumnType("int");
 
+                    b.Property<string>("PartsUsed")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("ServiceDetails")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -1984,7 +1988,7 @@ namespace Code_Vanta_Systems.Migrations
                         .HasForeignKey("FaultId");
 
                     b.HasOne("Code_Vanta_Systems.Models.Fridge", "Fridge")
-                        .WithMany()
+                        .WithMany("ServiceRecords")
                         .HasForeignKey("FridgeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2139,6 +2143,8 @@ namespace Code_Vanta_Systems.Migrations
                     b.Navigation("Maintenances");
 
                     b.Navigation("SensorReadings");
+
+                    b.Navigation("ServiceRecords");
 
                     b.Navigation("UsageLogs");
                 });

@@ -39,7 +39,6 @@ namespace Code_Vanta_Systems.Models
         // Navigation property for scheduled technician visits - FIX
         public virtual ICollection<TechnicianSchedule> ScheduledVisits { get; set; }
 
-
         public Location()
         {
             Customers = new HashSet<Customer>();

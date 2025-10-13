@@ -1,0 +1,22 @@
+﻿@* Views/Account/AccessDenied.cshtml *@
+@model dynamic
+
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<header class="text-center py-5">
+    <h1 class="text-danger display-4"><i class="bi bi-x-octagon-fill"></i> Access Denied</h1>
+    <p class="lead">You do not have permission to view the requested resource.</p>
+</header>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="alert alert-warning text-center" role="alert">
+            Please contact an administrator if you believe this is an error.
+        </div>
+        <p class="text-center mt-4">
+            <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Return to Home</a>
+        </p>
+    </div>
+</div>

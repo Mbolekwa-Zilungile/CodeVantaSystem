@@ -2,6 +2,7 @@
 {
     public enum FaultStatus
     {
+        Open,
         Reported,
         Assigned,
         InProgress,

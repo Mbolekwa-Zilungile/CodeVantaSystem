@@ -1,11 +1,12 @@
 ﻿using Code_Vanta_Systems.Data;
-using Code_Vanta_Systems.ViewModels;
-using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Models;
+using Code_Vanta_Systems.Models.Enums;
+using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Code_Vanta_Systems.Controllers
 {
@@ -35,6 +36,144 @@ namespace Code_Vanta_Systems.Controllers
             if (customer == null) return NotFound("Customer profile not found.");
 
             return View(customer);
+        }
+
+        //=========================================================
+        // FAULT MANAGEMENT (CUSTOMER)
+        //=========================================================
+
+        // GET: CustomerPortal/Faults
+        public async Task<IActionResult> Faults()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var customerFaults = await _context.FridgeFaults
+                .Include(ff => ff.Fridge)
+                .Where(ff => ff.ReportedByUserId == userId)
+                .OrderByDescending(ff => ff.DateReported)
+                // NOTE: Map to a simple FaultListViewModel if necessary
+                .ToListAsync();
+
+            return View(customerFaults);
+        }
+
+        // GET: CustomerPortal/CreateFault
+        public async Task<IActionResult> CreateFault()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Fetch the customer's allocated fridges for the dropdown
+            var customerFridges = await _context.Fridges
+                .Include(f => f.Customer)
+                .Where(f => f.Customer.UserId == userId && f.Status == FridgeStatus.Allocated)
+                .ToListAsync();
+
+            if (!customerFridges.Any())
+            {
+                TempData["Warning"] = "You must have an allocated fridge to report a fault.";
+                return RedirectToAction(nameof(Faults));
+            }
+
+            ViewBag.AvailableFridges = new SelectList(
+                customerFridges,
+                "Id",
+                "SerialNumber"
+            );
+            ViewBag.SeverityOptions = new SelectList(System.Enum.GetNames(typeof(FaultSeverity)));
+
+            return View(new CreateFaultReportViewModel()); // Assuming this ViewModel exists
+        }
+
+        // POST: CustomerPortal/CreateFault
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFault(CreateFaultReportViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var userId = _userManager.GetUserId(User);
+
+                var newFault = new FridgeFault
+                {
+                    FridgeId = model.FridgeId,
+                    DateReported = System.DateTime.Now,
+                    FaultDescription = model.Description,
+                    Severity = model.Severity,
+                    Status = FaultStatus.Reported, // Initial status
+                    ReportedByUserId = userId,
+                    // AssignedTechnicianId will be set by the Customer Liaison or system later
+                };
+
+                _context.FridgeFaults.Add(newFault);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Fault reported successfully! A technician will be assigned soon.";
+                return RedirectToAction(nameof(Faults));
+            }
+
+            // Repopulate dropdowns on failure
+            await CreateFault();
+            return View(model);
+        }
+
+        //=========================================================
+        // FRIDGE REQUEST MANAGEMENT (CUSTOMER)
+        //=========================================================
+
+        // GET: CustomerPortal/Requests
+        public async Task<IActionResult> Requests()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var requests = await _context.FridgeRequests
+                .Where(r => r.RequestedByUserId == userId)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            // NOTE: Map to a simple RequestListViewModel if necessary
+            return View(requests);
+        }
+
+        // GET: CustomerPortal/CreateRequest
+        public IActionResult CreateRequest()
+        {
+            // FridgeRequestStatus and other necessary options can be populated here
+            return View(new CreateFridgeRequestViewModel()); // Assuming this ViewModel exists
+        }
+
+        // POST: CustomerPortal/CreateRequest
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateRequest(CreateFridgeRequestViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var userId = _userManager.GetUserId(User);
+                var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == userId);
+
+                if (customer == null)
+                {
+                    ModelState.AddModelError("", "Could not find customer profile linked to your account.");
+                    return View(model);
+                }
+
+                var newRequest = new FridgeRequest
+                {
+                    RequestedByUserId = userId,
+                    CustomerId = customer.Id,
+                    CreatedAt = System.DateTime.Now,
+                    RequestType = model.RequestType, // e.g., RequestType.NewAllocation or RequestType.Replacement
+                    Notes = model.Notes,
+                    Status = RequestStatus.Pending,
+                };
+
+                _context.FridgeRequests.Add(newRequest);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Fridge request submitted successfully. A Customer Liaison will review it shortly.";
+                return RedirectToAction(nameof(Requests));
+            }
+            return View(model);
         }
 
 

@@ -334,41 +334,113 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction("Allocations");
         }
 
-        [HttpGet]
         public async Task<IActionResult> EditAllocation(int id)
         {
-            var allocation = await _context.FridgeAllocations.FindAsync(id);
-            if (allocation == null) return NotFound();
+            var allocation = await _context.FridgeAllocations
+                .Include(a => a.Fridge)
+                .FirstOrDefaultAsync(a => a.Id == id);
 
-            ViewBag.Customers = await _context.Customers
-                .Select(c => new SelectListItem { Text = c.BusinessName, Value = c.Id.ToString() })
+            if (allocation == null)
+            {
+                return NotFound();
+            }
+
+            // Populate ViewModel, including the current technician ID
+            var model = new FridgeAllocationViewModel
+            {
+                Id = allocation.Id,
+                CustomerId = allocation.CustomerId,
+                FridgeId = allocation.FridgeId,
+                Quantity = allocation.Quantity,
+                AssignedTechnicianId = allocation.Fridge.TechnicianUserId // <-- Loads current assignment
+            };
+
+            await PopulateAllocationDropdowns(model);
+
+            return View(model);
+        }
+
+        // Helper method to fetch and populate all required dropdown lists
+        private async Task PopulateAllocationDropdowns(FridgeAllocationViewModel model)
+        {
+            // A. Fetch Customers
+            model.AvailableCustomers = await _context.Customers
+                .Select(c => new SelectListItem { Value = c.Id.ToString(), Text = c.BusinessName })
                 .ToListAsync();
 
-            ViewBag.Fridges = await _context.Fridges
-                .Select(f => new SelectListItem { Text = f.Model, Value = f.Id.ToString() })
+            // B. Fetch Fridges
+            model.AvailableFridges = await _context.Fridges
+                .Where(f => !f.IsDeleted)
+                .Select(f => new SelectListItem { Value = f.Id.ToString(), Text = $"{f.SerialNumber} - {f.Model}" })
                 .ToListAsync();
 
-            return View(allocation);
+            // C. Fetch Maintenance Technicians (CRITICAL STEP)
+            var technicianRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Maintenance Technician");
+
+            if (technicianRole != null)
+            {
+                var technicianUserIds = _context.UserRoles
+                    .Where(ur => ur.RoleId == technicianRole.Id)
+                    .Select(ur => ur.UserId);
+
+                model.AvailableTechnicians = await _context.Users
+                    .Where(u => technicianUserIds.Contains(u.Id))
+                    .Select(u => new SelectListItem
+                    {
+                        Value = u.Id,
+                        Text = u.Email
+                    }).ToListAsync();
+            }
         }
 
         [HttpPost]
-        public async Task<IActionResult> EditAllocation(int id, AllocationViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAllocation(FridgeAllocationViewModel model)
         {
-            var allocation = await _context.FridgeAllocations.FindAsync(id);
-            if (allocation == null) return NotFound();
+            if (!ModelState.IsValid)
+            {
+                await PopulateAllocationDropdowns(model);
+                return View(model);
+            }
+
+            var allocation = await _context.FridgeAllocations
+                .FirstOrDefaultAsync(a => a.Id == model.Id);
+
+            if (allocation == null) { return NotFound(); }
 
             var fridge = await _context.Fridges.FindAsync(model.FridgeId);
-            if (fridge == null) { ModelState.AddModelError("", "Fridge not found."); return View(model); }
+            if (fridge == null)
+            {
+                ModelState.AddModelError("", "Fridge not found.");
+                await PopulateAllocationDropdowns(model);
+                return View(model);
+            }
 
-            fridge.StockQuantity += allocation.Quantity; // return old
-            if (fridge.StockQuantity < model.Quantity) { ModelState.AddModelError("", "Not enough stock."); return View(model); }
+            // 1. Update Stock Logic
+            fridge.StockQuantity += allocation.Quantity;
+            if (fridge.StockQuantity < model.Quantity)
+            {
+                ModelState.AddModelError("", "Not enough stock for the new quantity.");
+                await PopulateAllocationDropdowns(model);
+                return View(model);
+            }
             fridge.StockQuantity -= model.Quantity;
 
+            // 2. CRITICAL FIX: Update the Fridge Model's Technician ID and Status
+            fridge.TechnicianUserId = model.AssignedTechnicianId; // <-- ASSIGNMENT IS HERE
+            fridge.Status = FridgeStatus.Allocated;
+            fridge.CustomerId = model.CustomerId;
+
+            // 3. Update Allocation Record
             allocation.CustomerId = model.CustomerId;
             allocation.FridgeId = model.FridgeId;
             allocation.Quantity = model.Quantity;
 
+            _context.Fridges.Update(fridge);
+            _context.FridgeAllocations.Update(allocation);
+
             await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Fridge allocation and technician assignment updated successfully.";
             return RedirectToAction("Allocations");
         }
 

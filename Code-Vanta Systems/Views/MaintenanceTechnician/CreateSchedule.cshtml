@@ -1,0 +1,67 @@
+﻿@model Code_Vanta_Systems.ViewModels.CreateScheduleViewModel
+
+
+@{
+    ViewData["Title"] = "Create Maintenance Schedule";
+    Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4 text-success"><i class="bi bi-calendar-plus"></i> Schedule Maintenance Visit</h2>
+    
+    <p class="text-muted">Select a fridge to schedule maintenance.</p> 
+
+    <div class="card shadow-sm p-4">
+        <form asp-action="CreateSchedule" method="post"> @* Action name updated to match controller *@
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="FridgeId" class="form-label"></label>
+                <select asp-for="FridgeId" 
+                        asp-items="Model.AvailableFridges" 
+                        class="form-select"
+                        data-val="true"
+                        data-val-required="Please select a fridge.">
+                    <option value="">-- Select Fridge --</option>
+                </select>
+                <span asp-validation-for="FridgeId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ScheduledDate" class="form-label"></label>
+                <input asp-for="ScheduledDate" type="datetime-local" class="form-control" />
+                <span asp-validation-for="ScheduledDate" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                @if (Model.FridgeId.HasValue)
+                {
+                    <a asp-action="FridgeDetails" asp-route-id="@Model.FridgeId" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Details
+                    </a>
+                }
+                else
+                {
+                    <a asp-action="AllocatedFridges" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Fridge List
+                    </a>
+                }
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-calendar-check"></i> Create Schedule
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

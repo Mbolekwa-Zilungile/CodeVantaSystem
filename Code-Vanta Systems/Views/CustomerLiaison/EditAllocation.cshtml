@@ -1,28 +1,52 @@
-﻿@model Code_Vanta_Systems.ViewModels.AllocationViewModel
+﻿@model Code_Vanta_Systems.ViewModels.FridgeAllocationViewModel
+@* NOTE: The model must be FridgeAllocationViewModel to include the technician lists/ID. *@
 
 @{
-    ViewData["Title"] = "Edit Allocation";
+    ViewData["Title"] = "Edit Fridge Allocation";
     Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
 }
 
 <h2 class="mb-4 text-warning"><i class="bi bi-pencil-square me-2"></i> Edit Allocation</h2>
 
-<form asp-action="EditAllocation" method="post">
+<div class="card shadow-sm p-4">
+    <form asp-action="EditAllocation" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-    <div class="mb-3">
-        <label asp-for="CustomerId" class="form-label">Customer</label>
-        <select asp-for="CustomerId" class="form-select" asp-items="ViewBag.Customers"></select>
-    </div>
+        <input type="hidden" asp-for="Id" />
 
-    <div class="mb-3">
-        <label asp-for="FridgeId" class="form-label">Fridge</label>
-        <select asp-for="FridgeId" class="form-select" asp-items="ViewBag.Fridges"></select>
-    </div>
+        <div class="mb-3">
+            <label asp-for="CustomerId" class="form-label">Customer</label>
+            <select asp-for="CustomerId" asp-items="@(new SelectList(Model.AvailableCustomers, "Value", "Text"))" class="form-select">
+                <option value="">-- Select Customer --</option>
+            </select>
+            <span asp-validation-for="CustomerId" class="text-danger"></span>
+        </div>
 
-    <div class="mb-3">
-        <label asp-for="Quantity" class="form-label">Quantity</label>
-        <input asp-for="Quantity" type="number" min="1" class="form-control" />
-    </div>
+        <div class="mb-3">
+            <label asp-for="FridgeId" class="form-label">Fridge</label>
+            <select asp-for="FridgeId" asp-items="@(new SelectList(Model.AvailableFridges, "Value", "Text"))" class="form-select">
+                <option value="">-- Select Fridge --</option>
+            </select>
+            <span asp-validation-for="FridgeId" class="text-danger"></span>
+        </div>
 
-    <button type="submit" class="btn btn-warning"><i class="bi bi-check-circle"></i> Update Allocation</button>
-</form>
+        <div class="mb-3">
+            <label asp-for="Quantity" class="form-label">Quantity</label>
+            <input asp-for="Quantity" type="number" min="1" class="form-control" />
+            <span asp-validation-for="Quantity" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="AssignedTechnicianId" class="form-label">Assigned Maintenance Technician</label>
+            <select asp-for="AssignedTechnicianId"
+                    asp-items="@(new SelectList(Model.AvailableTechnicians, "Value", "Text"))"
+                    class="form-select">
+                <option value="">-- Select Maintenance Technician --</option>
+            </select>
+            <span asp-validation-for="AssignedTechnicianId" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-warning"><i class="bi bi-check-circle"></i> Update Allocation</button>
+        <a asp-action="Allocations" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to List</a>
+    </form>
+</div>

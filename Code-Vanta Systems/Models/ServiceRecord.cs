@@ -32,5 +32,9 @@ namespace Code_Vanta_Systems.Models
         // Optional: Reference to a fault that was resolved
         public int? FaultId { get; set; }
         public FridgeFault Fault { get; set; }
+
+        // NEW PROPERTY: Add this to track parts used
+        [StringLength(500)]
+        public string? PartsUsed { get; set; } // Make nullable if not always required
     }
 }

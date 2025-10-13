@@ -1,17 +1,29 @@
 ﻿@model Code_Vanta_Systems.ViewModels.CreateFaultReportViewModel
 
 @{
-    ViewData["Title"] = "Create Fault Report";
+    ViewData["Title"] = "Report New Fault";
     Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
 }
 
 <div class="container py-4">
-    <h2 class="mb-4 text-danger"><i class="bi bi-exclamation-triangle"></i> Report Fault for @Model.SerialNumber</h2>
+    <h2 class="mb-4 text-danger"><i class="bi bi-exclamation-triangle"></i> Report New Fault</h2>
 
     <div class="card shadow-sm">
         <div class="card-body">
             <form asp-action="CreateFaultReport" method="post">
-                <input type="hidden" asp-for="FridgeId" />
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="FridgeId" class="form-label"></label>
+                    <select asp-for="FridgeId"
+                            asp-items="Model.AvailableFridges"
+                            class="form-select"
+                            data-val="true"
+                            data-val-required="Please select the fridge reporting the fault.">
+                        <option value="">-- Select Fridge --</option>
+                    </select>
+                    <span asp-validation-for="FridgeId" class="text-danger"></span>
+                </div>
 
                 <div class="mb-3">
                     <label asp-for="Description" class="form-label"></label>
@@ -28,9 +40,18 @@
                 </div>
 
                 <div class="d-flex justify-content-between">
-                    <a asp-action="FridgeDetails" asp-route-id="@Model.FridgeId" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Back to Fridge Details
-                    </a>
+                    @if (Model.FridgeId.HasValue)
+                    {
+                        <a asp-action="FridgeDetails" asp-route-id="@Model.FridgeId" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Fridge Details
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-action="AllocatedFridges" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Fridge List
+                        </a>
+                    }
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-send"></i> Submit Fault Report
                     </button>

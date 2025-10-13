@@ -6,7 +6,7 @@ namespace Code_Vanta_Systems.ViewModels
 {
     public class CreateFaultReportViewModel
     {
-        public int FridgeId { get; set; }
+        public int? FridgeId { get; set; }
         public string SerialNumber { get; set; }
 
         [Required(ErrorMessage = "Fault description is required.")]
@@ -18,6 +18,6 @@ namespace Code_Vanta_Systems.ViewModels
         public FaultSeverity Severity { get; set; }
 
         // FIX: Must be present. Used by the Controller to populate the severity dropdown list.
-        public SelectList AvailableSeverities { get; set; }
+        public IEnumerable<SelectListItem> AvailableFridges { get; set; } = new List<SelectListItem>();
     }
 }
