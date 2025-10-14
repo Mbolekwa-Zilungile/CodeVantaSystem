@@ -52,6 +52,24 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Company",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    RegistrationNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    VatNumber = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Company", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Locations",
                 columns: table => new
                 {
@@ -579,6 +597,7 @@ namespace Code_Vanta_Systems.Migrations
                     RequestQuotationId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     RequestDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RFQId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     RequestedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false)
@@ -646,6 +665,7 @@ namespace Code_Vanta_Systems.Migrations
                     CustomerId = table.Column<int>(type: "int", nullable: false),
                     AllocationDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     DeallocationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
                     CreatedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>
@@ -1400,6 +1420,9 @@ namespace Code_Vanta_Systems.Migrations
 
             migrationBuilder.DropTable(
                 name: "AuditTrails");
+
+            migrationBuilder.DropTable(
+                name: "Company");
 
             migrationBuilder.DropTable(
                 name: "DeliveryNotes");

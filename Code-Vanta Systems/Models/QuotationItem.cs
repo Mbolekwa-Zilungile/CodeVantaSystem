@@ -11,6 +11,10 @@ namespace Code_Vanta_Systems.Models
 
         [Required]
         public int QuotationId { get; set; }
+
+        public int FridgeId { get; set; }
+        public string FridgeModel { get; set; }
+        public int Quantity { get; set; }
         public virtual Quotation Quotation { get; set; }
 
         // Link back to the original PurchaseRequestItem being quoted

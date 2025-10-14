@@ -1,73 +1,75 @@
-﻿using Code_Vanta_Systems.Models;
-using Code_Vanta_Systems.Services;
-using Microsoft.AspNetCore.Authorization;
+﻿using Code_Vanta_Systems.Data;
+using Code_Vanta_Systems.Models;
+using Code_Vanta_Systems.ViewModels;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Code_Vanta_Systems.Controllers
 {
-    [Authorize(Roles = "Admin,Inventory Liaison")]
     public class SupplierController : Controller
     {
-        private readonly ISupplierService _supplierService;
+        private readonly UserManager<ApplicationUser> userManager;
+        private readonly RoleManager<IdentityRole> roleManager;
+        private readonly ApplicationDbContext context;
 
-        public SupplierController(ISupplierService supplierService)
+        public SupplierController(
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            ApplicationDbContext context)
         {
-            _supplierService = supplierService;
+            this.userManager = userManager;
+            this.roleManager = roleManager;
+            this.context = context;
         }
 
-        public async Task<IActionResult> Index()
-        {
-            var suppliers = await _supplierService.GetAllAsync();
-            return View(suppliers);
-        }
-
-        public IActionResult Create()
+        public IActionResult Index()
         {
             return View();
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create(Supplier supplier)
+        #region RFQ
+
+        public async Task<IActionResult> RFQ()
         {
-            if (ModelState.IsValid)
+            // Get the current logged-in user's ID
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Retrieve the Supplier entity associated with this user
+            var supplier = await context.Suppliers
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.User.Id == userId);
+
+            if (supplier == null)
             {
-                await _supplierService.CreateAsync(supplier);
-                return RedirectToAction(nameof(Index));
+                return Unauthorized(); // Or redirect with a message
             }
-            return View(supplier);
-        }
 
-        public async Task<IActionResult> Edit(int id)
-        {
-            var supplier = await _supplierService.GetByIdAsync(id);
-            if (supplier == null) return NotFound();
-            return View(supplier);
-        }
+            // Get only RFQs for this supplier
+            var rfqs = await context.RequestQuotations
+                .Include(r => r.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(r => r.RequestedBy)
+                .Where(r => r.SupplierId == supplier.Id) // filter by supplier
+                .OrderByDescending(r => r.RequestDate)
+                .ToListAsync();
 
-        [HttpPost]
-        public async Task<IActionResult> Edit(Supplier supplier)
-        {
-            if (ModelState.IsValid)
+            var vm = rfqs.Select(r => new RFQListItemViewModel
             {
-                await _supplierService.UpdateAsync(supplier);
-                return RedirectToAction(nameof(Index));
-            }
-            return View(supplier);
+                RFQId = r.RFQId,
+                RequestQuotationId = r.RequestQuotationId,
+                RequestDate = r.RequestDate,
+                SupplierName = r.Supplier?.Name,
+                SupplierEmail = r.Supplier?.User?.Email,
+                RequestedBy = r.RequestedBy?.UserName ?? "Unknown",
+                Notes = r.Notes
+            }).ToList();
+
+            return View(vm);
         }
 
-        public async Task<IActionResult> Delete(int id)
-        {
-            var supplier = await _supplierService.GetByIdAsync(id);
-            if (supplier == null) return NotFound();
-            return View(supplier);
-        }
-
-        [HttpPost, ActionName("Delete")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            await _supplierService.DeleteAsync(id);
-            return RedirectToAction(nameof(Index));
-        }
+     
+        #endregion
     }
-
 }

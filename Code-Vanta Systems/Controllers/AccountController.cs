@@ -79,8 +79,13 @@ namespace Code_Vanta_Systems.Controllers
                         // Pending customers go to PendingPage to upload document
                         return RedirectToAction("Index", "Customer");
                     }
+                    if (customer != null && customer.Status == CustomerStatus.Rejected)
+                    {
+                        // Pending customers go to PendingPage to upload document
+                        return RedirectToAction("Rejected", "Customer");
+                    }
                     // Active customers go to dashboard
-                    return RedirectToAction("Rejected", "Customer");
+                    return RedirectToAction("Register", "AccountController");
                 }
 
                 // Customer Liaison
@@ -92,7 +97,6 @@ namespace Code_Vanta_Systems.Controllers
                     // ✅ Redirect to the Index page of InventoryLiaisonController
                     return RedirectToAction("Index", "InventoryLiaison");
                 }
-
                 // Service Technician
                 if (await _userManager.IsInRoleAsync(user, Roles.ServiceTechnician))
                     return RedirectToAction("Index", "ServiceTechnician");
@@ -108,6 +112,8 @@ namespace Code_Vanta_Systems.Controllers
                 // Purchasing Manager
                 if (await _userManager.IsInRoleAsync(user, Roles.PurchasingManager))
                     return RedirectToAction("Index", "PurchasingManager");
+                if (await _userManager.IsInRoleAsync(user, Roles.Supplier))
+                    return RedirectToAction("Index", "Supplier");
 
                 return RedirectToAction("Index", "Home");
             }

@@ -3,6 +3,7 @@
 @{
     Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
     ViewData["Title"] = "Purchasing manager Dashboard";
+    var notifications = ViewBag.LatestNotifications as List<Code_Vanta_Systems.Models.Notification>;
 }
 
 
@@ -115,3 +116,40 @@
 
 </div>
 
+<div class="container mt-4">
+    <h2 class="mb-4">Purchasing Manager Dashboard</h2>
+
+    @if (User.IsInRole("Purchasing Manager"))
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Latest Notifications</h5>
+            </div>
+            <div class="card-body">
+                @if (notifications != null && notifications.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var notification in notifications)
+                        {
+                            <li class="list-group-item">
+                                <strong>@notification.Title</strong><br />
+                                <span>@notification.Message</span><br />
+                                <small class="text-muted">
+                                    @notification.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                                </small>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted">No notifications available.</p>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="text-danger">You do not have access to view notifications.</p>
+    }
+</div>

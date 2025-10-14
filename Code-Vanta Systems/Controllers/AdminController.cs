@@ -96,6 +96,7 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction("ManageRoles");
         }
 
+        #region Employees
         //---------------------------------------------------------
         // EMPLOYEE MANAGEMENT
         //---------------------------------------------------------
@@ -526,6 +527,9 @@ namespace Code_Vanta_Systems.Controllers
                 .ToListAsync();
         }
 
+        #endregion
+
+        #region Customer
         //---------------------------------------------------------
         // CUSTOMER MANAGEMENT
         //---------------------------------------------------------
@@ -831,6 +835,9 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction("Customers");
         }
 
+        #endregion
+
+        #region Role
         //---------------------------------------------------------
         // ROLE MANAGEMENT
         //---------------------------------------------------------
@@ -996,5 +1003,110 @@ namespace Code_Vanta_Systems.Controllers
                 .ToListAsync();
             return View(model);
         }
+        #endregion
+
+        #region Supplier
+
+        public async Task<IActionResult> Suppliers()
+        {
+            var activeSuppliers = await context.Suppliers.Include(s => s.User)
+            .Where(s => s.IsActive)
+            .ToListAsync();
+            ViewBag.ActiveSupplierCount = activeSuppliers.Count;
+
+            ViewBag.InactiveSuppliersCount = await context.Suppliers.CountAsync(s => !s.IsActive);
+            return View(activeSuppliers);
+        }
+
+        public async Task<IActionResult> InactiveSuppliers()
+        {
+            var activeSuppliers = await context.Suppliers.Include(s => s.User)
+            .Where(s => s.IsActive)
+            .ToListAsync();
+            ViewBag.ActiveSupplierCount = activeSuppliers.Count;
+
+            var InactiveSuppliers = await context.Suppliers.Include(s => s.User)
+           .Where(s => !s.IsActive)
+           .ToListAsync();
+
+            ViewBag.InactiveSuppliersCount = InactiveSuppliers.Count;
+            return View(InactiveSuppliers);
+        }
+        #endregion
+
+        [HttpGet]
+        public IActionResult CreateSupplier()
+        {
+            ViewData["Title"] = "Create New Supplier";
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateSupplier(RegisterSupplierViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = new ApplicationUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                FullName = model.ContactPerson,
+                EmailConfirmed = true,
+                PhoneNumber = model.Phone
+            };
+            // Use a strong default password
+            var result = await userManager.CreateAsync(user, "Supplier@123!");
+
+            if (result.Succeeded)
+            {
+                user.EmailConfirmed = true;
+                await userManager.UpdateAsync(user);
+
+                var roleExists = await context.Roles.AnyAsync(r => r.Name == "Supplier");
+                if (!roleExists)
+                {
+                    ModelState.AddModelError(string.Empty, "Supplier role does not exist. Please create the role first.");
+                    return View(model);
+                }
+
+                var roleResult = await userManager.AddToRoleAsync(user, "Supplier");
+
+                if (roleResult.Succeeded)
+                {
+                    // 3. Create Supplier record
+                    var supplier = new Supplier
+                    {
+                        ApplicationUserId = user.Id,
+                        Name = model.CompanyName,
+                        Phone = model.Phone,
+                        Address = model.Address,
+                        IsActive = true
+                    };
+
+                    await context.Suppliers.AddAsync(supplier);
+                    await context.SaveChangesAsync();
+
+
+                    TempData["SuccessMessage"] = $"Supplier '{model.CompanyName}' created successfully.";
+                    return RedirectToAction("Suppliers"); // Adjust this action to your supplier list page
+                }
+
+                // Cleanup user if role assignment fails
+                await userManager.DeleteAsync(user);
+                ModelState.AddModelError(string.Empty, "Failed to assign 'Supplier' role. User has been deleted.");
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+
+            return View(model);
+        }
     }
+
 }

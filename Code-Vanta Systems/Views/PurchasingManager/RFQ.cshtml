@@ -1,0 +1,47 @@
+﻿@model List<Code_Vanta_Systems.ViewModels.RFQListItemViewModel>
+
+@{
+    ViewData["Title"] = "All RFQs";
+    Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
+}
+
+<h2 class="mb-4">All Request for Quotations (RFQs)</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No RFQs found.
+    </div>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>RFQ ID</th>
+                <th>Date</th>
+                <th>Supplier</th>
+                <th>Email</th>
+                <th>Requested By</th>
+                <th>Notes</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var rfq in Model)
+            {
+                <tr>
+                    <td>@rfq.RFQId</td>
+                    <td>@rfq.RequestDate.ToString("yyyy-MM-dd")</td>
+                    <td>@rfq.SupplierName</td>
+                    <td><a href="mailto:@rfq.SupplierEmail">@rfq.SupplierEmail</a></td>
+                    <td>@rfq.RequestedBy</td>
+                    <td>@rfq.Notes</td>
+                    <td>
+                        <a asp-action="RFQDetails" asp-controller="PurchaseManager" asp-route-id="@rfq.RequestQuotationId" class="btn btn-sm btn-primary">View</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

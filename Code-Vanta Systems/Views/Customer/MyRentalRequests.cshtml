@@ -1,0 +1,39 @@
+﻿@model IEnumerable<Code_Vanta_Systems.Models.RentalRequest>
+
+
+@{
+    Layout = "~/Views/Shared/_CustomerLayout.cshtml";
+    ViewData["Title"] = "My Rental Requests";
+}
+
+
+<h2>My Rental Requests</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Fridge</th>
+            <th>Quantity</th>
+            <th>Status</th>
+            <th>Requested On</th>
+            <th>Last Updated</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model)
+        {
+            <tr>
+                <td>@r.Fridge?.Model</td>
+                <td>@r.Quantity</td>
+                <td>
+                    <span class="badge @(r.Status == "Pending" ? "bg-warning" : r.Status == "Approved" ? "bg-success" : "bg-danger")">
+                        @r.Status
+                    </span>
+                </td>
+                <td>@r.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                <td>@(r.UpdatedAt.HasValue? r.UpdatedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "-")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
