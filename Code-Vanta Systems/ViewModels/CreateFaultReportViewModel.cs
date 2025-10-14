@@ -9,7 +9,7 @@ namespace Code_Vanta_Systems.ViewModels
         [Required(ErrorMessage = "Please select the fridge reporting the fault.")]
         public int? FridgeId { get; set; }
 
-        public string SerialNumber { get; set; }
+        public string? SerialNumber { get; set; }
 
         [Required(ErrorMessage = "Fault description is required.")]
         [Display(Name = "Fault Description")]

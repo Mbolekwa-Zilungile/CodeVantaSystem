@@ -12,12 +12,12 @@
         <div class="card-body">
             <form asp-action="CreateFaultReport" method="post">
 
-                @* IMPORTANT: This displays ALL validation errors (which are currently hidden) *@
-                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                @* This ensures all errors are visible on screen *@
+                <div asp-validation-summary="All" class="text-danger"></div>
 
-                @* ========================================================== *@
-                @* 1. FRIDGE ID SELECTION (Required, but allowing dropdown if needed) *@
-                @* ========================================================== *@
+                @* CRITICAL FIX: Ensures SerialNumber is submitted to avoid "SerialNumber is required" error *@
+                <input type="hidden" asp-for="SerialNumber" />
+
                 <div class="mb-3">
                     <label asp-for="FridgeId" class="form-label"></label>
                     <select asp-for="FridgeId"
@@ -25,40 +25,30 @@
                             class="form-select"
                             data-val="true"
                             data-val-required="Please select the fridge reporting the fault.">
-                        @* CRITICAL FIX: If Model.FridgeId is pre-populated (via link from FridgeDetails), 
-                           the GET action should disable this dropdown and rely on a hidden field to preserve it. *@
+                        @* Only show blank option if the ID is not pre-selected (via URL) *@
                         @if (!Model.FridgeId.HasValue)
                         {
                             <option value="">-- Select Fridge --</option>
                         }
                     </select>
-                    @* This displays the error text for FridgeId *@
                     <span asp-validation-for="FridgeId" class="text-danger"></span>
                 </div>
 
-                @* ========================================================== *@
-                @* 2. FAULT DESCRIPTION (Required string) *@
-                @* ========================================================== *@
                 <div class="mb-3">
                     <label asp-for="Description" class="form-label"></label>
                     <textarea asp-for="Description" rows="5" class="form-control" placeholder="Describe the fault and when it was noticed."></textarea>
                     <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
 
-                @* ========================================================== *@
-                @* 3. SEVERITY SELECTION (Required Enum) *@
-                @* ========================================================== *@
                 <div class="mb-3">
                     <label asp-for="Severity" class="form-label"></label>
                     <select asp-for="Severity" asp-items="Html.GetEnumSelectList<Code_Vanta_Systems.Models.Enums.FaultSeverity>()" class="form-select">
-                        @* CRITICAL FIX: REMOVE THE BLANK OPTION HERE! 
-                           The blank value "" cannot be bound to the non-nullable Enum type, causing the server validation to fail. *@
+                        @* CRITICAL FIX: REMOVE THE BLANK OPTION for non-nullable Enum *@
                     </select>
                     <span asp-validation-for="Severity" class="text-danger"></span>
                 </div>
 
                 <div class="d-flex justify-content-between">
-                    @* Back Button Logic *@
                     @if (Model.FridgeId.HasValue)
                     {
                         <a asp-action="FridgeDetails" asp-route-id="@Model.FridgeId" class="btn btn-secondary">
@@ -81,7 +71,6 @@
 </div>
 
 @section Scripts {
-    @* CRITICAL: These scripts enable client-side validation, which prevents unnecessary server round trips *@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
