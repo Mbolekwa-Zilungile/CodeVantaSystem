@@ -24,6 +24,7 @@ namespace Code_Vanta_Systems.Controllers
 
         public async Task<IActionResult> Index()
         {
+            var name = "test git";
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return RedirectToAction("Login", "Account");
 
