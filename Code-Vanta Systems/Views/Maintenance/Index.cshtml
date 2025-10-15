@@ -1,0 +1,180 @@
+﻿@using Code_Vanta_Systems.Models.Enums
+@model IEnumerable<Code_Vanta_Systems.ViewModels.Maintenance_Schedule.MaintenanceViewModel>
+
+@{
+    Layout = "~/Views/Shared/_TechnicianDashboard.cshtml";
+    ViewData["Title"] = "Fridge Maintenance Records";
+    int counter = ((int)ViewData["currentPage"] - 1) * 10 + 1;
+}
+
+<h3 class="text-center mb-5 display-5">Fridge Maintenance Records</h3>
+
+<!-- TempData Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Search + New Maintenance Button -->
+<div class="mb-3">
+    <form class="d-flex flex-grow-1 me-2" method="get" asp-action="Index">
+        <input type="text" name="search" class="form-control me-2" value="@ViewData["search"]" placeholder="Search maintenance records...">
+        <button type="submit" class="btn btn-secondary">Search</button>
+    </form>
+
+    <a asp-action="Create" class="btn btn-outline-primary mt-2">Schedule Maintenance</a>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Fridge</th>
+            <th>Business Name</th>
+            <th>Description</th>
+            <th>Scheduled Date</th>
+            <th>Status</th>
+            <th>Actual Completion</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var maintenance in Model)
+        {
+            <tr>
+                <td>@counter</td>
+                <td>@maintenance.FridgeModel</td>
+                <td>@maintenance.BusinessName</td>
+                <td>@maintenance.MaintenanceDescription</td>
+                <td>@maintenance.MaintenanceDate.ToString("yyyy-MM-dd")</td>
+                <td>
+                    <span class="badge bg-@(
+                        maintenance.Status == MaintenanceStatus.Completed ? "success" :
+                        maintenance.Status == MaintenanceStatus.Scheduled ? "warning" :
+                        maintenance.Status == MaintenanceStatus.Cancelled ? "danger" :
+                        maintenance.Status == MaintenanceStatus.Overdue ? "info" : "secondary")">
+                        @maintenance.Status
+                    </span>
+                </td>
+                <td>@(maintenance.ActualCompletionDate?.ToString("yyyy-MM-dd") ?? "Still Scheduled")</td>
+                <td class="d-flex">
+                    <button type="button" class="btn btn-sm btn-warning me-2" data-bs-toggle="modal" data-bs-target="#editModal-@maintenance.Id">Edit</button>
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-@maintenance.Id">Delete</button>
+                </td>
+            </tr>
+
+            <!-- Edit Modal -->
+            <div class="modal fade" id="editModal-@maintenance.Id" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <form asp-action="Edit" method="post">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Edit Maintenance</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="Id" value="@maintenance.Id" />
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Fridge</label>
+                                        <select name="FridgeId" class="form-select" required>
+                                            @foreach (var fridge in ViewBag.Fridges)
+                                            {
+                                                if (fridge.Id == maintenance.FridgeId)
+                                                {
+                                                    <option value="@fridge.Id" selected>@fridge.Model - @fridge.SerialNumber</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@fridge.Id">@fridge.Model - @fridge.SerialNumber</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Scheduled Date</label>
+                                        <input type="date" name="MaintenanceDate" class="form-control" value="@maintenance.MaintenanceDate.ToString("yyyy-MM-dd")" required />
+                                    </div>
+
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label">Description</label>
+                                        <textarea class="form-control" name="MaintenanceDescription">@maintenance.MaintenanceDescription</textarea>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Status</label>
+                                        <select name="Status" class="form-select" required>
+                                            <option value="Scheduled" selected="@(maintenance.Status == MaintenanceStatus.Scheduled)">Scheduled</option>
+                                            <option value="Completed" selected="@(maintenance.Status == MaintenanceStatus.Completed)">Completed</option>
+                                            <option value="Cancelled" selected="@(maintenance.Status == MaintenanceStatus.Cancelled)">Cancelled</option>
+                                            <option value="Overdue" selected="@(maintenance.Status == MaintenanceStatus.Overdue)">Overdue</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Completion Date</label>
+                                        <input type="date" name="ActualCompletionDate" class="form-control"
+                                               value="@(maintenance.ActualCompletionDate?.ToString("yyyy-MM-dd") ?? "")" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-success">Save Changes</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Modal -->
+            <div class="modal fade" id="deleteModal-@maintenance.Id" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form asp-action="DeleteConfirmed" method="post">
+                            <div class="modal-header">
+                                <h5 class="modal-title text-danger">Delete Maintenance Record</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="Id" value="@maintenance.Id" />
+                                <p>Are you sure you want to delete the maintenance record for fridge
+                                    <strong>@maintenance.FridgeSerial</strong>?</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            counter++;
+        }
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<nav>
+    <ul class="pagination justify-content-end">
+        @for (int i = 1; i <= (int)ViewData["totalPages"]; i++)
+        {
+            <li class="page-item @(i == (int)ViewData["currentPage"] ? "active" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pageIndex="@i" asp-route-search="@ViewData["search"]">@i</a>
+            </li>
+        }
+    </ul>
+</nav>
