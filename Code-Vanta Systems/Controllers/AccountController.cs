@@ -37,7 +37,56 @@ namespace Code_Vanta_Systems.Controllers
         }
 
         [HttpGet]
-        public IActionResult Login() => View();
+        public async Task<IActionResult> Login()
+        {
+            if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user != null)
+                {
+                    if (await _userManager.IsInRoleAsync(user, Roles.Admin))
+                        return RedirectToAction("Employees", "Admin");
+
+                    if (await _userManager.IsInRoleAsync(user, Roles.Customer))
+                    {
+                        var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == user.Id);
+                        if (customer != null)
+                        {
+                            if (customer.Status == CustomerStatus.Pending)
+                                return RedirectToAction("PendingPage", "CustomerDashboard");
+                            if (customer.Status == CustomerStatus.Active)
+                                return RedirectToAction("Dashboard", "Customer");
+
+                            return RedirectToAction("Rejected", "CustomerDashboard");
+                        }
+                        return RedirectToAction("Rejected", "CustomerDashboard");
+                    }
+
+                    if (await _userManager.IsInRoleAsync(user, Roles.CustomerLiaison))
+                        return RedirectToAction("Index", "CustomerLiaison");
+
+                    if (await _userManager.IsInRoleAsync(user, Roles.InventoryLiaison))
+                        return RedirectToAction("Dashboard", "InventoryLiaison");
+
+                    if (await _userManager.IsInRoleAsync(user, Roles.ServiceTechnician))
+                        return RedirectToAction("Index", "ServiceTechnician");
+
+                    if (await _userManager.IsInRoleAsync(user, Roles.FaultTechnician))
+                        return RedirectToAction("Dashboard", "FaultTechnician");
+
+                    if (await _userManager.IsInRoleAsync(user, Roles.MaintenanceTechnician))
+                        return RedirectToAction("Index", "MaintenanceTechnician");
+
+                    if (await _userManager.IsInRoleAsync(user, Roles.PurchasingManager))
+                        return RedirectToAction("Index", "PurchasingManager");
+
+                    // fallback
+                    return RedirectToAction("Index", "Home");
+                }
+            }
+
+            return View();
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModels model)
@@ -77,7 +126,7 @@ namespace Code_Vanta_Systems.Controllers
                     if (customer != null && customer.Status == CustomerStatus.Active)
                     {
                         // Pending customers go to PendingPage to upload document
-                        return RedirectToAction("Index", "Customer");
+                        return RedirectToAction("Dashboard", "Customer");
                     }
                     if (customer != null && customer.Status == CustomerStatus.Rejected)
                     {
