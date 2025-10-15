@@ -14,6 +14,10 @@ namespace Code_Vanta_Systems.Models
         public virtual Fridge Fridge { get; set; }
 
         [Required]
+        public int CustomerId { get; set; }
+        public virtual Customer Customer { get; set; }
+
+        [Required]
         public string TechnicianId { get; set; }
         public virtual ApplicationUser Technician { get; set; }
 
