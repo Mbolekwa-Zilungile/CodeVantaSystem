@@ -2,12 +2,14 @@
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.ViewModels.Log_Request;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Code_Vanta_Systems.Controllers
 {
+    [Authorize(Roles = "Customer")]
     public class FridgeRequestController : Controller
     {
         private readonly ApplicationDbContext _context;
