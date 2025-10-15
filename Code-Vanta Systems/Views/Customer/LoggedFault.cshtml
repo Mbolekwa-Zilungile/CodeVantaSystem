@@ -1,0 +1,144 @@
+﻿@model IEnumerable<Code_Vanta_Systems.ViewModels.Log_Fault.FridgeFaultViewModel>
+
+@{
+    Layout = "~/Views/Shared/_CustomerDashboard.cshtml"; // or TechnicianLayout
+    ViewData["Title"] = "My Logged Faults";
+    int counter = ((int)ViewData["currentPage"] - 1) * 10 + 1; // For pagination numbering
+}
+
+<h3 class="text-center mb-5 display-5">My Logged Faults</h3>
+
+<!-- TempData Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Search + Log Fault Button -->
+<div class="mb-3">
+    <form class="d-flex flex-grow-1 me-2" method="get" asp-action="LoggedFault">
+        <input type="text" name="search" class="form-control me-2" value="@ViewData["search"]" placeholder="Search faults...">
+        <button type="submit" class="btn btn-secondary">Search</button>
+    </form>
+
+    <a asp-action="LogFault" class="btn btn-sm btn-outline-primary">Log Fault</a>
+</div>
+
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Fridge Model</th>
+            <th>Serial Number</th>
+            <th>Technician</th>
+            <th>Date Reported</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Resolution Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var fault in Model)
+        {
+            <tr>
+                <td>@counter</td>
+                <td>@fault.FridgeModel</td>
+                <td>@fault.FridgeSerialNumber</td>
+                <td>@(fault.AssignedTechnicianName ?? "Not yet assigned")</td>
+                <td>@fault.DateReported.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@fault.FaultDescription</td>
+                <td>@fault.Status</td>
+                <td>@(fault.ResolutionDate.HasValue ? fault.ResolutionDate.Value.ToString("yyyy-MM-dd HH:mm") : "Still Open")</td>
+                <td class="d-flex">
+                    <!-- Edit Button triggers modal -->
+                    <button type="button" class="btn btn-sm btn-warning me-2" data-bs-toggle="modal" data-bs-target="#editModal-@fault.Id">Edit</button>
+                    <!-- Delete Button triggers modal -->
+                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-@fault.Id">Delete</button>
+                </td>
+            </tr>
+
+            <!-- Edit Modal -->
+            <div class="modal fade" id="editModal-@fault.Id" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form asp-action="EditFault" method="post">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Edit Fault</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="Id" value="@fault.Id" />
+
+                                <div class="mb-3">
+                                    <label class="form-label">Fridge</label>
+                                    <select name="FridgeId" asp-items="ViewBag.Fridges" class="form-select" id="FridgeId" required>
+                                        <option value="">-- Select Fridge --</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Fault Description</label>
+                                    <textarea class="form-control" name="FaultDescription" required>@fault.FaultDescription</textarea>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-success">Save Changes</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Delete Modal -->
+            <div class="modal fade" id="deleteModal-@fault.Id" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form asp-action="DeleteConfirmed" method="post">
+                            <div class="modal-header">
+                                <h5 class="modal-title text-danger">Delete Fault</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="Id" value="@fault.Id" />
+                                <p>Are you sure you want to delete the fault "<strong>@fault.FaultDescription</strong>"?</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            counter++;
+        }
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<nav>
+    <ul class="pagination justify-content-end">
+        @for (int i = 1; i <= (int)ViewData["totalPages"]; i++)
+        {
+            <li class="page-item @(i == (int)ViewData["currentPage"] ? "active" : "")">
+                <a class="page-link" asp-action="LoggedFault" asp-route-pageIndex="@i" asp-route-search="@ViewData["search"]">@i</a>
+            </li>
+        }
+    </ul>
+</nav>
