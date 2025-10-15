@@ -63,12 +63,21 @@ namespace Code_Vanta_Systems.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAllRead()
         {
-            var unread = await _context.Notifications.Where(n => !n.IsRead).ToListAsync();
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            // Only mark notifications for the current user as read
+            var unread = await _context.Notifications
+                .Where(n => n.RecipientUserId == user.Id && !n.IsRead)
+                .ToListAsync();
+
             foreach (var n in unread)
                 n.IsRead = true;
 
             await _context.SaveChangesAsync();
-            return RedirectToAction("Index");
+
+            // Return JSON indicating success
+            return Json(new { success = true, count = unread.Count });
         }
     }
 }
