@@ -1,0 +1,69 @@
+﻿@model Code_Vanta_Systems.ViewModels.Log_Request.CreateFridgeRequestViewModel
+
+@{
+    Layout = "~/Views/Shared/_CustomerDashboard.cshtml";
+    ViewData["Title"] = "Log Fridge Request";
+}
+
+<h3 class="text-center mb-5 display-5">Log New Fridge Request</h3>
+
+<!-- TempData Alerts -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+<form asp-action="Create" method="post">
+    <div class="row g-3">
+        <!-- Location -->
+        <div class="col-md-6">
+            <label class="form-label">Location</label>
+            <select asp-for="LocationId" class="form-select" required>
+                <option value="">-- Select Location --</option>
+                @foreach (var loc in ViewBag.Locations)
+                {
+                    <option value="@loc.Id">@loc.Description</option>
+                }
+            </select>
+            <span asp-validation-for="LocationId" class="text-danger"></span>
+        </div>
+
+        <!-- Fridge -->
+        <div class="col-md-6">
+            <label class="form-label">Fridge</label>
+            <select asp-for="FridgeId" class="form-select" required>
+                <option value="">-- Select Fridge --</option>
+                @foreach (var f in ViewBag.Fridges)
+                {
+                    <option value="@f.Id">@f.Model - @f.SerialNumber</option>
+                }
+            </select>
+            <span asp-validation-for="FridgeId" class="text-danger"></span>
+        </div>
+
+        <!-- Notes -->
+        <div class="col-12">
+            <label class="form-label">Notes</label>
+            <textarea asp-for="Notes" class="form-control" rows="4" placeholder="Optional notes..."></textarea>
+            <span asp-validation-for="Notes" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-3">
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Submit Request</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
