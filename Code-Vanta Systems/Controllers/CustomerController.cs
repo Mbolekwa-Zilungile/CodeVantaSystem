@@ -277,5 +277,8 @@ namespace Code_Vanta_Systems.Controllers
             return View(rentals);
         }
 
+        // Dashboard endpoint
+
+
     }
 }
