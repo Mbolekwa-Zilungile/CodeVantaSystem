@@ -1,10 +1,28 @@
-﻿@model List<Code_Vanta_Systems.Models.Notification>
+﻿@using Microsoft.AspNetCore.Identity
+@model List<Code_Vanta_Systems.Models.Notification>
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@inject UserManager<ApplicationUser> UserManager
 
 @{
 
     ViewData["Title"] = "Notifications";
     var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+
+    // Get logged-in user and role
+    var user = await UserManager.GetUserAsync(User);
+    var roles = user != null ? await UserManager.GetRolesAsync(user) : new List<string>();
+    if (roles.Contains("Admin"))
+    {
+        Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    }
+    else if (roles.Contains("Fault Technician"))
+    {
+        Layout = "~/Views/Shared/_TechnicianDashboard.cshtml";
+    }
+    else if (roles.Contains("Customer"))
+    {
+        Layout = "~/Views/Shared/_CustomerDashboard.cshtml";
+    }
 }
 
 <div class="container mt-5">
@@ -12,13 +30,11 @@
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-primary fw-bold mb-0">Notifications</h2>
-        <form method="post" asp-action="MarkAllRead">
-            <input name="__RequestVerificationToken" type="hidden" value="@token" />
-            <button type="submit" class="btn btn-sm btn-success shadow-sm">
-                Mark All as Read
-            </button>
-        </form>
+        <button id="markAllReadBtn" class="btn btn-sm btn-success shadow-sm">
+            Mark All as Read
+        </button>
     </div>
+
 
     <!-- Empty State -->
     @if (!Model.Any())
@@ -94,6 +110,31 @@
                     }
                 });
             });
+
+                    // Mark All as Read functionality
+        $('#markAllReadBtn').click(function () {
+            var token = $('meta[name="csrf-token"]').attr('content');
+
+            $.ajax({
+                url: '/Notification/MarkAllRead',
+                type: 'POST',
+                headers: { 'RequestVerificationToken': token },
+                success: function () {
+                    // Update all cards as read
+                    $('.card').removeClass('border border-danger').addClass('bg-light');
+                    $('.card .badge').removeClass('bg-danger').addClass('bg-secondary').text('Read');
+                    $('.card .mark-read').remove(); // remove individual buttons
+
+                    // Update notification badge
+                    var badge = $('#notificationBadge');
+                    badge.hide();
+                },
+                error: function (xhr) {
+                    alert('Failed to mark all notifications as read: ' + xhr.statusText);
+                }
+            });
+        });
+
 
             // Navigate on card click
             $('.card').click(function () {
