@@ -53,7 +53,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("PerformedByUserId");
 
-                    b.ToTable("ActivityLogs", (string)null);
+                    b.ToTable("ActivityLogs");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.ApplicationUser", b =>
@@ -162,7 +162,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("ChangedByUserId");
 
-                    b.ToTable("AuditTrails", (string)null);
+                    b.ToTable("AuditTrails");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Company", b =>
@@ -199,7 +199,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Company", (string)null);
+                    b.ToTable("Company");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Customer", b =>
@@ -269,7 +269,7 @@ namespace Code_Vanta_Systems.Migrations
                         .IsUnique()
                         .HasFilter("[UserId] IS NOT NULL");
 
-                    b.ToTable("Customers", (string)null);
+                    b.ToTable("Customers");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.DeliveryNote", b =>
@@ -306,7 +306,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("SupplierId");
 
-                    b.ToTable("DeliveryNotes", (string)null);
+                    b.ToTable("DeliveryNotes");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Document", b =>
@@ -343,7 +343,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("UploadedByUserId");
 
-                    b.ToTable("Documents", (string)null);
+                    b.ToTable("Documents");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Employee", b =>
@@ -386,7 +386,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("LocationId");
 
-                    b.ToTable("Employees", (string)null);
+                    b.ToTable("Employees");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Fridge", b =>
@@ -452,7 +452,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("SupplierId");
 
-                    b.ToTable("Fridges", (string)null);
+                    b.ToTable("Fridges");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.FridgeAllocation", b =>
@@ -490,7 +490,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("FridgeId");
 
-                    b.ToTable("FridgeAllocations", (string)null);
+                    b.ToTable("FridgeAllocations");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.FridgeFault", b =>
@@ -534,7 +534,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("ReportedByUserId");
 
-                    b.ToTable("FridgeFaults", (string)null);
+                    b.ToTable("FridgeFaults");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.FridgeMaintenance", b =>
@@ -576,7 +576,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("TechnicianId");
 
-                    b.ToTable("FridgeMaintenances", (string)null);
+                    b.ToTable("FridgeMaintenances");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.FridgeRequest", b =>
@@ -616,7 +616,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("RequestedByUserId");
 
-                    b.ToTable("FridgeRequests", (string)null);
+                    b.ToTable("FridgeRequests");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.FridgeUsageLog", b =>
@@ -647,7 +647,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("FridgeId");
 
-                    b.ToTable("FridgeUsageLogs", (string)null);
+                    b.ToTable("FridgeUsageLogs");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.InventoryItem", b =>
@@ -673,7 +673,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("SupplierId");
 
-                    b.ToTable("InventoryItems", (string)null);
+                    b.ToTable("InventoryItems");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.ItemCatalog", b =>
@@ -711,7 +711,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("SupplierId");
 
-                    b.ToTable("ItemCatalogs", (string)null);
+                    b.ToTable("ItemCatalogs");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Location", b =>
@@ -742,7 +742,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Locations", (string)null);
+                    b.ToTable("Locations");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.MaintenanceSchedule", b =>
@@ -768,7 +768,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("FridgeId");
 
-                    b.ToTable("MaintenanceSchedules", (string)null);
+                    b.ToTable("MaintenanceSchedules");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Notification", b =>
@@ -809,7 +809,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("RecipientUserId");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.PurchaseOrder", b =>
@@ -840,7 +840,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("SupplierId");
 
-                    b.ToTable("PurchaseOrders", (string)null);
+                    b.ToTable("PurchaseOrders");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.PurchaseOrderItem", b =>
@@ -869,7 +869,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("PurchaseOrderId");
 
-                    b.ToTable("PurchaseOrderItems", (string)null);
+                    b.ToTable("PurchaseOrderItems");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.PurchaseRequest", b =>
@@ -904,7 +904,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("RequestedByUserId");
 
-                    b.ToTable("PurchaseRequests", (string)null);
+                    b.ToTable("PurchaseRequests");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.PurchaseRequestItem", b =>
@@ -938,7 +938,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("PurchaseRequestId");
 
-                    b.ToTable("PurchaseRequestItems", (string)null);
+                    b.ToTable("PurchaseRequestItems");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Quotation", b =>
@@ -969,7 +969,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("SupplierId");
 
-                    b.ToTable("Quotations", (string)null);
+                    b.ToTable("Quotations");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.QuotationItem", b =>
@@ -1008,7 +1008,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("QuotationId");
 
-                    b.ToTable("QuotationItem", (string)null);
+                    b.ToTable("QuotationItem");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.RentalOrder", b =>
@@ -1044,7 +1044,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RentalOrders", (string)null);
+                    b.ToTable("RentalOrders");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.RentalOrderItem", b =>
@@ -1072,7 +1072,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("RentalOrderId");
 
-                    b.ToTable("RentalOrderItem", (string)null);
+                    b.ToTable("RentalOrderItem");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.RentalRequest", b =>
@@ -1114,7 +1114,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("RequestedByUserId");
 
-                    b.ToTable("RentalRequests", (string)null);
+                    b.ToTable("RentalRequests");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.RentedFridge", b =>
@@ -1141,7 +1141,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RentedFridges", (string)null);
+                    b.ToTable("RentedFridges");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.RequestQuotation", b =>
@@ -1156,9 +1156,6 @@ namespace Code_Vanta_Systems.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("PurchaseRequestId")
-                        .HasColumnType("int");
 
                     b.Property<string>("RFQId")
                         .IsRequired()
@@ -1177,13 +1174,11 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasKey("RequestQuotationId");
 
-                    b.HasIndex("PurchaseRequestId");
-
                     b.HasIndex("RequestedByUserId");
 
                     b.HasIndex("SupplierId");
 
-                    b.ToTable("RequestQuotations", (string)null);
+                    b.ToTable("RequestQuotations");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.SensorReading", b =>
@@ -1213,7 +1208,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("FridgeId");
 
-                    b.ToTable("SensorReading", (string)null);
+                    b.ToTable("SensorReading");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Supplier", b =>
@@ -1249,7 +1244,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("ApplicationUserId");
 
-                    b.ToTable("Suppliers", (string)null);
+                    b.ToTable("Suppliers");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.TechnicianSchedule", b =>
@@ -1289,7 +1284,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("TechnicianUserId");
 
-                    b.ToTable("TechnicianSchedule", (string)null);
+                    b.ToTable("TechnicianSchedule");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.WorkFlowApproval", b =>
@@ -1329,7 +1324,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("ApproverUserId");
 
-                    b.ToTable("WorkflowApprovals", (string)null);
+                    b.ToTable("WorkflowApprovals");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -1922,12 +1917,6 @@ namespace Code_Vanta_Systems.Migrations
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.RequestQuotation", b =>
                 {
-                    b.HasOne("Code_Vanta_Systems.Models.PurchaseRequest", "PurchaseRequest")
-                        .WithMany()
-                        .HasForeignKey("PurchaseRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "RequestedBy")
                         .WithMany()
                         .HasForeignKey("RequestedByUserId")
@@ -1939,8 +1928,6 @@ namespace Code_Vanta_Systems.Migrations
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("PurchaseRequest");
 
                     b.Navigation("RequestedBy");
 
