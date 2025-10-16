@@ -29,7 +29,7 @@ namespace Code_Vanta_Systems.Controllers
                         return RedirectToAction("Employees", "Admin");
 
                     if (await _userManager.IsInRoleAsync(user, Roles.Customer))
-                        return RedirectToAction("Dashboard", "Customer");
+                        return RedirectToAction("Index", "Customer");
 
                     if (await _userManager.IsInRoleAsync(user, Roles.CustomerLiaison))
                         return RedirectToAction("Index", "CustomerLiaison");
