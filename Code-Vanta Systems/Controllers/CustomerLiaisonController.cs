@@ -4,6 +4,7 @@ using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Services;
 using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +17,14 @@ namespace Code_Vanta_Systems.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
+        private readonly UserManager<ApplicationUser> userManager;
 
-        public CustomerLiaisonController(ApplicationDbContext context, EmailService emailService)
+        public CustomerLiaisonController(ApplicationDbContext context, EmailService emailService, UserManager<ApplicationUser> userManager)
         {
+
             _context = context;
             _emailService = emailService;
+            this.userManager = userManager;
         }
 
         public async Task<IActionResult> Index()
@@ -197,89 +201,109 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(rentals);
         }
-
         [HttpPost]
         public async Task<IActionResult> ApproveRental(int id)
         {
-            var rental = await _context.RentalRequests
-                .Include(r => r.Fridge)
-                .Include(r => r.RequestedByUser)
-                .FirstOrDefaultAsync(r => r.Id == id);
-
-            if (rental == null) return Json(new { success = false, message = "Rental not found." });
-
-            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == rental.RequestedByUserId);
-            if (customer == null) return Json(new { success = false, message = "Customer not found." });
-
-            if (rental.Fridge.StockQuantity < rental.Quantity)
-                return Json(new { success = false, message = "Not enough stock to approve." });
-
-            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var rental = await _context.RentalRequests
+                    .Include(r => r.Fridge)
+                    .Include(r => r.RequestedByUser)
+                    .FirstOrDefaultAsync(r => r.Id == id);
+
+                if (rental == null)
+                    return Json(new { success = false, message = "Rental not found." });
+
+                if (rental.Fridge == null)
+                    return Json(new { success = false, message = "Fridge not found." });
+
+
+                if (rental.Fridge.StockQuantity < rental.Quantity)
+                    return Json(new { success = false, message = "Not enough stock available." });
+
                 rental.Fridge.StockQuantity -= rental.Quantity;
+
+
                 rental.Status = "Approved";
                 rental.UpdatedAt = DateTime.UtcNow;
 
-                var allocation = new FridgeAllocation
-                {
-                    CustomerId = customer.Id,
-                    FridgeId = rental.FridgeId,
-                    Quantity = rental.Quantity,
-                    AllocationDate = DateTime.UtcNow,
-                    CreatedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                };
-                await _context.FridgeAllocations.AddAsync(allocation);
-                await _context.SaveChangesAsync();
+                var fridgeModel = rental.Fridge?.Model ?? "fridge";
 
-                rental.AllocationId = allocation.Id;
 
                 var notification = new Notification
                 {
+                    Title = "Rental Approved",
                     RecipientUserId = rental.RequestedByUserId,
-                    Message = $"Your rental request for {rental.Fridge.Model} ({rental.Quantity}) has been approved.",
+                    Message = $"Your rental request for {fridgeModel} ({rental.Quantity}) has been approved.",
                     CreatedAt = DateTime.UtcNow,
-                    IsRead = false
+                    IsRead = false,
+                    TargetController = "Customer",
+                    TargetAction = "MyRentalRequests"
                 };
-                await _context.Notifications.AddAsync(notification);
 
+                _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
 
-                return Json(new { success = true, message = "Rental approved!", rentalId = rental.Id });
+                return Json(new { success = true, message = "Rental approved and stock updated!" });
             }
-            catch
+            catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                return Json(new { success = false, message = "Failed to approve rental." });
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                return Json(new { success = false, message = $"Failed to approve rental: {inner}" });
             }
         }
 
         [HttpPost]
         public async Task<IActionResult> RejectRental(int id)
         {
-            var rental = await _context.RentalRequests
-                .Include(r => r.Fridge)
-                .Include(r => r.RequestedByUser)
-                .FirstOrDefaultAsync(r => r.Id == id);
-
-            if (rental == null) return Json(new { success = false, message = "Rental not found." });
-
-            rental.Status = "Rejected";
-            rental.UpdatedAt = DateTime.UtcNow;
-
-            var notification = new Notification
+            try
             {
-                RecipientUserId = rental.RequestedByUserId,
-                Message = $"Your rental request for {rental.Fridge.Model} has been rejected.",
-                CreatedAt = DateTime.UtcNow,
-                IsRead = false
-            };
-            await _context.Notifications.AddAsync(notification);
-            await _context.SaveChangesAsync();
+                var rental = await _context.RentalRequests
+                    .Include(r => r.Fridge)
+                    .Include(r => r.RequestedByUser)
+                    .FirstOrDefaultAsync(r => r.Id == id);
 
-            return Json(new { success = true, message = "Rental rejected!", rentalId = rental.Id });
+                if (rental == null)
+                    return Json(new { success = false, message = "Rental not found." });
+
+                rental.Status = "Rejected";
+                rental.UpdatedAt = DateTime.UtcNow;
+
+                var fridgeModel = rental.Fridge?.Model ?? "fridge";
+
+                var customer = await userManager.GetUsersInRoleAsync("Customer");
+                var liaisonUser = customer.FirstOrDefault();
+
+                if (liaisonUser != null)
+                {
+                    // ✅ 2. Create notification
+                    var notification = new Notification
+                    {
+                        RecipientUserId = liaisonUser.Id,
+                        Title = "Fridge Request Rejected",
+                        Message = $"Your rental request for {fridgeModel} ({rental.Quantity}) has been rejected.",
+                        CreatedAt = DateTime.UtcNow,
+                        IsRead = false,
+                        TargetController = "Customer",
+                        TargetAction = "MyRentalRequests"
+                    };
+
+                    _context.Notifications.Add(notification);
+                    await _context.SaveChangesAsync();
+                }
+
+       
+             
+
+                return Json(new { success = true, message = "Rental rejected!" });
+            }
+            catch (Exception ex)
+            {
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                return Json(new { success = false, message = $"Failed to reject rental: {inner}" });
+            }
         }
+
 
         // Allocations
         public async Task<IActionResult> Allocations()

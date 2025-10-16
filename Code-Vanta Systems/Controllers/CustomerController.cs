@@ -329,15 +329,15 @@ namespace Code_Vanta_Systems.Controllers
                 })
                 .ToList();
 
-            // --- Build ViewModel ---
-            var viewModel = new CustomerDashboardViewModel
-            {
-                TotalLogged = totalLoggedFaults,
-                TotalRequested = totalPendingRequests,
-                TotalPending = totalPending,
-                TotalAllocated = totalFridgesAllocated,
-                FaultsOverTime = faultsOverTime
-            };
+           // ---Build ViewModel-- -
+           var viewModel = new CustomerDashboardViewModel
+           {
+               TotalLogged = totalLoggedFaults,
+               TotalRequested = totalPendingRequests,
+               TotalPending = totalPending,
+               TotalAllocated = totalFridgesAllocated,
+               FaultsOverTime = faultsOverTime
+           };
 
             return View(viewModel);
         }

@@ -54,8 +54,9 @@ namespace Code_Vanta_Systems.Controllers
                         {
                             if (customer.Status == CustomerStatus.Pending)
                                 return RedirectToAction("PendingPage", "CustomerDashboard");
+
                             if (customer.Status == CustomerStatus.Active)
-                                return RedirectToAction("Dashboard", "Customer");
+                                return RedirectToAction("Index", "Customer");
 
                             return RedirectToAction("Rejected", "CustomerDashboard");
                         }
@@ -126,7 +127,7 @@ namespace Code_Vanta_Systems.Controllers
                     if (customer != null && customer.Status == CustomerStatus.Active)
                     {
                         // Pending customers go to PendingPage to upload document
-                        return RedirectToAction("Dashboard", "Customer");
+                        return RedirectToAction("Index", "Customer");
                     }
                     if (customer != null && customer.Status == CustomerStatus.Rejected)
                     {
