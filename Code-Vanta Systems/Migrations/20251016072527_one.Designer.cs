@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Code_Vanta_Systems.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251015215756_one")]
+    [Migration("20251016072527_one")]
     partial class one
     {
         /// <inheritdoc />
@@ -554,6 +554,9 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
                     b.Property<int>("FridgeId")
                         .HasColumnType("int");
 
@@ -574,6 +577,8 @@ namespace Code_Vanta_Systems.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("FridgeId");
 
@@ -1639,6 +1644,12 @@ namespace Code_Vanta_Systems.Migrations
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.FridgeMaintenance", b =>
                 {
+                    b.HasOne("Code_Vanta_Systems.Models.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Code_Vanta_Systems.Models.Fridge", "Fridge")
                         .WithMany("Maintenances")
                         .HasForeignKey("FridgeId")
@@ -1650,6 +1661,8 @@ namespace Code_Vanta_Systems.Migrations
                         .HasForeignKey("TechnicianId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Customer");
 
                     b.Navigation("Fridge");
 

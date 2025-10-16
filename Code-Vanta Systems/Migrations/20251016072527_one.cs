@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateDB : Migration
+    public partial class one : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -735,6 +735,7 @@ namespace Code_Vanta_Systems.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FridgeId = table.Column<int>(type: "int", nullable: false),
+                    CustomerId = table.Column<int>(type: "int", nullable: false),
                     TechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     MaintenanceDate = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -751,6 +752,12 @@ namespace Code_Vanta_Systems.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_FridgeMaintenances_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_FridgeMaintenances_Fridges_FridgeId",
                         column: x => x.FridgeId,
@@ -1053,6 +1060,9 @@ namespace Code_Vanta_Systems.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     QuotationId = table.Column<int>(type: "int", nullable: false),
+                    FridgeId = table.Column<int>(type: "int", nullable: false),
+                    FridgeModel = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
                     PurchaseRequestItemId = table.Column<int>(type: "int", nullable: false),
                     QuotedUnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     QuotedQuantity = table.Column<int>(type: "int", nullable: false)
@@ -1200,6 +1210,11 @@ namespace Code_Vanta_Systems.Migrations
                 name: "IX_FridgeFaults_ReportedByUserId",
                 table: "FridgeFaults",
                 column: "ReportedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FridgeMaintenances_CustomerId",
+                table: "FridgeMaintenances",
+                column: "CustomerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_FridgeMaintenances_FridgeId",

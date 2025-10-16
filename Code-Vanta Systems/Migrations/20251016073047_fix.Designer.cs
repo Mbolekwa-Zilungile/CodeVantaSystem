@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Code_Vanta_Systems.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251012192921_CreateDB")]
-    partial class CreateDB
+    [Migration("20251016073047_fix")]
+    partial class fix
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -554,6 +554,9 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
                     b.Property<int>("FridgeId")
                         .HasColumnType("int");
 
@@ -574,6 +577,8 @@ namespace Code_Vanta_Systems.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("FridgeId");
 
@@ -983,7 +988,17 @@ namespace Code_Vanta_Systems.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("FridgeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FridgeModel")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("PurchaseRequestItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
                         .HasColumnType("int");
 
                     b.Property<int>("QuotationId")
@@ -1629,6 +1644,12 @@ namespace Code_Vanta_Systems.Migrations
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.FridgeMaintenance", b =>
                 {
+                    b.HasOne("Code_Vanta_Systems.Models.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Code_Vanta_Systems.Models.Fridge", "Fridge")
                         .WithMany("Maintenances")
                         .HasForeignKey("FridgeId")
@@ -1640,6 +1661,8 @@ namespace Code_Vanta_Systems.Migrations
                         .HasForeignKey("TechnicianId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Customer");
 
                     b.Navigation("Fridge");
 

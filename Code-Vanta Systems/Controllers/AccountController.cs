@@ -152,7 +152,7 @@ namespace Code_Vanta_Systems.Controllers
 
                 // Fault Technician
                 if (await _userManager.IsInRoleAsync(user, Roles.FaultTechnician))
-                    return RedirectToAction("Index", "FaultTechnician");
+                    return RedirectToAction("Dashboard", "FaultTechnician");
 
                 // Maintenance Technician
                 if (await _userManager.IsInRoleAsync(user, Roles.MaintenanceTechnician))
