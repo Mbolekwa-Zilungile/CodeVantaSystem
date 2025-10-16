@@ -1,0 +1,171 @@
+﻿@model Code_Vanta_Systems.ViewModels.MaintenanceFridgeDetailsViewModel
+
+@{
+    ViewData["Title"] = $"Details for Fridge: {Model.FridgeSummary.SerialNumber}";
+    Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4 text-primary">
+        <i class="bi bi-box-seam"></i> Fridge Details
+    </h2>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Summary for: @Model.FridgeSummary.SerialNumber</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+
+                <div class="col-md-6">
+                    <p><strong>Model:</strong> @Model.FridgeSummary.Model</p>
+                    <p><strong>Status:</strong> <span class="badge bg-success">@Model.FridgeSummary.FridgeStatus</span></p>
+                    <p><strong>Customer:</strong> @Model.FridgeSummary.CustomerBusinessName</p>
+                </div>
+
+                <div class="col-md-6">
+                    <p><strong>Location Address:</strong> @Model.FridgeSummary.CustomerAddress</p>
+                    <p>
+                        <strong>Next Scheduled Visit:</strong>
+                        @if (Model.FridgeSummary.NextScheduledVisit.HasValue)
+                        {
+                            <span class="text-success fw-bold">@Model.FridgeSummary.NextScheduledVisit.Value.ToString("dd MMMM yyyy")</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">None scheduled</span>
+                        }
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-4 text-end">
+                <a asp-action="CreateSchedule"
+                   asp-route-fridgeId="@Model.FridgeSummary.FridgeId"
+                   class="btn btn-success me-2">
+                    <i class="bi bi-calendar-plus"></i> Schedule New Visit
+                </a>
+
+                <a asp-action="CreateServiceRecord"
+                   asp-route-fridgeId="@Model.FridgeSummary.FridgeId"
+                   class="btn btn-primary me-2">
+                    <i class="bi bi-check-circle"></i> Log Service
+                </a>
+
+                <a asp-action="CreateFaultReport"
+                   asp-route-fridgeId="@Model.FridgeSummary.FridgeId"
+                   class="btn btn-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Report Fault
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    @* TAB NAVIGATION (Buttons) *@
+    <ul class="nav nav-tabs" id="historyTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="fault-history-tab" data-bs-toggle="tab" data-bs-target="#fault-history" type="button" role="tab">Fault History (@Model.FaultHistory.Count)</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="service-history-tab" data-bs-toggle="tab" data-bs-target="#service-history" type="button" role="tab">Service History (@Model.ServiceHistory.Count)</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="upcoming-schedules-tab" data-bs-toggle="tab" data-bs-target="#upcoming-schedules" type="button" role="tab">Upcoming Schedules (@Model.UpcomingSchedules.Count)</button>
+        </li>
+    </ul>
+
+    @* TAB CONTENT (Panels) *@
+    <div class="tab-content border border-top-0 p-3" id="historyTabsContent">
+        <div class="tab-pane fade show active" id="fault-history" role="tabpanel">
+            @if (Model.FaultHistory != null && Model.FaultHistory.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var fault in Model.FaultHistory)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Reported: @fault.DateReported.ToShortDateString() - @fault.Severity</div>
+                                @fault.FaultDescription
+                            </div>
+                            <span class="badge bg-danger rounded-pill">Status: @fault.Status</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="alert alert-secondary">No fault history found for this fridge.</div>
+            }
+        </div>
+        <div class="tab-pane fade" id="service-history" role="tabpanel">
+            @if (Model.ServiceHistory != null && Model.ServiceHistory.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var service in Model.ServiceHistory)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Completed: @service.DateOfService.ToShortDateString()</div>
+                                **Action Taken:** @service.ServiceDetails
+                            </div>
+                            @* Assuming Technician navigation property exists on ServiceRecord *@
+                            <span class="badge bg-info">Tech: @(service.Technician?.FullName ?? "N/A")</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="alert alert-secondary">No service history found for this fridge.</div>
+            }
+        </div>
+        <div class="tab-pane fade" id="upcoming-schedules" role="tabpanel">
+            @if (Model.UpcomingSchedules != null && Model.UpcomingSchedules.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var schedule in Model.UpcomingSchedules)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Scheduled Date: @schedule.ScheduledDate.ToShortDateString()</div>
+                                **Task:** @schedule.Description
+                            </div>
+                            <span class="badge bg-warning">@schedule.Status</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="alert alert-success">No upcoming maintenance schedules found.</div>
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-action="AllocatedFridges" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Fridge List
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    @* 🚩 CRITICAL FIX: Explicitly initialize the Bootstrap tab component *@
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get all tab triggers by their class
+            const triggerEl = document.querySelectorAll('#historyTabs button')
+
+            // Loop through and initialize each one
+            triggerEl.forEach(trigger => {
+                // If using Bootstrap 5, this line is sufficient to initialize the component
+                new bootstrap.Tab(trigger)
+            })
+        });
+    </script>
+}

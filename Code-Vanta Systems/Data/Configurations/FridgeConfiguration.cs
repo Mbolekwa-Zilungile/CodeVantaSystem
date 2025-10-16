@@ -20,6 +20,13 @@ namespace Code_Vanta_Systems.Data.Configurations
                    .WithMany(s => s.Fridges)
                    .HasForeignKey(f => f.SupplierId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            // NEW CRITICAL FIX: TechnicianUserId relationship configuration
+            // This explicitly sets ON DELETE NO ACTION (Restrict) to prevent the SQL cascade cycle error (Error 1785)
+            builder.HasOne(f => f.Technician)
+                   .WithMany() // Assumes ApplicationUser does not have a navigation property back to Fridges
+                   .HasForeignKey(f => f.TechnicianUserId)
+                   .OnDelete(DeleteBehavior.Restrict); // <-- CRITICAL FIX
         }
     }
 }

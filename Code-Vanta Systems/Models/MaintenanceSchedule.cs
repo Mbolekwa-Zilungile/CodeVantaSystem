@@ -8,18 +8,28 @@ namespace Code_Vanta_Systems.Models
     {
         [Key]
         public int Id { get; set; }
-        // Foreign key referencing the fridge scheduled for maintenance
+
         [Required]
         public int FridgeId { get; set; }
-        // Navigation property for the fridge
-        public virtual Fridge Fridge { get; set; }
 
-        // Date when the next maintenance is scheduled
+        // This property now relies entirely on MaintenanceScheduleConfiguration.cs
+        public Fridge Fridge { get; set; }
+
         [Required]
-        public DateTime NextServiceDate { get; set; }
+        public DateTime ScheduledDate { get; set; }
 
-        //notes about the maintenance schedule
-        [StringLength(200)]
-        public string Notes { get; set; }
+        [Required]
+        [MaxLength(500)]
+        public string Description { get; set; }
+
+        [Required]
+        public string TechnicianId { get; set; }
+
+        // This property now relies on conventions or other configurations
+        public ApplicationUser Technician { get; set; }
+
+        [Required]
+        [MaxLength(20)]
+        public string Status { get; set; }
     }
 }

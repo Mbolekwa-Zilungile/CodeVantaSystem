@@ -13,5 +13,7 @@ namespace Code_Vanta_Systems.ViewModels
         [Required]
         [Range(1, int.MaxValue)]
         public int Quantity { get; set; }
+
+        public string? TechnicianId { get; set; }
     }
 }

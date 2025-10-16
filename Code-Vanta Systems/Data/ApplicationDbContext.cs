@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Code_Vanta_Systems.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Code_Vanta_Systems.Models;
 
 
 namespace Code_Vanta_Systems.Data
@@ -43,6 +44,10 @@ namespace Code_Vanta_Systems.Data
         public DbSet<RentalRequest> RentalRequests { get; set; }
         public DbSet<RentedFridge> RentedFridges { get; set; }
         public DbSet<Company> Company { get; set; }
+        public DbSet<ServiceRecord> ServiceRecords { get; set; }
+        public DbSet<ApplicationUser> Users { get; set; }
+        public DbSet<IdentityUserRole<string>> UserRoles { get; set; } // If using default Identity
+        public DbSet<IdentityRole> Roles { get; set; }
         // Note: The DbSet for SensorReading and TechnicianSchedule (mentioned in overview) 
         // were not included in the original DbContext code, but are listed in the model overview.
 

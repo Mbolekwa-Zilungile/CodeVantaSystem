@@ -25,6 +25,8 @@ namespace Code_Vanta_Systems.Models
         [Required, StringLength(500)]
         public string FaultDescription { get; set; }
 
+        public FaultSeverity Severity { get; set; }
+
         [Required]
         public FaultStatus Status { get; set; }
 
