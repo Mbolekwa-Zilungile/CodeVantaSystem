@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateDB : Migration
+    public partial class NEW : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -1117,7 +1117,7 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "QuotationItem",
+                name: "QuotationItems",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -1132,15 +1132,15 @@ namespace Code_Vanta_Systems.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_QuotationItem", x => x.Id);
+                    table.PrimaryKey("PK_QuotationItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_QuotationItem_PurchaseRequestItems_PurchaseRequestItemId",
+                        name: "FK_QuotationItems_PurchaseRequestItems_PurchaseRequestItemId",
                         column: x => x.PurchaseRequestItemId,
                         principalTable: "PurchaseRequestItems",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_QuotationItem_Quotations_QuotationId",
+                        name: "FK_QuotationItems_Quotations_QuotationId",
                         column: x => x.QuotationId,
                         principalTable: "Quotations",
                         principalColumn: "Id",
@@ -1405,13 +1405,13 @@ namespace Code_Vanta_Systems.Migrations
                 column: "RequestedByUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_QuotationItem_PurchaseRequestItemId",
-                table: "QuotationItem",
+                name: "IX_QuotationItems_PurchaseRequestItemId",
+                table: "QuotationItems",
                 column: "PurchaseRequestItemId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_QuotationItem_QuotationId",
-                table: "QuotationItem",
+                name: "IX_QuotationItems_QuotationId",
+                table: "QuotationItems",
                 column: "QuotationId");
 
             migrationBuilder.CreateIndex(
@@ -1570,7 +1570,7 @@ namespace Code_Vanta_Systems.Migrations
                 name: "PurchaseOrderItems");
 
             migrationBuilder.DropTable(
-                name: "QuotationItem");
+                name: "QuotationItems");
 
             migrationBuilder.DropTable(
                 name: "RentalOrderItem");
