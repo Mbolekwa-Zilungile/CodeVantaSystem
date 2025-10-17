@@ -120,9 +120,9 @@
             <i class="bi bi-people-fill"></i> RFQs
         </a>
 
-        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Allocations" ? "active" : "")"
-           asp-controller="CustomerLiaison" asp-action="Allocations">
-            <i class="bi bi-box2-heart"></i> Allocations
+        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "MyQuotations" ? "active" : "")"
+           asp-controller="Supplier" asp-action="MyQuotations">
+            <i class="bi bi-box2-heart"></i> Qoutations
         </a>
 
         <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "FridgeTracking" ? "active" : "")"
@@ -131,7 +131,7 @@
         </a>
 
         <a class="sidebar-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Reports" ? "active" : "")"
-           asp-controller="Reports" asp-action="CustomerReports">
+           asp-controller="Reports" asp-action="MyQuotations">
             <i class="bi bi-bar-chart-line"></i> Reports
         </a>
 

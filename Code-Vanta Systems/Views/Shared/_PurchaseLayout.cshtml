@@ -138,16 +138,15 @@
             <i class="bi bi-receipt me-2"></i>Purchase Request
         </a>
 
-        <a class="sidebar-link @(currentController == "Admin" && (currentAction == "ManageRoles" || currentAction == "EditUserRoles") ? "active" : "")"
+        <a class="sidebar-link @(currentController == "PurchasingManager" && (currentAction == "ManageRoles" || currentAction == "EditUserRoles") ? "active" : "")"
            asp-controller="PurchasingManager" asp-action="RFQ">
             <i class="bi bi-send me-2"></i>RFQS
         </a>
 
-        <a class="sidebar-link @(currentController == "Reports" ? "active" : "")"
-           asp-controller="Reports" asp-action="Index">
-            <i class="bi bi-graph-up me-2"></i>Reports
+        <a class="sidebar-link @(currentController == "PurchasingManager" && currentAction == "MyQuotations" ? "active" : "")"
+           asp-controller="PurchasingManager" asp-action="MyQuotations">
+            <i class="bi bi-send me-2"></i>Supplier Quotations
         </a>
-
         <div class="px-3 py-2 mt-auto">
             <small class="text-muted">FMS v1.0</small>
         </div>

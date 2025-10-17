@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateDb : Migration
+    public partial class CreateDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -563,7 +563,8 @@ namespace Code_Vanta_Systems.Migrations
                     RFQId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     RequestedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false)
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    PurchaseRequestId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -572,6 +573,12 @@ namespace Code_Vanta_Systems.Migrations
                         name: "FK_RequestQuotations_AspNetUsers_RequestedByUserId",
                         column: x => x.RequestedByUserId,
                         principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RequestQuotations_PurchaseRequests_PurchaseRequestId",
+                        column: x => x.PurchaseRequestId,
+                        principalTable: "PurchaseRequests",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -753,8 +760,7 @@ namespace Code_Vanta_Systems.Migrations
                         name: "FK_Quotations_RequestQuotations_RequestQuotationId",
                         column: x => x.RequestQuotationId,
                         principalTable: "RequestQuotations",
-                        principalColumn: "RequestQuotationId",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "RequestQuotationId");
                     table.ForeignKey(
                         name: "FK_Quotations_Suppliers_SupplierId",
                         column: x => x.SupplierId,
@@ -1141,6 +1147,11 @@ namespace Code_Vanta_Systems.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.InsertData(
+                table: "Company",
+                columns: new[] { "Id", "Address", "Email", "Name", "Phone", "RegistrationNumber", "VatNumber" },
+                values: new object[] { 1, "123 Western Way, Port Elizabeth, South Africa", "codevanta@gmail.com", "Codevanta Systems Ltd.", "+27 83 193 9887", "1234567890", "VAT123456" });
+
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityLogs_PerformedByUserId",
                 table: "ActivityLogs",
@@ -1449,6 +1460,11 @@ namespace Code_Vanta_Systems.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RequestQuotations_PurchaseRequestId",
+                table: "RequestQuotations",
+                column: "PurchaseRequestId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RequestQuotations_RequestedByUserId",
                 table: "RequestQuotations",
                 column: "RequestedByUserId");
@@ -1605,13 +1621,13 @@ namespace Code_Vanta_Systems.Migrations
                 name: "ItemCatalogs");
 
             migrationBuilder.DropTable(
-                name: "PurchaseRequests");
-
-            migrationBuilder.DropTable(
                 name: "RequestQuotations");
 
             migrationBuilder.DropTable(
                 name: "Fridges");
+
+            migrationBuilder.DropTable(
+                name: "PurchaseRequests");
 
             migrationBuilder.DropTable(
                 name: "Customers");

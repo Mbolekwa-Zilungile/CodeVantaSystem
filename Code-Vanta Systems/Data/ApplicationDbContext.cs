@@ -51,7 +51,7 @@ namespace Code_Vanta_Systems.Data
         // Note: The DbSet for SensorReading and TechnicianSchedule (mentioned in overview) 
         // were not included in the original DbContext code, but are listed in the model overview.
 
-
+        public DbSet<QuotationItem> QuotationItems { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Call base method first for Identity configurations

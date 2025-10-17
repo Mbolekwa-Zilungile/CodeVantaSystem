@@ -27,7 +27,10 @@ namespace Code_Vanta_Systems.Models
 
         [MaxLength(500)]
         public string Notes { get; set; }
-    
+
+        [Required]
+        public int PurchaseRequestId { get; set; }
+        public PurchaseRequest PurchaseRequest { get; set; }
         public ICollection<Quotation> Quotations { get; set; } = new HashSet<Quotation>();
     }
 }

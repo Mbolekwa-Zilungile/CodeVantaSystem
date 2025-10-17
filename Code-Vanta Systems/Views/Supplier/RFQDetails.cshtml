@@ -2,55 +2,60 @@
 
 @{
     ViewData["Title"] = "RFQ Details";
-    Layout = "~/Views/Shared/_Layout.cshtml"; // Adjust if you have a supplier-specific layout
+    Layout = "~/Views/Shared/_SupplierLayout.cshtml";
 }
 
 <h2 class="mb-4">RFQ Details</h2>
 
+<!-- RFQ Info Card -->
 <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-primary text-white">
-        <h4>RFQ Information</h4>
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">RFQ Information</h5>
     </div>
     <div class="card-body">
-        <p><strong>RFQ ID:</strong> @Model.RFQId</p>
-        <p><strong>Request ID:</strong> @Model.RequestQuotationId</p>
-        <p><strong>Request Date:</strong> @Model.RequestDate.ToString("yyyy-MM-dd")</p>
-        <p><strong>Supplier Name:</strong> @Model.SupplierName</p>
-        <p><strong>Supplier Email:</strong> @Model.SupplierEmail</p>
-        <p><strong>Requested By:</strong> @Model.RequestedBy</p>
+        <p><strong>RFQ #:</strong> @Model.RFQId</p>
+        <p><strong>Request Date:</strong> @Model.RequestDate.ToString("dd MMM yyyy")</p>
+        <p><strong>Requested By:</strong> @Model.IssuedByName</p>
         <p><strong>Notes:</strong> @Model.Notes</p>
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-header bg-secondary text-white">
-        <h4>Quotation Items</h4>
+<!-- Company Info Card -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Company Information</h5>
     </div>
     <div class="card-body">
+        <p><strong>Name:</strong> @Model.CompanyName</p>
+        <p><strong>Email:</strong> <a href="mailto:@Model.CompanyEmail">@Model.CompanyEmail</a></p>
+        <p><strong>Phone:</strong> @Model.CompanyPhone</p>
+        <p><strong>Address:</strong> @Model.CompanyAddress</p>
+    </div>
+</div>
+
+<!-- Requested Items Card -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Requested Items</h5>
+    </div>
+    <div class="card-body p-0">
         @if (Model.Items != null && Model.Items.Any())
         {
-            <table class="table table-bordered table-striped">
+            <table class="table table-striped table-hover mb-0">
                 <thead class="table-dark">
                     <tr>
                         <th>#</th>
-                        <th>Item Name</th>
-                        <th>Requested Quantity</th>
-                        <th>Quoted Quantity</th>
-                        <th>Quoted Unit Price</th>
-                        <th>Total Price</th>
+                        <th>Fridge Model</th>
+                        <th>Quantity</th>
                     </tr>
                 </thead>
                 <tbody>
                     @for (int i = 0; i < Model.Items.Count; i++)
                     {
-                        var item = Model.Items.ElementAt(i);
                         <tr>
                             <td>@(i + 1)</td>
-                            <td>@item.PurchaseRequestItem?.ModelRequested ?? "N/A"</td>
-                            <td>@item.PurchaseRequestItem?.Quantity ?? 0</td>
-                            <td>@item.QuotedQuantity</td>
-                            <td>@item.QuotedUnitPrice.ToString("C")</td>
-                            <td>@(item.QuotedQuantity * item.QuotedUnitPrice).ToString("C")</td>
+                            <td>@Model.Items[i].FridgeModel</td>
+                            <td>@Model.Items[i].Quantity</td>
                         </tr>
                     }
                 </tbody>
@@ -58,10 +63,14 @@
         }
         else
         {
-            <p>No quotation items found for this RFQ.</p>
+            <p class="p-3">No items found for this RFQ.</p>
         }
     </div>
 </div>
 
-<a asp-action="RFQ" class="btn btn-secondary mt-3">Back to RFQ List</a>
-
+<div class="d-flex justify-content-start mt-3">
+    <a class="btn btn-secondary" asp-action="RFQ">Back to RFQs</a>
+    <a class="btn btn-primary" asp-action="CreateQoutation" asp-route-requestQuotationId="@Model.RequestQuotationId">
+        Create Quotation
+    </a>
+</div>

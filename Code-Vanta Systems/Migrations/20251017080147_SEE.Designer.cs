@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Code_Vanta_Systems.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251016105943_CreateDb")]
-    partial class CreateDb
+    [Migration("20251017080147_SEE")]
+    partial class SEE
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -203,6 +203,18 @@ namespace Code_Vanta_Systems.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Company");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Address = "123 Western Way, Port Elizabeth, South Africa",
+                            Email = "codevanta@gmail.com",
+                            Name = "Codevanta Systems Ltd.",
+                            Phone = "+27 83 193 9887",
+                            RegistrationNumber = "1234567890",
+                            VatNumber = "VAT123456"
+                        });
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.Customer", b =>
@@ -1040,7 +1052,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("QuotationId");
 
-                    b.ToTable("QuotationItem");
+                    b.ToTable("QuotationItems");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.RentalOrder", b =>
@@ -1189,6 +1201,9 @@ namespace Code_Vanta_Systems.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<int>("PurchaseRequestId")
+                        .HasColumnType("int");
+
                     b.Property<string>("RFQId")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -1205,6 +1220,8 @@ namespace Code_Vanta_Systems.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("RequestQuotationId");
+
+                    b.HasIndex("PurchaseRequestId");
 
                     b.HasIndex("RequestedByUserId");
 
@@ -1930,7 +1947,7 @@ namespace Code_Vanta_Systems.Migrations
                     b.HasOne("Code_Vanta_Systems.Models.RequestQuotation", "RequestQuotation")
                         .WithMany("Quotations")
                         .HasForeignKey("RequestQuotationId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Code_Vanta_Systems.Models.Supplier", "Supplier")
                         .WithMany("Quotations")
@@ -2019,6 +2036,12 @@ namespace Code_Vanta_Systems.Migrations
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.RequestQuotation", b =>
                 {
+                    b.HasOne("Code_Vanta_Systems.Models.PurchaseRequest", "PurchaseRequest")
+                        .WithMany()
+                        .HasForeignKey("PurchaseRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "RequestedBy")
                         .WithMany()
                         .HasForeignKey("RequestedByUserId")
@@ -2030,6 +2053,8 @@ namespace Code_Vanta_Systems.Migrations
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("PurchaseRequest");
 
                     b.Navigation("RequestedBy");
 

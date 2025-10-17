@@ -769,6 +769,7 @@ namespace Code_Vanta_Systems.Controllers
                     RequestDate = DateTime.Now,
                     RequestedByUserId = currentUserId,
                     SupplierId = supplierId,
+                    PurchaseRequestId = model.PurchaseRequestId,
                     Notes = model.Notes ?? ""
                 };
 
@@ -814,8 +815,33 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction("RFQ", "PurchasingManager", new { id = model.PurchaseRequestId });
         }
 
-       
+
         #endregion RFQ
+
+        #region Supplier Qoutation 
+
+        public async Task<IActionResult> MyQuotations()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var supplier = await context.Suppliers
+                .FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
+
+            if (supplier == null)
+                return Unauthorized();
+
+            if (supplier == null)
+                return Unauthorized();
+
+            var quotations = await context.Quotations
+                .Include(q => q.RequestQuotation)
+                .Where(q => q.SupplierId == supplier.Id)
+                .OrderByDescending(q => q.DateReceived)
+                .ToListAsync();
+
+            return View(quotations);
+        }
+
+        #endregion
     }
 
 }
