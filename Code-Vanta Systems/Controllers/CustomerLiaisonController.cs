@@ -292,8 +292,8 @@ namespace Code_Vanta_Systems.Controllers
                     await _context.SaveChangesAsync();
                 }
 
-       
-             
+
+
 
                 return Json(new { success = true, message = "Rental rejected!" });
             }
@@ -321,7 +321,7 @@ namespace Code_Vanta_Systems.Controllers
         [HttpGet]
         public async Task<IActionResult> CreateAllocation()
         {
-              
+
             ViewBag.Customers = await _context.Customers
                  .Include(c => c.Location)
                .Where(c => c.Status == CustomerStatus.Active)
@@ -399,19 +399,81 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction("Allocations");
         }
 
-        // Fridge Tracking
+        //// Fridge Tracking
+        //public async Task<IActionResult> FridgeTracking()
+        //{
+        //    var trackedFridges = await _context.FridgeAllocations
+        //        .Include(a => a.Fridge)
+        //        .Include(a => a.Customer)
+        //        .Include(a => a.CreatedBy)
+        //         .Where(a => a.Fridge != null && a.Customer != null)
+        //        .OrderByDescending(a => a.AllocationDate)
+        //        .ToListAsync();
+
+        //    return View(trackedFridges);
+        //}
+        //Combined view
+
         public async Task<IActionResult> FridgeTracking()
         {
-            var trackedFridges = await _context.FridgeAllocations
+            // 1️⃣ Fetch approved rental requests
+            var approvedRequests = await _context.RentalRequests
+                .Include(r => r.Fridge)
+                .Include(r => r.RequestedByUser)
+                .Include(r => r.RequestedByUser)
+                .Where(r => r.Status == "Approved")
+                .Select(r => new FridgeTrackingViewModel
+                {
+                    FridgeModel = r.Fridge.Model,
+                    SerialNumber = r.Fridge.SerialNumber,
+                    CustomerName = r.RequestedByUser.FullName ?? r.RequestedByUser.UserName,
+                    PhysicalAddress = "" ,// not always known until allocation
+                    Quantity = r.Quantity,
+                    Status = "Approved Request",
+                    AllocatedBy = "Pending Allocation",
+                    Date = r.UpdatedAt
+                })
+                .ToListAsync();
+
+            // 2️⃣ Fetch actual fridge allocations
+            var allocations = await _context.FridgeAllocations
                 .Include(a => a.Fridge)
                 .Include(a => a.Customer)
                 .Include(a => a.CreatedBy)
-                .OrderByDescending(a => a.AllocationDate)
+                .Select(a => new FridgeTrackingViewModel
+                {
+                    FridgeModel = a.Fridge.Model,
+                    SerialNumber = a.Fridge.SerialNumber,
+                    CustomerName = a.Customer.BusinessName,
+                    PhysicalAddress = a.Customer.PhysicalAddress, // ✅ use physical address
+                    Quantity = a.Quantity,
+                    Status = "Allocated",
+                    AllocatedBy = a.CreatedBy.FullName ?? a.CreatedBy.UserName,
+                    Date = a.AllocationDate
+                })
                 .ToListAsync();
 
-            return View(trackedFridges);
+            // 3️⃣ Merge both lists
+            var combined = approvedRequests.Concat(allocations)
+                .OrderByDescending(x => x.Date)
+                .ToList();
+
+            return View(combined);
         }
 
+        ////new fridge tracking
+        //public async Task<IActionResult> FridgeTracking()
+        //{
+        //    var trackedFridges = await _context.FridgeAllocations
+        //        .Include(a => a.Fridge)
+        //        .Include(a => a.Customer)
+        //        .Include(a => a.CreatedBy)
+        //        .Where(a => a.Fridge != null && a.Customer != null)
+        //        .OrderByDescending(a => a.AllocationDate)
+        //        .ToListAsync();
+
+        //    return View(trackedFridges);
+        //}
         // Requests
         public async Task<IActionResult> Requests()
         {
@@ -422,6 +484,149 @@ namespace Code_Vanta_Systems.Controllers
                 .ToListAsync();
 
             return View(requests);
+        }
+
+        //Adding delete and edit in the active customer table
+        // GET: CustomerLiaison/EditCustomer/5
+        [HttpGet]
+        public async Task<IActionResult> EditCustomer(int id)
+        {
+            var customer = await _context.Customers
+                .Include(c => c.Location)
+                .FirstOrDefaultAsync(c => c.Id == id && c.Status == CustomerStatus.Active);
+
+            if (customer == null)
+            {
+                TempData["ErrorMessage"] = "Customer not found or inactive.";
+                return RedirectToAction(nameof(ActiveCustomers));
+            }
+
+            var viewModel = new EditCustomerViewModel
+            {
+                Id = customer.Id,
+                BusinessName = customer.BusinessName,
+                ContactName = customer.ContactName,
+                Phone = customer.Phone,
+                Email = customer.Email,
+                BusinessType = customer.BusinessType,
+                PhysicalAddress = customer.PhysicalAddress,
+                LocationId = customer.LocationId,
+                CurrentLocationDescription = customer.Location?.Description,
+                AvailableLocations = await _context.Locations
+                    .Select(l => new SelectListItem
+                    {
+                        Value = l.Id.ToString(),
+                        Text = l.Description
+                    }).ToListAsync()
+            };
+
+            return View(viewModel);
+        }
+
+        // POST: CustomerLiaison/EditCustomer
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCustomer(EditCustomerViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                model.AvailableLocations = await _context.Locations
+                    .Select(l => new SelectListItem
+                    {
+                        Value = l.Id.ToString(),
+                        Text = l.Description
+                    }).ToListAsync();
+                return View(model);
+            }
+
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.Id == model.Id);
+            if (customer == null)
+            {
+                TempData["ErrorMessage"] = "Customer not found.";
+                return RedirectToAction(nameof(ActiveCustomers));
+            }
+
+            customer.BusinessName = model.BusinessName;
+            customer.ContactName = model.ContactName;
+            customer.Phone = model.Phone;
+            customer.Email = model.Email;
+            customer.BusinessType = model.BusinessType;
+            customer.PhysicalAddress = model.PhysicalAddress;
+            customer.LocationId = model.LocationId;
+
+            _context.Customers.Update(customer);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Customer '{model.BusinessName}' updated successfully.";
+            return RedirectToAction(nameof(ActiveCustomers));
+        }
+
+        // POST: CustomerLiaison/SoftDeleteCustomer/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SoftDeleteCustomer(int id)
+        {
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.Id == id);
+            if (customer == null)
+            {
+                TempData["ErrorMessage"] = "Customer not found.";
+                return RedirectToAction(nameof(ActiveCustomers));
+            }
+
+            customer.IsActive = false;
+            customer.Status = CustomerStatus.Rejected; // Optional: mark as rejected or inactive
+            _context.Customers.Update(customer);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Customer '{customer.BusinessName}' deactivated successfully.";
+            return RedirectToAction(nameof(ActiveCustomers));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReactivateCustomer(int id)
+        {
+            var customer = await _context.Customers
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (customer == null)
+            {
+                TempData["ErrorMessage"] = "Customer not found.";
+                return RedirectToAction(nameof(RejectCustomers)); // Redirect to inactive/rejected list
+            }
+
+            var user = customer.User;
+
+            // 1️⃣ Reactivate customer record
+            customer.IsActive = true;
+            customer.Status = CustomerStatus.Active;
+
+            // 2️⃣ Remove account lockout (allow login again)
+            if (user != null)
+            {
+                await userManager.SetLockoutEndDateAsync(user, null);
+
+                // Ensure Customer role exists
+                const string roleName = "Customer";
+                if (await userManager.IsInRoleAsync(user, roleName) == false)
+                {
+                    if (await _context.Roles.AnyAsync(r => r.Name == roleName))
+                    {
+                        await userManager.AddToRoleAsync(user, roleName);
+                    }
+                    else
+                    {
+                        TempData["WarningMessage"] = $"Customer '{user.Email}' reactivated but role '{roleName}' not found. Please assign manually.";
+                    }
+                }
+            }
+
+            _context.Customers.Update(customer);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Customer '{customer.BusinessName}' has been successfully reactivated.";
+            return RedirectToAction(nameof(ActiveCustomers)); // Back to the active list
         }
     }
 }

@@ -1,0 +1,42 @@
+﻿@model Code_Vanta_Systems.ViewModels.EditCustomerViewModel
+@{
+    ViewData["Title"] = "Deactivate Customer";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-danger text-white">
+            <h4>Confirm Deactivation</h4>
+        </div>
+        <div class="card-body">
+            <p>
+                Are you sure you want to deactivate the following customer?
+                This action will mark them as inactive but will not permanently delete their record.
+            </p>
+
+            <dl class="row">
+                <dt class="col-sm-3">Business Name</dt>
+                <dd class="col-sm-9">@Model.BusinessName</dd>
+
+                <dt class="col-sm-3">Contact Name</dt>
+                <dd class="col-sm-9">@Model.ContactName</dd>
+
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">@Model.Email</dd>
+
+                <dt class="col-sm-3">Phone</dt>
+                <dd class="col-sm-9">@Model.Phone</dd>
+            </dl>
+
+            <form asp-action="SoftDeleteCustomer" method="post">
+                <input type="hidden" asp-for="Id" />
+                <div class="d-flex justify-content-between">
+                    <a asp-action="ActiveCustomers" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Confirm Deactivate
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

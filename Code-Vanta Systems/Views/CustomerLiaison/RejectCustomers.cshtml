@@ -2,27 +2,35 @@
 
 @{
     Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
-    ViewData["Title"] = "Pending Customers";
+    ViewData["Title"] = "Rejected Customers";
 }
+
 @if (TempData["Success"] != null)
 {
-    <div class="alert alert-success">
-        @TempData["Success"]
-    </div>
+    <div class="alert alert-success">@TempData["Success"]</div>
 }
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+@if (TempData["WarningMessage"] != null)
+{
+    <div class="alert alert-warning">@TempData["WarningMessage"]</div>
+}
+
 <br />
 
 <div class="row">
-    <!-- Card 4: Suppliers (wrapped in a link properly) -->
+    <!-- Pending -->
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="@Url.Action("PendingCustomers", "CustomerLiaison")" class="text-decoration-none">
-            <div class="card shadow h-100 py-2 ">
+            <div class="card shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
-                            <div class="text-xs fw-bold text-uppercase mb-2">Pending </div>
+                            <div class="text-xs fw-bold text-uppercase mb-2">Pending</div>
                             <div class="h4 mb-0 fw-bold">
-                                <i class="bi bi-box me-2"></i> @ViewBag.PendingCustomerCount
+                                <i class="bi bi-box me-2"></i>@ViewBag.PendingCustomerCount
                             </div>
                         </div>
                     </div>
@@ -30,14 +38,15 @@
             </div>
         </a>
     </div>
-    <!-- Card 1: Pending Requests -->
+
+    <!-- Active -->
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="@Url.Action("ActiveCustomers", "CustomerLiaison")" class="text-decoration-none">
-            <div class="card shadow h-100 py-2 ">
+            <div class="card shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
-                            <div class="text-xs fw-bold text-uppercase mb-2">Approved </div>
+                            <div class="text-xs fw-bold text-uppercase mb-2">Approved</div>
                             <div class="h4 mb-0 fw-bold">
                                 <i class="bi bi-cart3 me-2"></i>@ViewBag.ActiveCustomerCount
                             </div>
@@ -48,14 +57,14 @@
         </a>
     </div>
 
-    <!-- Card 2: Active RFQs -->
+    <!-- Rejected -->
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="@Url.Action("RejectCustomers", "CustomerLiaison")" class="text-decoration-none">
-            <div class="card shadow h-100 py-2 ">
+            <div class="card shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
-                            <div class="text-xs fw-bold text-uppercase mb-2">Rejected </div>
+                            <div class="text-xs fw-bold text-uppercase mb-2">Rejected</div>
                             <div class="h4 mb-0 fw-bold">
                                 <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectCustomerCount
                             </div>
@@ -65,18 +74,15 @@
             </div>
         </a>
     </div>
-
 </div>
 
-
-
 <div class="container mt-5">
-    <h2 class="mb-4 text-primary">Rejected Customers</h2>
+    <h2 class="mb-4 text-danger">Rejected Customers</h2>
 
     @if (!Model.Any())
     {
         <div class="alert alert-info">
-            There are no pending customers at the moment.
+            There are no rejected customers at the moment.
         </div>
     }
     else
@@ -88,6 +94,7 @@
                     <th>Contact Name</th>
                     <th>Email</th>
                     <th>Phone</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -98,6 +105,14 @@
                         <td>@customer.ContactName</td>
                         <td>@customer.Email</td>
                         <td>@customer.Phone</td>
+                        <td>
+                            <form asp-action="ReactivateCustomer" asp-route-id="@customer.Id" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-success"
+                                        onclick="return confirm('Are you sure you want to reactivate this customer?');">
+                                    <i class="bi bi-arrow-clockwise"></i> Reactivate
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                 }
             </tbody>

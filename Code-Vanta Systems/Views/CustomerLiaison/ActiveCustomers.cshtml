@@ -86,6 +86,11 @@
                     <th>Contact Name</th>
                     <th>Email</th>
                     <th>Phone</th>
+                    <th> Physical Address</th>
+                    <th>Actions</th>
+
+
+
                 </tr>
             </thead>
             <tbody>
@@ -96,6 +101,19 @@
                         <td>@customer.ContactName</td>
                         <td>@customer.Email</td>
                         <td>@customer.Phone</td>
+                        <td>@customer.PhysicalAddress</td>
+                        <td>
+                            <a asp-action="EditCustomer" asp-route-id="@customer.Id" class="btn btn-sm btn-primary">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+
+                            <form asp-action="SoftDeleteCustomer" asp-route-id="@customer.Id" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                        onclick="return confirm('Are you sure you want to deactivate this customer?');">
+                                    <i class="bi bi-trash"></i> Deactivate
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                 }
             </tbody>
