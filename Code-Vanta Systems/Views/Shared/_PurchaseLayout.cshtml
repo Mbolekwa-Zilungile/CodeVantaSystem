@@ -140,15 +140,15 @@
 
         <a class="sidebar-link @(currentController == "PurchasingManager" && (currentAction == "ManageRoles" || currentAction == "EditUserRoles") ? "active" : "")"
            asp-controller="PurchasingManager" asp-action="RFQ">
-            <i class="bi bi-send me-2"></i>RFQS
+            <i class="bi bi-send me-2"></i>RFQs
         </a>
 
         <a class="sidebar-link @(currentController == "PurchasingManager" && currentAction == "MyQuotations" ? "active" : "")"
-           asp-controller="PurchasingManager" asp-action="MyQuotations">
+           asp-controller="PurchasingManager" asp-action="SupplerQuotations">
             <i class="bi bi-send me-2"></i>Supplier Quotations
         </a>
         <div class="px-3 py-2 mt-auto">
-            <small class="text-muted">FMS v1.0</small>
+            <small class="text-muted">FMS v1.0 - Purchase Manager</small>
         </div>
     </div>
 

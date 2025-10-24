@@ -815,26 +815,57 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction("RFQ", "PurchasingManager", new { id = model.PurchaseRequestId });
         }
 
+        public async Task<IActionResult> RFQDetails(int id)
+        {
+            // Fetch the RFQ with related data
+            var rfq = await context.RequestQuotations
+                .Include(r => r.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(r => r.PurchaseRequest)
+                    .ThenInclude(pr => pr.RequestedItems)
+                        .ThenInclude(ri => ri.Fridge)
+                .Include(r => r.RequestedBy)
+                .FirstOrDefaultAsync(r => r.RequestQuotationId == id);
+
+            if (rfq == null)
+            {
+                return NotFound();
+            }
+
+            // Map to a view model
+            var viewModel = new RFQDetailViewModel
+            {
+                RFQId = rfq.RFQId,
+                RequestDate = rfq.RequestDate,
+                Notes = rfq.Notes,
+                // Supplier Info
+                SupplierName = rfq.Supplier?.Name ?? rfq.Supplier?.ContactName,
+                SupplierEmail = rfq.Supplier?.User?.Email,
+                SupplierPhone = rfq.Supplier?.Phone,
+                SupplierAddress = rfq.Supplier?.Address,
+                // Requested By (who issued the RFQ)
+                IssuedByName = rfq.RequestedBy?.UserName ?? "Unknown",
+                // Requested Items
+                Items = rfq.PurchaseRequest?.RequestedItems.Select(ri => new RFQItemViewModel
+                {
+                    FridgeModel = ri.Fridge?.Model ?? "Unknown",
+                    Quantity = ri.Quantity
+                }).ToList() ?? new List<RFQItemViewModel>()
+            };
+            return View(viewModel);
+        }
 
         #endregion RFQ
 
         #region Supplier Qoutation 
 
-        public async Task<IActionResult> MyQuotations()
+        public async Task<IActionResult> SupplerQuotations()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var supplier = await context.Suppliers
-                .FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
-
-            if (supplier == null)
-                return Unauthorized();
-
-            if (supplier == null)
-                return Unauthorized();
-
+            // Fetch all quotations including related RFQ and supplier details
             var quotations = await context.Quotations
                 .Include(q => q.RequestQuotation)
-                .Where(q => q.SupplierId == supplier.Id)
+                .Include(q => q.Supplier)
+                    .ThenInclude(s => s.User)  // Include supplier user info (like name/email)
                 .OrderByDescending(q => q.DateReceived)
                 .ToListAsync();
 

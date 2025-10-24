@@ -26,9 +26,48 @@ namespace Code_Vanta_Systems.Controllers
             this.context = context;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            if (User.IsInRole("Supplier"))
+            {
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                if (currentUserId == null)
+                    return RedirectToAction("Login", "Account");
+
+                var supplier = await context.Suppliers
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.User.Id == currentUserId);
+
+                if (supplier == null)
+                {
+                    return Unauthorized(); // Or redirect with a message
+                }
+
+                var rfqs = await context.RequestQuotations
+               .Include(r => r.Supplier)
+                   .ThenInclude(s => s.User)
+               .Include(r => r.RequestedBy)
+               .Where(r => r.SupplierId == supplier.Id) // filter by supplier
+               .OrderByDescending(r => r.RequestDate)
+               .ToListAsync();
+
+                ViewBag.RFQCount = rfqs.Count;
+                // Fetch the latest 5 notifications for the logged-in supplier
+                var notifications = await context.Notifications
+                    .Where(n => n.RecipientUserId == currentUserId)
+                    .OrderByDescending(n => n.CreatedAt)
+                    .Take(5)
+                    .ToListAsync();
+
+                // Send the notifications to the view
+                ViewBag.LatestNotifications = notifications;
+
+                return View(notifications); // optional: pass directly to view
+            }
+
+            // If not a supplier, redirect to dashboard or show an access denied page
+            return RedirectToAction("AccessDenied", "Account");
         }
 
         #region RFQ

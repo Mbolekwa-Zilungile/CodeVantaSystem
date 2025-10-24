@@ -5,7 +5,14 @@
     Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
 }
 
-<h2 class="mb-4">All Request for Quotations (RFQs)</h2>
+<<div class="row mb-4">
+    <div class="col">
+        <h1 class="alert alert-success">Request for Quotations (RFQs)</h1>
+        <p class="text-muted">
+            View all RFQs sent to suppliers, including details about the purchase request, supplier, and requested items.
+        </p>
+    </div>
+</div>
 
 @if (!Model.Any())
 {
@@ -38,7 +45,7 @@ else
                     <td>@rfq.RequestedBy</td>
                     <td>@rfq.Notes</td>
                     <td>
-                        <a asp-action="RFQDetails" asp-controller="PurchaseManager" asp-route-id="@rfq.RequestQuotationId" class="btn btn-sm btn-primary">View</a>
+                        <a asp-action="RFQDetails" asp-controller="PurchasingManager" asp-route-id="@rfq.RequestQuotationId" class="btn btn-sm btn-primary">View</a>
                     </td>
                 </tr>
             }
