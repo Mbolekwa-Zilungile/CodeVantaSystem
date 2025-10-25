@@ -23,6 +23,18 @@
     {
         Layout = "~/Views/Shared/_CustomerLayout.cshtml";
     }
+    else if (roles.Contains("Supplier"))
+    {
+        Layout = "~/Views/Shared/_SupplierLayout.cshtml";
+    }
+    else if (roles.Contains("Purchasing Manager"))
+    {
+        Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
+    }
+    else if (roles.Contains("Inventory Liaison"))
+    {
+        Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
+    }
 }
 
 <div class="container mt-5">

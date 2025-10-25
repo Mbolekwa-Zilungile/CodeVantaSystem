@@ -115,9 +115,6 @@ namespace Code_Vanta_Systems.Controllers
         #endregion
 
 
-
-
-
         #region PURCHASE REQUESTS
         // 🗂️ Display all purchase requests created by this liaison
         public async Task<IActionResult> PurchaseRequests()
@@ -634,7 +631,6 @@ namespace Code_Vanta_Systems.Controllers
         #endregion
 
 
-
         #region EDIT FRIDGE
 
 
@@ -819,6 +815,7 @@ namespace Code_Vanta_Systems.Controllers
         }
 
         #endregion
+
 
         #region SOFT HEAD DELETE
 

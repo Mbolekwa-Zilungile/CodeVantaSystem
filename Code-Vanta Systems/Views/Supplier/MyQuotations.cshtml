@@ -5,7 +5,11 @@
     Layout = "~/Views/Shared/_SupplierLayout.cshtml";
 }
 
-<h2>My Quotations</h2><br /><br />
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="alert alert-success">My quotations</h1>
+    </div>
+</div>
 
 @if (TempData["SuccessMessage"] != null)
 {

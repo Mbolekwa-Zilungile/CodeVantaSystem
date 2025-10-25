@@ -283,29 +283,30 @@ namespace Code_Vanta_Systems.Controllers
 
                 context.QuotationItems.Add(quotationItem);
             }
+           
 
             await context.SaveChangesAsync();
-            var purchasemanager = await userManager.GetUsersInRoleAsync("Inventory Liaison");
-            var manager = purchasemanager.FirstOrDefault();
+            var purchasingManagers = await userManager.GetUsersInRoleAsync("Purchasing Manager");
+            var liaisonUser = purchasingManagers.FirstOrDefault();
 
-            if (manager != null)
+            if (liaisonUser != null)
             {
-                // ✅ 2. Create notification
                 var notification = new Notification
                 {
-                    RecipientUserId = manager.Id,
+                    RecipientUserId = liaisonUser.Id,
                     Title = "New Quotation Submitted",
-                    Message = $"Supplier '{supplier.Name}' submitted a quotation for RFQ {model.RFQCode}.",
+                    Message = $"Supplier {supplier.Name} has submitted a new quotation for RFQ #{quotation.RequestQuotationId}.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
                     TargetController = "PurchasingManager",
-                    TargetAction = "RFQDetails", // adjust to actual action/view
-                    CreatedAt = DateTime.Now
+                    TargetAction = "ViewQuotationDetails", // or whatever action shows quotation details
                 };
 
                 context.Notifications.Add(notification);
                 await context.SaveChangesAsync();
             }
 
-        TempData["SuccessMessage"] = "Quotation submitted successfully!";
+            TempData["SuccessMessage"] = "Quotation submitted successfully!";
             return RedirectToAction("MyQuotations", "Supplier");
         }
 
