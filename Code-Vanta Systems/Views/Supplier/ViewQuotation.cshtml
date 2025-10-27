@@ -50,7 +50,7 @@
                         <th>Quoted Quantity</th>
                         <th>Quoted Unit Price</th>
                         <th>Delivery Date</th>
-                        <th>Warranty</th>
+                        <th>Warranty (months)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -61,9 +61,9 @@
                             <td>@Model.Items[i].FridgeModel</td>
                             <td>@Model.Items[i].RequestedQuantity</td>
                             <td>@Model.Items[i].QuotedQuantity</td>
-                            <td>@Model.Items[i].QuotedUnitPrice.ToString("C")</td>
-                            <td>@Model.Items[i].DeliveryDate.ToString("dd MMM yyyy")</td>
-                            <td>@Model.Items[i].Warranty</td>
+                            <td>@Model.Items[i].QuotedUnitPrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA"))</td>
+                            <td>@Model.Items[i].ExpectedDeliveryDate.ToString("dd MMM yyyy")</td>
+                            <td>@Model.Items[i].WarrantyMonths</td>
                         </tr>
                     }
                 </tbody>

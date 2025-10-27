@@ -31,5 +31,7 @@ namespace Code_Vanta_Systems.Models
         [Required]
         [Range(1, int.MaxValue)]
         public int QuotedQuantity { get; set; }
+        public int WarrantyMonths { get; set; }
+        public DateTime ExpectedDeliveryDate { get; set; }
     }
 }

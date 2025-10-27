@@ -9,6 +9,9 @@ namespace Code_Vanta_Systems.Models
         public int Id { get; set; }
 
         [Required]
+        [StringLength(20)]
+        public string RequestNumber { get; set; }
+        [Required]
         [DataType(DataType.Date)]
         public DateTime RequestDate { get; set; } = DateTime.Now;
 

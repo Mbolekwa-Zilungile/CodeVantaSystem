@@ -20,7 +20,7 @@ namespace Code_Vanta_Systems.ViewModels
         public string? SupplierEmail { get; set; }
         public string? SupplierPhone { get; set; }
         public string? SupplierAddress { get; set; }
-
+        public string PurchaseRequestNumber { get; set; }
         public string RequestedBy { get; set; }
         public List<RFQItemViewModel> Items { get; set; } = new List<RFQItemViewModel>();
 

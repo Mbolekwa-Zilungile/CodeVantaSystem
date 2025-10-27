@@ -3,8 +3,10 @@ using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Services;
 using Code_Vanta_Systems.ViewModels;
+using Code_Vanta_Systems.ViewModels.SupplierQoutation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -861,17 +863,264 @@ namespace Code_Vanta_Systems.Controllers
 
         public async Task<IActionResult> SupplerQuotations()
         {
-            // Fetch all quotations including related RFQ and supplier details
+                    var quotations = await context.Quotations
+             .Where(q => q.Status == "Pending")
+             .Include(q => q.RequestQuotation)
+             .Include(q => q.Supplier)
+                 .ThenInclude(s => s.User)
+             .Include(q => q.Items) // <-- Include the line items
+                 .ThenInclude(i => i.PurchaseRequestItem) // optional, if you want requested quantity
+             .OrderByDescending(q => q.DateReceived)
+             .ToListAsync();
+
+            return View(quotations);
+        }
+        public async Task<IActionResult> ApprovedQuotations()
+        {
             var quotations = await context.Quotations
-                .Include(q => q.RequestQuotation)
-                .Include(q => q.Supplier)
-                    .ThenInclude(s => s.User)  // Include supplier user info (like name/email)
-                .OrderByDescending(q => q.DateReceived)
-                .ToListAsync();
+         .Where(q => q.Status == "Approved")
+         .Include(q => q.RequestQuotation)
+         .Include(q => q.Supplier)
+             .ThenInclude(s => s.User)
+         .OrderByDescending(q => q.DateReceived)
+         .ToListAsync();
+
+            return View(quotations);
+        }
+        public async Task<IActionResult> RejectedQuotations()
+        {
+            var quotations = await context.Quotations
+         .Where(q => q.Status == "Rejected")
+         .Include(q => q.RequestQuotation)
+         .Include(q => q.Supplier)
+             .ThenInclude(s => s.User)
+         .OrderByDescending(q => q.DateReceived)
+         .ToListAsync();
 
             return View(quotations);
         }
 
+        #endregion
+
+        #region Comparison
+
+
+        public async Task<IActionResult> SelectPurchaseRequest()
+        {
+            // Fetch purchase requests with RequestNumber only
+            var purchaseRequests = await context.PurchaseRequests
+                .Select(pr => new { pr.Id, pr.RequestNumber }) // only RequestNumber
+                .ToListAsync();
+
+            // Use ViewBag as SelectList for Razor binding
+            ViewBag.PurchaseRequests = new SelectList(purchaseRequests, "Id", "RequestNumber");
+
+            return View();
+        }
+
+        // POST: Fetch quotations for selected RequestNumber
+        [HttpPost]
+        public async Task<IActionResult> SelectPurchaseRequest(int purchaseRequestId)
+        {
+            if (purchaseRequestId == 0)
+            {
+                ModelState.AddModelError("", "Please select a purchase request.");
+                return RedirectToAction(nameof(SelectPurchaseRequest));
+            }
+
+            // Get the purchase request number for the selected ID
+            var purchaseRequest = await context.PurchaseRequests
+                .FirstOrDefaultAsync(pr => pr.Id == purchaseRequestId);
+
+            if (purchaseRequest == null)
+                return NotFound("Purchase request not found.");
+
+            // Fetch only pending quotations
+            var quotations = await context.Quotations
+                .Where(q => q.PurchaseRequestId == purchaseRequestId && q.Status == "Pending")
+                .Include(q => q.RequestQuotation)
+                .Include(q => q.Supplier)
+                .Include(q => q.Items)
+                .ToListAsync();
+
+            // Pass the request number to the view
+            ViewBag.RequestNumber = purchaseRequest.RequestNumber;
+
+            return View("QuotationsByRequest", quotations);
+        }
+
+        public async Task<IActionResult> QuotationsByRequest(int purchaseRequestId)
+        {
+            if (purchaseRequestId == 0)
+                return RedirectToAction("SelectPurchaseRequest");
+
+            var purchaseRequest = await context.PurchaseRequests
+                .FirstOrDefaultAsync(pr => pr.Id == purchaseRequestId);
+
+            if (purchaseRequest == null)
+                return NotFound("Purchase Request not found.");
+
+            var quotations = await context.Quotations
+                .Where(q => q.PurchaseRequestId == purchaseRequestId)
+                .Include(q => q.RequestQuotation)
+                .Include(q => q.Supplier)
+                .Include(q => q.Items)
+                .ToListAsync();
+
+            if (!quotations.Any())
+            {
+                ViewBag.Message = "No quotations found for this purchase request.";
+            }
+
+            // Set the RequestNumber for header
+            ViewBag.RequestNumber = purchaseRequest.RequestNumber;
+
+            return View(quotations);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveQuotation(int quotationId)
+        {
+            var quotation = await context.Quotations
+                .Include(q => q.PurchaseRequest)
+                .Include(q => q.Supplier)
+                    .ThenInclude(s => s.User)
+                .FirstOrDefaultAsync(q => q.Id == quotationId);
+
+            if (quotation == null)
+                return NotFound("Quotation not found.");
+
+            // Get all quotations for the same purchase request
+            var allQuotations = await context.Quotations
+                .Where(q => q.PurchaseRequestId == quotation.PurchaseRequestId)
+                .Include(q => q.Supplier)
+                    .ThenInclude(s => s.User)
+                .ToListAsync();
+
+            foreach (var q in allQuotations)
+            {
+                if (q.Id == quotation.Id)
+                {
+                    q.Status = "Approved";
+
+                    // ✅ Add notification for approved supplier
+                    var notification = new Notification
+                    {
+                        RecipientUserId = q.Supplier.ApplicationUserId,
+                        Title = "Quotation Approved",
+                        Message = $"Your quotation #{q.Id} for Purchase Request {q.PurchaseRequest.RequestNumber} has been approved.",
+                        CreatedAt = DateTime.UtcNow,
+                        IsRead = false,
+                        TargetController = "Supplier",
+                        TargetAction = "Quotations"
+                    };
+                    context.Notifications.Add(notification);
+
+                    // ✅ Try sending approval email
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(q.Supplier.User?.Email))
+                        {
+                            await emailService.SendEmailAsync(
+                                q.Supplier.User.Email,
+                                "Quotation Approved",
+                                $"<p>Dear {q.Supplier.Name},</p>" +
+                                $"<p>Your quotation <strong>#{q.Id}</strong> for Purchase Request <strong>{q.PurchaseRequest.RequestNumber}</strong> has been <b>approved</b>.</p>" +
+                                $"<p>Thank you for working with CodeVanta Systems.</p>");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error (optional)
+                        Console.WriteLine($"Email sending failed: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    q.Status = "Rejected";
+
+                    // ✅ Add notification for rejected suppliers
+                    var notification = new Notification
+                    {
+                        RecipientUserId = q.Supplier.ApplicationUserId,
+                        Title = "Quotation Rejected",
+                        Message = $"Your quotation #{q.Id} for Purchase Request {q.PurchaseRequest.RequestNumber} has been rejected.",
+                        CreatedAt = DateTime.UtcNow,
+                        IsRead = false,
+                        TargetController = "Supplier",
+                        TargetAction = "Quotations"
+                    };
+                    context.Notifications.Add(notification);
+
+                    // ✅ Try sending rejection email
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(q.Supplier.User?.Email))
+                        {
+                            await emailService.SendEmailAsync(
+                                q.Supplier.User.Email,
+                                "Quotation Rejected",
+                                $"<p>Dear {q.Supplier.Name},</p>" +
+                                $"<p>We regret to inform you that your quotation <strong>#{q.Id}</strong> for Purchase Request <strong>{q.PurchaseRequest.RequestNumber}</strong> has been <b>rejected</b>.</p>" +
+                                $"<p>We appreciate your participation and encourage you to quote again in the future.</p>");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error (optional)
+                        Console.WriteLine($"Email sending failed: {ex.Message}");
+                    }
+                }
+            }
+
+            await context.SaveChangesAsync();
+
+            TempData["Success"] = $"Quotation #{quotation.Id} approved and others rejected.";
+            return RedirectToAction("ApprovedQuotations");
+
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectQuotation(int quotationId)
+        {
+            var quotation = await context.Quotations
+                .Include(q => q.PurchaseRequest)
+                .Include(q => q.Supplier)
+                    .ThenInclude(s => s.User)
+                .FirstOrDefaultAsync(q => q.Id == quotationId);
+
+            if (quotation == null)
+                return NotFound("Quotation not found.");
+
+            quotation.Status = "Rejected";
+
+            var notification = new Notification
+            {
+                RecipientUserId = quotation.Supplier.ApplicationUserId,
+                Title = "Quotation Rejected",
+                Message = $"Your quotation #{quotation.Id} for Purchase Request {quotation.PurchaseRequest.RequestNumber} has been rejected.",
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false,
+                TargetController = "Supplier",
+                TargetAction = "Quotations"
+            };
+            context.Notifications.Add(notification);
+
+            if (!string.IsNullOrEmpty(quotation.Supplier.User?.Email))
+            {
+                await emailService.SendEmailAsync(quotation.Supplier.User.Email,
+                    "Quotation Rejected",
+                    $"We regret to inform you that your quotation #{quotation.Id} for Purchase Request {quotation.PurchaseRequest.RequestNumber} has been rejected.");
+            }
+
+            await context.SaveChangesAsync();
+
+            TempData["Success"] = $"Quotation #{quotation.Id} rejected.";
+            return RedirectToAction("QuotationsByRequest", new { purchaseRequestId = quotation.PurchaseRequestId });
+        }
         #endregion
     }
 

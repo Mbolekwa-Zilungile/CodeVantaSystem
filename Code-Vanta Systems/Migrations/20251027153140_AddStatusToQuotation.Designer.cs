@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Code_Vanta_Systems.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251027102631_Quotations")]
-    partial class Quotations
+    [Migration("20251027153140_AddStatusToQuotation")]
+    partial class AddStatusToQuotation
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -996,9 +996,6 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<DateTime>("DateReceived")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("ExpectedDeliveryDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<int>("PurchaseRequestId")
                         .HasColumnType("int");
 
@@ -1032,7 +1029,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("DeliveryDate")
+                    b.Property<DateTime>("ExpectedDeliveryDate")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("FridgeId")
@@ -1057,9 +1054,8 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<decimal>("QuotedUnitPrice")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("Warranty")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("WarrantyMonths")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

@@ -1,0 +1,94 @@
+﻿@model List<Code_Vanta_Systems.Models.Quotation>
+
+@{
+    ViewData["Title"] = "Supplier Quotations";
+    Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
+}
+<div class="row mb-4">
+    <h2 class="alert alert-success">Quotations for @ViewBag.RequestNumber</h2>
+</div>
+
+
+@if (Model != null && Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Quotation ID</th>
+                    <th>RFQ ID</th>
+                    <th>Supplier</th>
+                    <th>Date Received</th>
+                    <th>Quoted Items</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var q in Model)
+                {
+                    <tr>
+                        <td>@q.Id</td>
+                        <td>@q.RequestQuotation?.RFQId</td>
+                        <td>@q.Supplier?.Name</td>
+                        <td>@q.DateReceived.ToString("dd MMM yyyy")</td>
+                        <td>
+                            @if (q.Items != null && q.Items.Any())
+                            {
+                                <table class="table table-sm table-bordered mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:20%;">Fridge Model</th>
+                                            <th style="width:12%;">Quoted Qty</th>
+                                            <th style="width:15%;">Unit Price</th>
+                                            <th style="width:15%;">Total</th>
+                                            <th style="width:12%;">Warranty (Months)</th>
+                                            <th style="width:15%;">Delivery Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in q.Items)
+                                        {
+                                            <tr>
+                                                <td>@item.FridgeModel</td>
+                                                <td>@item.QuotedQuantity</td>
+                                                <td>@item.QuotedUnitPrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA"))</td>
+                                                <td>@((item.QuotedQuantity * item.QuotedUnitPrice).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA")))</td>
+                                                <td>@item.WarrantyMonths</td>
+                                                <td>@item.ExpectedDeliveryDate.ToString("dd MMM yyyy")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No items quoted.</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <form asp-controller="PurchasingManager" asp-action="ApproveQuotation" method="post">
+                                    <input type="hidden" name="quotationId" value="@q.Id" />
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="bi bi-check-circle"></i> Accept
+                                    </button>
+                                </form>
+
+                                <form asp-controller="PurchasingManager" asp-action="RejectQuotation" method="post">
+                                    <input type="hidden" name="quotationId" value="@q.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <i class="bi bi-x-circle"></i> Reject
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <p class="text-muted">@ViewBag.Message ?? "No quotations have been submitted yet."</p>
+}

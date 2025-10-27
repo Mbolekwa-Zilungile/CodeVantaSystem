@@ -187,6 +187,29 @@ namespace Code_Vanta_Systems.Controllers
                .CountAsync(s => s.Status == RequestStatus.Completed);
             return View(SubmitedRequests);
         }
+        public async Task<IActionResult> ApprovedPurchaseRequests()
+        {
+            var SubmitedRequests = await _context.PurchaseRequests
+               .Include(pr => pr.RequestedBy)
+               .Include(pr => pr.RequestedItems)
+               .Where(pr => pr.Status == Code_Vanta_Systems.Models.Enums.RequestStatus.Approved)
+               .OrderByDescending(pr => pr.RequestDate)
+               .ToListAsync();
+
+            ViewBag.PendingCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Pending);
+            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Submitted);
+
+            ViewBag.RejectedRequests = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Rejected);
+
+            ViewBag.ApprovedRequestsCount = await _context.PurchaseRequests
+                .CountAsync(s => s.Status == RequestStatus.Approved);
+            ViewBag.CompletedRequestsCount = await _context.PurchaseRequests
+               .CountAsync(s => s.Status == RequestStatus.Completed);
+            return View(SubmitedRequests);
+        }
 
 
         [HttpGet]
@@ -238,7 +261,7 @@ namespace Code_Vanta_Systems.Controllers
                 ModelState.AddModelError("", "You must select at least one fridge.");
             }
 
-            // **Remove ModelState errors for FridgeModel fields**
+            // Remove ModelState errors for FridgeModel fields
             var keysToRemove = ModelState.Keys.Where(k => k.EndsWith("FridgeModel")).ToList();
             foreach (var key in keysToRemove)
             {
@@ -260,7 +283,6 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     item.AvailableItems = allFridges;
 
-                    // Set FridgeModel for display if fridge is selected
                     if (item.FridgeId > 0)
                     {
                         var fridge = await _context.Fridges.FirstOrDefaultAsync(f => f.Id == item.FridgeId);
@@ -276,7 +298,26 @@ namespace Code_Vanta_Systems.Controllers
                 return View(model);
             }
 
-            // Continue with purchase request creation as you had it...
+            // ---- Generate RequestNumber ----
+            var year = DateTime.Now.Year;
+            var lastRequest = await _context.PurchaseRequests
+                .Where(r => r.RequestDate.Year == year)
+                .OrderByDescending(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            int nextNumber = 1;
+            if (lastRequest != null)
+            {
+                var lastNumStr = lastRequest.RequestNumber?.Split('-').Last();
+                if (int.TryParse(lastNumStr, out int lastNum))
+                {
+                    nextNumber = lastNum + 1;
+                }
+            }
+
+            var requestNumber = $"PR-{year}-{nextNumber:000}";
+
+            // Create PurchaseRequest
             var request = new PurchaseRequest
             {
                 RequestedByUserId = user.Id,
@@ -284,12 +325,14 @@ namespace Code_Vanta_Systems.Controllers
                 ExpectedDate = model.ExpectedDate,
                 Priority = model.Priority,
                 Notes = model.Notes,
-                Status = RequestStatus.Submitted
+                Status = RequestStatus.Submitted,
+                RequestNumber = requestNumber // <-- set generated number
             };
 
             _context.PurchaseRequests.Add(request);
             await _context.SaveChangesAsync();
 
+            // Add request items
             var fridgeIds = model.Items.Where(i => i.FridgeId > 0).Select(i => i.FridgeId).Distinct();
             var fridgesDict = await _context.Fridges
                 .Where(f => fridgeIds.Contains(f.Id))
@@ -324,7 +367,7 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     RecipientUserId = liaisonUser.Id,
                     Title = "New Purchase Request Sent",
-                    Message = $"A new purchase request #{request.Id} was submitted by {User.Identity?.Name ?? "Unknown User"}.",
+                    Message = $"A new purchase request #{request.RequestNumber} was submitted by {User.Identity?.Name ?? "Unknown User"}.",
                     CreatedAt = DateTime.UtcNow,
                     IsRead = false,
                     TargetController = "PurchasingManager",

@@ -89,7 +89,7 @@
                 <td>@quotation.Id</td>
                 <td>@quotation.RequestQuotation?.RFQId</td>
                 <td>@quotation.DateReceived.ToString("dd MMM yyyy")</td>
-                <td>@quotation.Status</td>
+              @*   <td>@quotation.Status</td> *@
                 <td>@quotation.Items?.Count()</td>
                 <td>
                     <a asp-action="ViewQuotation" asp-route-id="@quotation.Id" class="btn btn-sm btn-info">View</a>

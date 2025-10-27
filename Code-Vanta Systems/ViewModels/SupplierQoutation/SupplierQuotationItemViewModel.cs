@@ -16,5 +16,14 @@ namespace Code_Vanta_Systems.ViewModels.SupplierQoutation
         [Required]
         [Range(0.01, double.MaxValue)]
         public decimal QuotedUnitPrice { get; set; }
+
+        [Required]
+        [Display(Name = "Warranty (months)")]
+        public int WarrantyMonths { get; set; }
+
+        [Required]
+        [Display(Name = "Expected Delivery Date")]
+        [DataType(DataType.Date)]
+        public DateTime ExpectedDeliveryDate { get; set; }
     }
 }

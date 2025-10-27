@@ -934,6 +934,11 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<DateTime>("RequestDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("RequestNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("RequestedByUserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -999,6 +1004,11 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<int?>("RequestQuotationId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<int>("SupplierId")
                         .HasColumnType("int");
 
@@ -1021,6 +1031,9 @@ namespace Code_Vanta_Systems.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("ExpectedDeliveryDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("FridgeId")
                         .HasColumnType("int");
 
@@ -1042,6 +1055,9 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.Property<decimal>("QuotedUnitPrice")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("WarrantyMonths")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

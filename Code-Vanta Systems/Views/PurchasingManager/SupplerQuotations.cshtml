@@ -1,19 +1,72 @@
 ﻿@model IEnumerable<Code_Vanta_Systems.Models.Quotation>
 
 @{
-    ViewData["Title"] = "All Supplier Quotations";
-    Layout = "~/Views/Shared/_PurchaseLayout.cshtml"; // Adjust if needed
+    ViewData["Title"] = "Pendin Supplier Quotations";
+    Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
 }
-
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="alert alert-success">All Supplier Quotations</h1>
-            <p class="text-muted">
-                View all quotations submitted by suppliers, including RFQ or Purchase Request details.
-            </p>
-        </div>
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="alert alert-success">Pending Quotations</h1>
     </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="@Url.Action("SupplerQuotations", "PurchasingManager")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2 ">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Pending Quotations</div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-box me-2"></i> @ViewBag.SubmitedCount
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <!-- Card 2: approved -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="@Url.Action("ApprovedQuotations", "PurchasingManager")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2 ">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Approved Quotations</div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card 3: Rejected -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="@Url.Action("RejectedQuotations", "PurchasingManager")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2 ">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-uppercase mb-2">Rejected Quotations</div>
+                            <div class="h4 mb-0 fw-bold">
+                                <i class="bi bi-cart3 me-2"></i>@ViewBag.ApprovedRequestsCount
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+
+ <a asp-controller="PurchasingManager" asp-action="SelectPurchaseRequest" class="btn btn-primary mb-3">
+    Select Purchase Request
+</a>
 
     <div class="row">
         <div class="col">
@@ -26,10 +79,8 @@
                                 <th>Quotation ID</th>
                                 <th>RFQ ID</th>
                                 <th>Supplier</th>
-                                <th>Supplier Email</th>
                                 <th>Date Received</th>
-
-                                <th>Notes</th>
+                                <th>Quoted Items</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -39,9 +90,40 @@
                                     <td>@q.Id</td>
                                     <td>@q.RequestQuotation?.RFQId</td>
                                     <td>@q.Supplier?.Name</td>
-                                    <td>@q.Supplier?.User?.Email</td>
                                     <td>@q.DateReceived.ToString("dd MMM yyyy")</td>
-                                    <td>@q.RequestQuotation?.Notes</td>
+                                    <td>
+                                        @if (q.Items != null && q.Items.Any())
+                                        {
+                                            <table class="table table-sm table-bordered mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Fridge Model</th>
+                                                        <th>Quoted Quantity</th>
+                                                        <th>Quoted Unit Price</th>
+                                                        <th>Total (Quoted)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var item in q.Items)
+                                                    {
+                                                        <tr>
+                                                            <td>@item.FridgeModel</td>
+                                                            <td>@item.QuotedQuantity</td>
+                                                            <td>@item.QuotedUnitPrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA"))</td>
+                                                            <td>@((item.QuotedQuantity * item.QuotedUnitPrice).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA")))</td>
+                    
+
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No items quoted.</span>
+                                        }
+                                    </td>
+                                   
                                 </tr>
                             }
                         </tbody>
@@ -55,3 +137,13 @@
         </div>
     </div>
 </div>
+
+
+
+
+
+
+
+
+
+

@@ -175,7 +175,8 @@ namespace Code_Vanta_Systems.Controllers
                 CompanyPhone = company?.Phone,
                 CompanyAddress = company?.Address,
                 Items = items,
-                SubmittedQuotations = quotations // optional, can be empty
+                SubmittedQuotations = quotations, // optional, can be empty
+                PurchaseRequestNumber = purchaseRequest.RequestNumber
             };
 
             return View(vm);
@@ -233,7 +234,7 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(model);
         }
-    
+
 
         // POST: SupplierQuotation/Create
         [HttpPost]
@@ -241,16 +242,11 @@ namespace Code_Vanta_Systems.Controllers
         public async Task<IActionResult> CreateQoutation(SupplierQuotationCreateViewModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var supplier = await context.Suppliers
                 .FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
-
-            if (supplier == null)
-                return Unauthorized();
 
             if (supplier == null)
                 return Unauthorized();
@@ -267,7 +263,7 @@ namespace Code_Vanta_Systems.Controllers
             context.Quotations.Add(quotation);
             await context.SaveChangesAsync();
 
-            // Add line items
+            // Add line items with warranty and expected delivery
             foreach (var item in model.Items)
             {
                 var quotationItem = new QuotationItem
@@ -278,14 +274,17 @@ namespace Code_Vanta_Systems.Controllers
                     PurchaseRequestItemId = item.PurchaseRequestItemId,
                     Quantity = item.RequestedQuantity,
                     QuotedQuantity = item.QuotedQuantity,
-                    QuotedUnitPrice = item.QuotedUnitPrice
+                    QuotedUnitPrice = item.QuotedUnitPrice,
+                    WarrantyMonths = item.WarrantyMonths,
+                    ExpectedDeliveryDate = item.ExpectedDeliveryDate
                 };
 
                 context.QuotationItems.Add(quotationItem);
             }
-           
 
             await context.SaveChangesAsync();
+
+            // Notify Purchasing Manager
             var purchasingManagers = await userManager.GetUsersInRoleAsync("Purchasing Manager");
             var liaisonUser = purchasingManagers.FirstOrDefault();
 
@@ -299,7 +298,7 @@ namespace Code_Vanta_Systems.Controllers
                     CreatedAt = DateTime.UtcNow,
                     IsRead = false,
                     TargetController = "PurchasingManager",
-                    TargetAction = "ViewQuotationDetails", // or whatever action shows quotation details
+                    TargetAction = "ViewQuotationDetails"
                 };
 
                 context.Notifications.Add(notification);
@@ -310,9 +309,11 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction("MyQuotations", "Supplier");
         }
 
+
         // GET: SupplierQuotation/MyQuotations
         public async Task<IActionResult> MyQuotations()
         {
+        
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var supplier = await context.Suppliers
                 .FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
@@ -320,18 +321,131 @@ namespace Code_Vanta_Systems.Controllers
             if (supplier == null)
                 return Unauthorized();
 
+            var allQuotations = await context.Quotations
+                .Include(q => q.RequestQuotation) 
+                .Include(q=> q.Items)
+                .Where(q => q.SupplierId == supplier.Id)
+                .ToListAsync();
+
+            ViewBag.PendingCount = allQuotations.Count(q => q.Status == "Pending");
+            ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
+            ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
+
+            var pendingQuotations = allQuotations
+                .Where(q => q.Status == "Pending")
+                .ToList();
+
+            return View(pendingQuotations);
+        }
+
+        public async Task<IActionResult> ApprovedQuotations()
+        {
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var supplier = await context.Suppliers
+                .FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
+
             if (supplier == null)
                 return Unauthorized();
 
-            var quotations = await context.Quotations
+            var allQuotations = await context.Quotations
                 .Include(q => q.RequestQuotation)
+                .Include(q => q.Items)
                 .Where(q => q.SupplierId == supplier.Id)
-                .OrderByDescending(q => q.DateReceived)
                 .ToListAsync();
 
-            return View(quotations);
+            ViewBag.PendingCount = allQuotations.Count(q => q.Status == "Pending");
+            ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
+            ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
+
+            var ApprovedQuotations = allQuotations
+                .Where(q => q.Status == "Approved")
+                .ToList();
+
+            return View(ApprovedQuotations);
         }
 
+        public async Task<IActionResult> RejectedQuotations()
+        {
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var supplier = await context.Suppliers
+                .FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
+
+            if (supplier == null)
+                return Unauthorized();
+
+            var allQuotations = await context.Quotations
+                .Include(q => q.RequestQuotation)
+                .Include(q => q.Items)
+                .Where(q => q.SupplierId == supplier.Id)
+                .ToListAsync();
+
+            ViewBag.PendingCount = allQuotations.Count(q => q.Status == "Pending");
+            ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
+            ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
+
+            var RejectedQuotations = allQuotations
+                .Where(q => q.Status == "Rejected")
+                .ToList();
+
+            return View(RejectedQuotations);
+        }
+
+
+        public async Task<IActionResult> ViewQuotation(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Get supplier linked to this user
+            var supplier = await context.Suppliers
+                .FirstOrDefaultAsync(s => s.ApplicationUserId == userId);
+
+            if (supplier == null)
+                return Unauthorized();
+
+            // Load the quotation including items
+            var quotation = await context.Quotations
+                .Include(q => q.Items)
+                .Include(q => q.PurchaseRequest)
+                    .ThenInclude(pr => pr.RequestedItems)
+                .Include(q => q.RequestQuotation)
+                .FirstOrDefaultAsync(q => q.Id == id && q.SupplierId == supplier.Id);
+
+            if (quotation == null)
+                return NotFound();
+
+            // Get a user in the "Purchasing Manager" role
+            var purchasingManagers = await userManager.GetUsersInRoleAsync("Purchasing Manager");
+            var purchasingManager = purchasingManagers.FirstOrDefault();
+
+            var model = new SupplierQoutationDetailsViewModel
+            {
+                QuotationId = quotation.Id,
+                RFQCode = quotation.RequestQuotation?.RFQId,
+                RequestDate = quotation.PurchaseRequest.RequestDate,
+                IssuedByName = purchasingManager?.FullName ?? purchasingManager?.UserName, // <-- Purchase Manager
+                Notes = quotation.PurchaseRequest.Notes,
+
+                // Company info
+                CompanyName = context.Company.FirstOrDefault()?.Name,
+                CompanyEmail = context.Company.FirstOrDefault()?.Email,
+                CompanyPhone = context.Company.FirstOrDefault()?.Phone,
+                CompanyAddress = context.Company.FirstOrDefault()?.Address,
+
+                Items = quotation.Items.Select(i => new SupplierQuotationItemViewModel
+                {
+                    FridgeModel = i.FridgeModel,
+                    RequestedQuantity = i.PurchaseRequestItem?.Quantity ?? i.QuotedQuantity,
+                    QuotedQuantity = i.QuotedQuantity,
+                    QuotedUnitPrice = i.QuotedUnitPrice,
+                    ExpectedDeliveryDate = i.ExpectedDeliveryDate,
+                    WarrantyMonths = i.WarrantyMonths
+                }).ToList()
+            };
+
+            return View(model);
+        }
         #endregion
     }
 }

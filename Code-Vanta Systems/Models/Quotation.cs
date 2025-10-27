@@ -25,6 +25,9 @@ namespace Code_Vanta_Systems.Models
         // Optional link to RFQ
         public int? RequestQuotationId { get; set; }
         public virtual RequestQuotation RequestQuotation { get; set; }
+        [Required]
+        [StringLength(20)]
+        public string Status { get; set; } = "Pending";
 
         // Navigation collection for the line items of the quotation
         public virtual ICollection<QuotationItem> Items { get; set; } = new HashSet<QuotationItem>();
