@@ -1,0 +1,10 @@
+﻿@{
+    Layout = "~/Views/Shared/_CustomerLayout.cshtml";
+    ViewData["Title"] = "Payment Successful";
+}
+
+<div class="text-center mt-5">
+    <h2 class="text-success">Payment Successful!</h2>
+    <p>Your rental request has been paid and is awaiting approval.</p>
+    <a asp-action="Index" asp-controller="Customer" class="btn btn-primary">Back to Rentals</a>
+</div>

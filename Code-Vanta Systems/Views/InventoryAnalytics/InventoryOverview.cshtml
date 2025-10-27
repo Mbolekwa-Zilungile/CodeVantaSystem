@@ -1,0 +1,187 @@
+﻿@model Code_Vanta_Systems.ViewModels.AnalyticsDashboardViewModel
+@{
+    Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
+    ViewData["Title"] = "Inventory Analytics";
+}
+
+<h2 class="mb-4 text-success">
+    <i class="bi bi-graph-up"></i> Inventory Analytics Dashboard
+</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+    </div>
+}
+
+ 
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-center text-primary">Fridge Status Distribution</h5>
+                    <canvas id="fridgeStatusChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-center text-primary">Fridges by Region</h5>
+                    <canvas id="fridgeRegionChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-center text-primary">Hourly Allocation Trends</h5>
+                    <canvas id="allocationTrendChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-center text-primary">Rental Request Status</h5>
+                    <canvas id="orderStatusChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-center text-primary">Customer Status Overview</h5>
+                    <canvas id="customerStatusChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-center text-primary">Stock Levels by Category</h5>
+                    <canvas id="categoryStockChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ===== Fridge Status Chart =====
+        new Chart(document.getElementById('fridgeStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeStatus.Select(f => f.Status))),
+                datasets: [{
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeStatus.Select(f => f.Count))),
+                    backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { title: { display: false } }
+            }
+        });
+
+        // ===== Fridge Region Chart =====
+        new Chart(document.getElementById('fridgeRegionChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeRegion.Select(r => r.Status))),
+                datasets: [{
+                    label: 'Fridges per Region',
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeRegion.Select(r => r.Count))),
+                    backgroundColor: '#007bff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // ===== Allocation Trend Chart =====
+        new Chart(document.getElementById('allocationTrendChart'), {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Allocations.Select(a => $"{a.Date:MM/dd} {a.Hour}:00"))),
+                datasets: [{
+                    label: 'Hourly Allocations',
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Allocations.Select(a => a.Count))),
+                    borderColor: '#28a745',
+                    fill: false,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // ===== Order Status Chart =====
+        new Chart(document.getElementById('orderStatusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OrderStatus.Select(o => o.Status))),
+                datasets: [{
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OrderStatus.Select(o => o.Count))),
+                    backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+        // ===== Customer Status Chart =====
+        new Chart(document.getElementById('customerStatusChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CustomerStatus.Select(c => c.Status))),
+                datasets: [{
+                    label: 'Customers',
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CustomerStatus.Select(c => c.Count))),
+                    backgroundColor: '#17a2b8'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // ===== Category Stock Chart =====
+        new Chart(document.getElementById('categoryStockChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeCategories.Select(c => c.Category))),
+                datasets: [
+                    { label: 'High', data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeCategories.Select(c => c.HighStock))), backgroundColor: '#28a745' },
+                    { label: 'Medium', data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeCategories.Select(c => c.MediumStock))), backgroundColor: '#ffc107' },
+                    { label: 'Low', data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeCategories.Select(c => c.LowStock))), backgroundColor: '#dc3545' },
+                    { label: 'Critical', data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeCategories.Select(c => c.CriticalStock))), backgroundColor: '#6c757d' }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    </script>
+}
