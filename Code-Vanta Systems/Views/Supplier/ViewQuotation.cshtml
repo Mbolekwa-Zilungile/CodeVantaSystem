@@ -1,0 +1,81 @@
+﻿@model Code_Vanta_Systems.ViewModels.SupplierQoutation.SupplierQoutationDetailsViewModel
+
+@{
+    ViewData["Title"] = "Quotation Details";
+    Layout = "~/Views/Shared/_SupplierLayout.cshtml";
+}
+
+<h2 class="mb-4">Quotation Details</h2>
+
+<!-- Company Info -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Company Information</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>Name:</strong> @Model.CompanyName</p>
+        <p><strong>Email:</strong> <a href="mailto:@Model.CompanyEmail">@Model.CompanyEmail</a></p>
+        <p><strong>Phone:</strong> @Model.CompanyPhone</p>
+        <p><strong>Address:</strong> @Model.CompanyAddress</p>
+    </div>
+</div>
+
+<!-- RFQ Info -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">RFQ Information</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>RFQ #:</strong> @Model.RFQCode</p>
+        <p><strong>Request Date:</strong> @Model.RequestDate.ToString("dd MMM yyyy")</p>
+        <p><strong>Requested By:</strong> @Model.IssuedByName</p>
+        <p><strong>Notes:</strong> @Model.Notes</p>
+    </div>
+</div>
+
+<!-- Quotation Items -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Quotation Items</h5>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Items != null && Model.Items.Any())
+        {
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Fridge Model</th>
+                        <th>Requested Quantity</th>
+                        <th>Quoted Quantity</th>
+                        <th>Quoted Unit Price</th>
+                        <th>Delivery Date</th>
+                        <th>Warranty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Items.Count; i++)
+                    {
+                        <tr>
+                            <td>@(i + 1)</td>
+                            <td>@Model.Items[i].FridgeModel</td>
+                            <td>@Model.Items[i].RequestedQuantity</td>
+                            <td>@Model.Items[i].QuotedQuantity</td>
+                            <td>@Model.Items[i].QuotedUnitPrice.ToString("C")</td>
+                            <td>@Model.Items[i].DeliveryDate.ToString("dd MMM yyyy")</td>
+                            <td>@Model.Items[i].Warranty</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p class="p-3">No items found for this quotation.</p>
+        }
+    </div>
+</div>
+
+<div class="d-flex justify-content-start mt-3">
+    <a class="btn btn-secondary" asp-action="MyQuotations">Back to My Quotations</a>
+</div>
