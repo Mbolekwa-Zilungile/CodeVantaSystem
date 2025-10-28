@@ -16,11 +16,19 @@ namespace Code_Vanta_Systems.Models
         public string RequestedByUserId { get; set; }
         public ApplicationUser RequestedByUser { get; set; }
 
+
+
         public int? AllocationId { get; set; }  
         public FridgeAllocation Allocation { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+
+
+        // New Payment Success
+        public bool IsPaid { get; set; } = false;
+
+
     }
 
 

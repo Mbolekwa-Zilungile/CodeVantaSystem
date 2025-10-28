@@ -20,6 +20,12 @@ namespace Code_Vanta_Systems.Models
 
         public DateTime PurchaseDate { get; set; }
 
+        // 🎯 FIX 1: Make TechnicianUserId nullable (string?)
+        // This is required by MaintenanceTechnicianController for filtering, but optional on creation.
+        public string? TechnicianUserId { get; set; }
+        // Assuming ApplicationUser is the entity for users
+        public virtual ApplicationUser? Technician { get; set; }
+
         [Required]
         public int SupplierId { get; set; }
         public virtual Supplier Supplier { get; set; }
@@ -28,6 +34,12 @@ namespace Code_Vanta_Systems.Models
         public int LocationId { get; set; }
         public virtual Location Location { get; set; }
 
+        // FIX 2: Make CustomerId nullable (int?)
+        // Required for tracking where the fridge is allocated, but optional on creation.
+        public int? CustomerId { get; set; }
+        // Assuming Customer is the entity for customers. Navigation property must also be nullable.
+        public virtual Customer? Customer { get; set; }
+
         // Added for completeness
         public virtual ICollection<FridgeFault> Faults { get; set; }
         public virtual ICollection<FridgeMaintenance> Maintenances { get; set; }
@@ -35,6 +47,7 @@ namespace Code_Vanta_Systems.Models
         public virtual ICollection<FridgeUsageLog> UsageLogs { get; set; }
         public virtual ICollection<MaintenanceSchedule> MaintenanceSchedules { get; set; }
         public virtual ICollection<SensorReading> SensorReadings { get; set; }
+        public virtual ICollection<ServiceRecord> ServiceRecords { get; set; }
 
         // Added New Fridge Props
         [Required]
@@ -65,6 +78,7 @@ namespace Code_Vanta_Systems.Models
             UsageLogs = new HashSet<FridgeUsageLog>();
             MaintenanceSchedules = new HashSet<MaintenanceSchedule>();
             SensorReadings = new HashSet<SensorReading>(); // Initialize new collection
+            ServiceRecords = new HashSet<ServiceRecord>();
         }
     }
 }

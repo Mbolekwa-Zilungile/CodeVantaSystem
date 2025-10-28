@@ -63,5 +63,8 @@ namespace Code_Vanta_Systems.Models
             Allocations = new HashSet<FridgeAllocation>();
             FridgeRequests = new HashSet<FridgeRequest>();
         }
+
+
+
     }
 }
