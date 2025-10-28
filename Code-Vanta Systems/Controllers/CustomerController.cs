@@ -24,20 +24,62 @@ namespace Code_Vanta_Systems.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string searchModel, int? category, int? status, int? supplier, int? location)
         {
-            var name = "test git";
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return RedirectToAction("Login", "Account");
+            var fridgesQuery = _context.Fridges.AsQueryable().Where(f => !f.IsDeleted);
 
-            // Load the customer record linked to this user
-            var customer = await _context.Customers
-                .Include(c => c.Location)
-                .FirstOrDefaultAsync(c => c.UserId == user.Id);
+            if (!string.IsNullOrEmpty(searchModel))
+                fridgesQuery = fridgesQuery.Where(f => f.Model.Contains(searchModel));
 
-            if (customer == null) return NotFound("Customer profile not found.");
+            if (category.HasValue)
+                fridgesQuery = fridgesQuery.Where(f => (int)f.Category == category.Value);
 
-            return View(customer);
+            if (status.HasValue)
+                fridgesQuery = fridgesQuery.Where(f => (int)f.Status == status.Value);
+
+            if (supplier.HasValue)
+                fridgesQuery = fridgesQuery.Where(f => f.SupplierId == supplier.Value);
+
+            if (location.HasValue)
+                fridgesQuery = fridgesQuery.Where(f => f.LocationId == location.Value);
+
+            var model = await fridgesQuery
+                .Select(f => new RentalViewModel
+                {
+                    Id = f.Id,
+                    Model = f.Model,
+                    SerialNumber = f.SerialNumber,
+                    PricePerMonth = f.RentalPricePerMonth,
+                    StockQuantity = f.StockQuantity,
+                    Location = f.Description,
+                    ImageUrl = f.ImageUrl
+                })
+                .ToListAsync();
+
+
+            ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory))
+                                     .Cast<FridgeCategory>()
+                                     .Select(c => new SelectListItem { Text = c.ToString(), Value = ((int)c).ToString() })
+                                     .ToList();
+
+            ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
+                                   .Cast<FridgeStatus>()
+                                   .Select(s => new SelectListItem { Text = s.ToString(), Value = ((int)s).ToString() })
+                                   .ToList();
+
+            ViewBag.Suppliers = await _context.Fridges
+                                              .Select(f => f.Supplier)
+                                              .Distinct()
+                                              .Select(s => new SelectListItem { Text = s.Name, Value = s.Id.ToString() })
+                                              .ToListAsync();
+
+            ViewBag.Locations = await _context.Fridges
+                                              .Select(f => f.Location)
+                                              .Distinct()
+                                              .Select(l => new SelectListItem { Text = l.Description, Value = l.Id.ToString() })
+                                              .ToListAsync();
+
+            return View(model);
         }
 
 
@@ -163,7 +205,58 @@ namespace Code_Vanta_Systems.Controllers
             return View(customer);
         }
 
+        public async Task<IActionResult> MyProfile()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return RedirectToAction("Login", "Account");
 
+            // Load customer
+            var customer = await _context.Customers
+                .Include(c => c.Location)
+                .FirstOrDefaultAsync(c => c.UserId == user.Id);
+
+            if (customer == null) return NotFound("Customer profile not found.");
+
+            // Compute stats from RentalRequests
+            var rentalsCount = await _context.RentalRequests
+                .CountAsync(r => r.RequestedByUserId == user.Id);
+
+            var pendingOrders = await _context.RentalRequests
+                .CountAsync(r => r.RequestedByUserId == user.Id && r.Status == "Pending");
+
+            var rejectedOrders = await _context.RentalRequests
+                .CountAsync(r => r.RequestedByUserId == user.Id && r.Status == "Rejected");
+
+            var approvedOrders = await _context.RentalRequests
+                .CountAsync(r => r.RequestedByUserId == user.Id && r.Status == "Approved");
+
+            var paidOrders = await _context.RentalRequests
+                .CountAsync(r => r.RequestedByUserId == user.Id && r.IsPaid == true);
+
+            var notPaidOrders = await _context.RentalRequests
+                .CountAsync(r => r.RequestedByUserId == user.Id && r.IsPaid == false);
+
+
+            // Map to ViewModel
+            var model = new ProfileViewModel
+            {
+                BusinessName = customer.BusinessName,
+                BusinessType = customer.BusinessType,
+                ContactName = customer.ContactName,
+                Phone = customer.Phone,
+                Email = customer.Email,
+                PhysicalAddress = customer.PhysicalAddress,
+                Location = customer.Location,
+                RentalsCount = rentalsCount,
+                PendingOrders = pendingOrders,
+                PaidOrders = paidOrders,
+                UnPaidOrders = notPaidOrders,
+                RejectedOrders = rejectedOrders,
+                ApprovedOrders = approvedOrders
+            };
+
+            return View(model);
+        }
 
         public async Task<IActionResult> Rentals(string searchModel, int? category, int? status, int? supplier, int? location)
         {
@@ -223,35 +316,8 @@ namespace Code_Vanta_Systems.Controllers
             return View(model);
         }
 
-        // Submit rental request  
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Checkout([FromBody] List<RentalViewModel> cartItems)
-        {
-            if (cartItems == null || !cartItems.Any())
-                return Json(new { success = false, message = "Your cart is empty." });
+      
 
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Json(new { success = false, message = "User not found." });
-
-            foreach (var item in cartItems)
-            {
-                var rental = new RentalRequest
-                {
-                    FridgeId = item.Id,
-                    Quantity = item.Quantity,
-                    Status = "Pending",
-                    RequestedByUserId = user.Id,
-                    CreatedAt = DateTime.UtcNow
-                };
-                await _context.RentalRequests.AddAsync(rental);
-            }
-
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Rental request submitted! Waiting for approval." });
-        }
 
         // List rental requests
         public async Task<IActionResult> MyRentalRequests()
@@ -703,5 +769,227 @@ namespace Code_Vanta_Systems.Controllers
 
             return RedirectToAction(nameof(LoggedFault));
         }
+
+
+        #region Checkout Logic
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Checkout([FromBody] List<RentalViewModel> cartItems)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Json(new { success = false, message = "User not found." });
+
+            if (cartItems == null || !cartItems.Any())
+                return Json(new { success = false, message = "Your cart is empty." });
+
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == user.Id);
+            if (customer == null)
+                return Json(new { success = false, message = "Customer profile not found." });
+
+            if (customer.Status != CustomerStatus.Active)
+                return Json(new { success = false, message = "Your account is not verified. Please wait for verification before making rental requests." });
+
+
+            var rentalsToSave = cartItems.Select(item => new RentalRequest
+            {
+                FridgeId = item.Id,
+                Quantity = item.Quantity,
+                Status = "Pending",
+                RequestedByUserId = user.Id,
+                CreatedAt = DateTime.UtcNow,
+                IsPaid = false
+            }).ToList();
+
+            _context.RentalRequests.AddRange(rentalsToSave);
+            await _context.SaveChangesAsync();
+
+
+            var rentalIds = rentalsToSave.Select(r => r.Id).ToList();
+
+            var redirectUrl = Url.Action("PayLater", new { rentalIds = string.Join(",", rentalIds) });
+
+            return Json(new
+            {
+                success = true,
+                message = "Rental request submitted! You can pay later if you want.",
+                redirectUrl
+            });
+        }
+        #endregion
+
+        #region Mock Payment Page
+        [HttpGet]
+        public IActionResult Payment(string rentalIds)
+        {
+            if (string.IsNullOrEmpty(rentalIds))
+                return RedirectToAction("Rentals");
+
+            ViewBag.RentalIds = rentalIds;
+            return View();
+        }
+        #endregion
+
+        #region Confirm Payment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmPayment(string rentalIds)
+        {
+            if (string.IsNullOrEmpty(rentalIds))
+                return RedirectToAction("Rentals");
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return RedirectToAction("Rentals");
+
+            var ids = rentalIds.Split(',')
+                               .Where(id => int.TryParse(id, out _))
+                               .Select(int.Parse)
+                               .ToList();
+
+            var rentals = await _context.RentalRequests
+                .Where(r => ids.Contains(r.Id) && r.RequestedByUserId == user.Id)
+                .ToListAsync();
+
+            if (!rentals.Any())
+                return RedirectToAction("Rentals");
+
+            foreach (var rental in rentals)
+            {
+
+                if (!rental.IsPaid)
+                {
+                    rental.IsPaid = true;
+                    rental.Status = "Awaiting Approval";
+                    rental.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("PaymentSuccess");
+        }
+        #endregion
+
+        #region Payment Success
+        public IActionResult PaymentSuccess(string rentalIds = "")
+        {
+            ViewBag.RentalIds = rentalIds.Split(',')
+                                          .Where(id => int.TryParse(id, out _))
+                                          .Select(int.Parse)
+                                          .ToList();
+            return View();
+        }
+        #endregion
+
+        #region Pay Later
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PayLater([FromBody] dynamic data)
+        {
+            if (data == null || data.rentalId == null)
+                return Json(new { success = false, message = "Invalid request." });
+
+            int rentalId = (int)data.rentalId;
+
+            var rental = await _context.RentalRequests.FirstOrDefaultAsync(r => r.Id == rentalId);
+            if (rental == null)
+                return Json(new { success = false, message = "Rental not found." });
+
+            if (rental.IsPaid)
+                return Json(new { success = false, message = "This rental is already paid." });
+
+            rental.Status = "Pay Later";
+            rental.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Rental marked as Pay Later." });
+        }
+        #endregion
+
+
+        #region Pay Later Page
+
+        [HttpGet]
+        public async Task<IActionResult> PayLater(string rentalIds)
+        {
+            if (string.IsNullOrEmpty(rentalIds))
+                return RedirectToAction("Rentals");
+
+            var ids = rentalIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                               .Select(id => int.TryParse(id.Trim(), out var val) ? val : (int?)null)
+                               .Where(id => id.HasValue)
+                               .Select(id => id.Value)
+                               .ToList();
+
+            var rentals = await _context.RentalRequests
+                .Include(r => r.Fridge)
+                .Where(r => ids.Contains(r.Id) && !r.IsPaid)
+                .ToListAsync();
+
+            if (!rentals.Any())
+                return RedirectToAction("Rentals");
+
+            return View(rentals);
+        }
+        #endregion
+
+        #region Confirm Pay Later 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmPayLater(string rentalIds)
+        {
+            if (string.IsNullOrEmpty(rentalIds))
+                return RedirectToAction("Rentals");
+
+            var ids = rentalIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                               .Select(id => int.TryParse(id.Trim(), out var val) ? val : (int?)null)
+                               .Where(id => id.HasValue)
+                               .Select(id => id.Value)
+                               .ToList();
+
+            if (!ids.Any())
+                return RedirectToAction("Rentals");
+
+            var rentals = await _context.RentalRequests
+                .Where(r => ids.Contains(r.Id))
+                .ToListAsync();
+
+            foreach (var rental in rentals)
+            {
+                rental.IsPaid = false;
+                rental.Status = "Pay Later Requested";
+                rental.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Rentals are now marked as 'Pay Later'. You will be notified once they are approved.";
+            return RedirectToAction("MyRentals");
+        }
+        #endregion
+
+        #region Pay Single Rental
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PayRental(int id)
+        {
+            var rental = await _context.RentalRequests.FindAsync(id);
+            if (rental == null)
+                return Json(new { success = false, message = "Rental not found." });
+
+            if (rental.IsPaid)
+                return Json(new { success = false, message = "Rental is already paid." });
+
+            rental.IsPaid = true;
+            rental.Status = "Awaiting Approval";
+            rental.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Payment successful!" });
+        }
+        #endregion
     }
 }

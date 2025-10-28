@@ -1,127 +1,328 @@
-﻿@model Code_Vanta_Systems.Models.Customer
+﻿@using Microsoft.AspNetCore.Antiforgery
+@model IEnumerable<Code_Vanta_Systems.ViewModels.RentalViewModel>
+@using Microsoft.AspNetCore.Mvc.Rendering
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
     Layout = "~/Views/Shared/_CustomerLayout.cshtml";
-    ViewData["Title"] = "My Profile";
-}
+    ViewData["Title"] = "Rentals";
+    const decimal VAT_RATE = 0.15M;
+    const decimal DELIVERY_FEE = 500M;
 
-<div class="row">
-    <div class="col-12">
-        <h2 class="mb-4 text-primary">Welcome, @(Model?.ContactName ?? "Customer")!</h2>
-    </div>
+    string selectedModel = Context.Request.Query["searchModel"];
+    string selectedCategory = Context.Request.Query["category"];
+    string selectedStatus = Context.Request.Query["status"];
+    string selectedSupplier = Context.Request.Query["supplier"];
+    string selectedLocation = Context.Request.Query["location"];
+
+    var categories = ViewBag.Categories as List<SelectListItem>;
+    var statuses = ViewBag.Statuses as List<SelectListItem>;
+    var suppliers = ViewBag.Suppliers as List<SelectListItem>;
+    var locations = ViewBag.Locations as List<SelectListItem>;
+
+    var tokens = Antiforgery.GetAndStoreTokens(ViewContext.HttpContext);
+    string antiforgeryToken = tokens.RequestToken;
+}
+<input type="hidden" id="RequestVerificationToken" value="@antiforgeryToken" />
+<div id="cartOverlay"></div>
+<div id="toastNotification"></div>
+
+<!-- Header + Cart Button -->
+<div class="d-flex justify-content-between align-items-center py-3 mb-3 border-bottom" style="position:sticky; top:0; background:#fff; z-index:1030;">
+    <h2 class="text-primary mb-0"><i class="bi bi-box-seam"></i> Rentals</h2>
+    <button id="toggleCartBtn" class="btn btn-success position-relative">
+        <i class="bi bi-cart3"></i> Cart
+        <span id="cartCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+    </button>
 </div>
 
-<div class="row">
-    <div class="col-lg-4 col-md-12 mb-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-primary text-white">
-                <i class="fas fa-user-circle"></i> Business Profile
-            </div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-5">Business Name</dt>
-                    <dd class="col-sm-7">@Model?.BusinessName </dd>
-
-                    <dt class="col-sm-5">Business Type</dt>
-                    <dd class="col-sm-7">@Model?.BusinessType</dd>
-
-                    <dt class="col-sm-5">Contact Name</dt>
-                    <dd class="col-sm-7">@Model?.ContactName</dd>
-
-                    <dt class="col-sm-5">Phone</dt>
-                    <dd class="col-sm-7">@Model?.Phone</dd>
-
-                    <dt class="col-sm-5">Email</dt>
-                    <dd class="col-sm-7">@Model?.Email</dd>
-
-                    <dt class="col-sm-5">Address</dt>
-                    <dd class="col-sm-7">@Model?.PhysicalAddress</dd>
-
-                    <dt class="col-sm-5">Location/Depot</dt>
-                    <dd class="col-sm-7">@Model?.Location?.Description</dd>
-                </dl>
-            </div>
-            <div class="card-footer d-flex justify-content-between">
-                <a asp-controller="Customer" asp-action="EditProfile" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-edit"></i> Edit Profile
-                </a>
-
-                <a asp-controller="Customer" asp-action="Rentals" class="btn btn-sm btn-outline-primary">
-                    <i class="fas fa-edit"></i> Rent A Fridge
-                </a>
-
-                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </button>
-                </form>
-            </div>
-        </div>
+<!-- Filters Below Header -->
+<form id="filterForm" method="get" class="row g-3 mb-4 align-items-end">
+    <div class="col-md-3">
+        <label class="form-label">Model</label>
+        <input type="text" name="searchModel" class="form-control" placeholder="Search by Model" value="@selectedModel" />
     </div>
+    <div class="col-md-2">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-select auto-submit">
+            <option value="">-- All Categories --</option>
+            @foreach (var cat in categories)
+            {
+                if (cat.Value == selectedCategory)
+                {
+                    <text>
+                    <option value="@cat.Value" selected>@cat.Text</option>
+                    </text>
+                }
+                else
+                {
+                    <text>
+                    <option value="@cat.Value">@cat.Text</option>
+                    </text>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select auto-submit">
+            <option value="">-- All Statuses --</option>
+            @foreach (var cat in statuses)
+            {
+                if (cat.Value == selectedStatus)
+                {
+                    <text>
+                    <option value="@cat.Value" selected>@cat.Text</option>
+                    </text>
+                }
+                else
+                {
+                    <text>
+                    <option value="@cat.Value">@cat.Text</option>
+                    </text>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-1 d-flex gap-1">
+        <button type="submit" class="btn btn-primary w-100" title="Filter"><i class="bi bi-funnel"></i> Filter</button>
+        <a href="@Url.Action("Rentals", "InventoryLiaison")" class="btn btn-secondary w-100" title="Clear Filters"><i class="bi bi-x-circle"></i> Clear</a>
+    </div>
+</form>
 
-    <div class="col-lg-8 col-md-12">
-        @* Card for System Interactions (History, Actions) *@
-        <div class="card shadow-sm h-100">
-            <div class="card-header p-0">
-                @* Navigation Tabs based on system requirements **@
-                <ul class="nav nav-tabs" id="customerTabs" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link active" id="faults-tab" data-bs-toggle="tab" href="#faults" role="tab" aria-controls="faults" aria-selected="true">
-                            <i class="fas fa-wrench"></i> Faults & Requests
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="maintenance-tab" data-bs-toggle="tab" href="#maintenance" role="tab" aria-controls="maintenance" aria-selected="false">
-                            <i class="fas fa-calendar-check"></i> Maintenance
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="history-tab" data-bs-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="false">
-                            <i class="fas fa-history"></i> Service History
-                        </a>
-                    </li>
-                    <li class="nav-item ms-auto">
-                        <a asp-controller="Customer" asp-action="LogFault" class="btn btn-success btn-sm m-1">
-                            <i class="fas fa-bug"></i> Report New Fault / Request Fridge
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            <div class="card-body">
-                <div class="tab-content" id="customerTabsContent">
+<!-- Fridge Cards -->
+<div class="container-fluid" id="fridgeContainer">
+    <div class="row">
+        @foreach (var item in Model)
+        {
+            <div class="col-md-6 col-lg-4 mb-4" data-id="@item.Id" data-stock="@item.StockQuantity">
+                <div class="card h-100 shadow-sm">
+                    <img src="@item.ImageUrl" class="card-img-top" style="height:200px; object-fit:cover;" />
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@item.Model</h5>
+                        <p class="mb-1"><strong>Serial:</strong> @item.SerialNumber</p>
+                        <p class="mb-1"><strong>Location:</strong> @item.Location</p>
+                        <p class="mb-1"><strong>Price/Month:</strong> R @item.PricePerMonth.ToString("N2")</p>
+                        <p class="mb-1"><strong>In Stock:</strong> <span class="stockQty">@item.StockQuantity</span></p>
+                        <div class="d-flex gap-2 mt-auto">
+                            <button class="btn btn-primary addToCartBtn flex-fill"
+                                    data-id="@item.Id" data-model="@item.Model"
+                                    data-price="@item.PricePerMonth" data-image="@item.ImageUrl">
+                                Add to Cart
+                            </button>
+                            <a asp-controller="Customer"
+                               asp-action="FridgeMoreInfo"
+                               asp-route-id="@item.Id"
+                               class="btn btn-secondary flex-fill">
+                                <i class="bi bi-info-circle"></i> View More
+                            </a>
 
-                    [cite_start]@* Tab 1: Faults & Requests (Report fault and track status) [cite: 43] *@
-                    <div class="tab-pane fade show active" id="faults" role="tabpanel" aria-labelledby="faults-tab">
-                        <h5>Fault Reporting and Status</h5>
-                        [cite_start]<p class="text-muted">Customers can report faults and track their fault status, as well as request new fridges here[cite: 43].</p>
-                        @* TODO: Render a list of the customer's faults/requests with status tracking *@
-                        <p class="alert alert-info">List of reported faults and their current status will appear here.</p>
+                        </div>
                     </div>
-
-                    @* Tab 2: Fridge Maintenance (View upcoming maintenance visits)  *@
-                    <div class="tab-pane fade" id="maintenance" role="tabpanel" aria-labelledby="maintenance-tab">
-                        <h5>Upcoming Maintenance Visits</h5>
-                        <p class="text-muted">View upcoming maintenance visits scheduled by Maintenance Technicians.</p>
-                        @* TODO: Render a list of upcoming maintenance visits *@
-                        <p class="alert alert-warning">Details of scheduled maintenance visits will appear here.</p>
-                    </div>
-
-                    @* Tab 3: Service History (Access detailed fridge history)  *@
-                    <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
-                        <h5>Detailed Fridge History</h5>
-                        <p class="text-muted">Access detailed fridge history, including maintenance and service records.</p>
-                        @* TODO: Render a list of all fridges allocated to the customer and their history *@
-                        <p class="alert alert-success">Comprehensive history of fridge maintenance, service, and repair records will appear here.</p>
-                    </div>
-
                 </div>
             </div>
-        </div>
+        }
     </div>
 </div>
+
+
+<div id="cartSidebar">
+    <h4 class="text-primary"><i class="bi bi-cart3"></i> Rental Summary</h4>
+    <ul id="cartItems" class="list-group mb-3"></ul>
+    <p>Subtotal: R <span id="subtotal">0.00</span></p>
+    <p>VAT (15%): R <span id="vat">0.00</span></p>
+    <p>Delivery: R @DELIVERY_FEE</p>
+    <hr />
+    <h5>Total: R <span id="total">0.00</span></h5>
+    <button id="checkoutBtn" class="btn btn-success w-100 mt-2">Checkout</button>
+    <input type="hidden" id="RequestVerificationToken" value="@antiforgeryToken" />
+</div>
+
+<style>
+    #cartSidebar {
+        position: fixed;
+        top: 80px;
+        right: -400px;
+        width: 350px;
+        max-width: 90%;
+        height: calc(100% - 100px);
+        background: #fff;
+        box-shadow: -3px 0 15px rgba(0,0,0,0.2);
+        padding: 20px;
+        overflow-y: auto;
+        transition: right 0.3s ease;
+        z-index: 1050;
+    }
+
+        #cartSidebar.open {
+            right: 0;
+        }
+
+    #cartOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.3);
+        z-index: 1040;
+        display: none;
+    }
+
+    body.cart-open {
+        overflow: hidden;
+    }
+
+    #toastNotification {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1100;
+        padding: 12px 25px;
+        background: #28a745;
+        color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.3);
+        font-weight: 500;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.5s ease, top 0.5s ease;
+    }
+
+        #toastNotification.show {
+            opacity: 1;
+            top: 40px;
+        }
+</style>
 
 @section Scripts {
     <script>
-        // Optional: Bootstrap tabs already handle active classes
+        const VAT_RATE = 0.15;
+        const DELIVERY_FEE = 500;
+        const antiforgeryToken = document.getElementById('RequestVerificationToken').value;
+        let cart = [];
+
+
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+
+        const toggleCartBtn = document.getElementById('toggleCartBtn');
+        const cartSidebar = document.getElementById('cartSidebar');
+        const cartOverlay = document.getElementById('cartOverlay');
+
+        toggleCartBtn.addEventListener('click', () => {
+            cartSidebar.classList.toggle('open');
+            cartOverlay.style.display = cartSidebar.classList.contains('open') ? 'block' : 'none';
+            document.body.classList.toggle('cart-open');
+        });
+
+        cartOverlay.addEventListener('click', () => {
+            cartSidebar.classList.remove('open');
+            cartOverlay.style.display = 'none';
+            document.body.classList.remove('cart-open');
+        });
+
+
+        document.querySelectorAll('.addToCartBtn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = parseInt(this.dataset.id);
+                const model = this.dataset.model;
+                const price = parseFloat(this.dataset.price);
+                const image = this.dataset.image;
+
+                const card = this.closest('.col-md-6.col-lg-4');
+                const stockSpan = card.querySelector('.stockQty');
+                let stock = parseInt(stockSpan.textContent);
+                if (stock <= 0) { alert("No stock available!"); return; }
+                stock -= 1;
+                stockSpan.textContent = stock;
+
+                const existing = cart.find(i => i.id === id);
+                if (existing) { existing.quantity += 1; }
+                else { cart.push({ id, model, price, image, quantity: 1 }); }
+
+                updateCartUI();
+                showToast(`"${model}" added to cart!`);
+            });
+        });
+
+
+        function updateCartUI() {
+            const cartItems = document.getElementById('cartItems');
+            cartItems.innerHTML = '';
+            let subtotal = 0;
+
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                subtotal += itemTotal;
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.innerHTML = `
+                            <img src="${item.image}" width="50" class="me-2 rounded" />
+                            ${item.model} x ${item.quantity} - R ${itemTotal.toFixed(2)}
+                            <button class="btn btn-sm btn-danger removeBtn" data-id="${item.id}">&times;</button>
+                        `;
+                cartItems.appendChild(li);
+            });
+
+            document.getElementById('cartCount').textContent = cart.reduce((a, b) => a + b.quantity, 0);
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('vat').textContent = (subtotal * VAT_RATE).toFixed(2);
+            document.getElementById('total').textContent = (subtotal * (1 + VAT_RATE) + DELIVERY_FEE).toFixed(2);
+
+            document.querySelectorAll('.removeBtn').forEach(btn => {
+                btn.onclick = () => {
+                    const id = parseInt(btn.dataset.id);
+                    const removed = cart.find(i => i.id === id);
+                    const card = document.querySelector(`.col-md-6.col-lg-4[data-id='${id}']`);
+                    card.querySelector('.stockQty').textContent = parseInt(card.querySelector('.stockQty').textContent) + removed.quantity;
+                    cart = cart.filter(i => i.id !== id);
+                    updateCartUI();
+                };
+            });
+        }
+
+        document.getElementById('checkoutBtn').addEventListener('click', () => {
+            if (cart.length === 0) {
+                alert("Cart is empty!");
+                return;
+            }
+
+            fetch('/Customer/Checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': antiforgeryToken
+                },
+                body: JSON.stringify(cart.map(c => ({
+                    Id: c.id,
+                    Model: c.model,
+                    PricePerMonth: c.price,
+                    Quantity: c.quantity,
+                    ImageUrl: c.image
+                })))
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message || "Rental request sent successfully!");
+                        setTimeout(() => {
+                            window.location.href = data.redirectUrl;
+                        }, 2000);
+                    } else {
+                        showToast(data.message || "Something went wrong while submitting the request.");
+                    }
+                })
+                .catch(err => {
+                    console.error('Checkout error:', err);
+                    showToast("An error occurred during checkout.");
+                });
+        });
     </script>
 }
