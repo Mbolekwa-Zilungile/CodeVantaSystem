@@ -477,5 +477,6 @@ namespace Code_Vanta_Systems.Controllers
                 .Cast<FaultSeverity>()
                 .Select(v => new SelectListItem { Text = v.ToString(), Value = v.ToString() });
         }
+
     }
 }

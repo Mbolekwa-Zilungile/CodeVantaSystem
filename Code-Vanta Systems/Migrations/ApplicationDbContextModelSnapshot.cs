@@ -412,6 +412,9 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<int>("Category")
                         .HasColumnType("int");
 
+                    b.Property<int>("Condition")
+                        .HasColumnType("int");
+
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
@@ -536,6 +539,14 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.Property<int>("FridgeId")
                         .HasColumnType("int");
+
+                    b.Property<string>("PartsUsed")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RepairDescription")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("ReportedByUserId")
                         .IsRequired()

@@ -2,8 +2,9 @@
 
 using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
-using Code_Vanta_Systems.ViewModels;
+using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Services;
+using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -1107,6 +1108,102 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(model);
         }
-    }
 
+        //=========================================================
+        // MAINTENANCE OVERSIGHT (GET)
+        //=========================================================
+
+        //=========================================================
+        // MAINTENANCE OVERSIGHT (GET)
+        //=========================================================
+
+        [HttpGet]
+        public async Task<IActionResult> MaintenanceOversight()
+        {
+            // 1. Get all Maintenance Technicians for the dropdown (This remains the same)
+            var maintenanceRole = await roleManager.FindByNameAsync("Maintenance Technician");
+            var maintenanceTechnicians = await userManager.GetUsersInRoleAsync(maintenanceRole.Name);
+
+            // This list populates the Technician dropdown in the view
+            ViewBag.MaintenanceTechnicians = maintenanceTechnicians
+                .Select(u => new SelectListItem
+                {
+                    Value = u.Id,
+                    Text = u.FullName // Assuming ApplicationUser has a FullName property
+                })
+                .ToList();
+
+            // 2. Query for fridges requiring maintenance oversight
+            var fridgesNeedingAssignment = await context.Fridges
+                .Include(f => f.Customer)
+                .Include(f => f.Technician)
+                .Where(f =>
+                    // 🚩 PRIMARY FILTER: Only show fridges that the Fault Technician flagged.
+                    f.Condition == FridgeCondition.RequireMaintenance &&
+
+                    // 🚩 CRITICAL FIX 1: Must be linked to a customer (i.e., not a fridge in stock)
+                    f.CustomerId.HasValue &&
+
+                    // 🚩 CRITICAL FIX 2: Exclude fridges that are officially out of service
+                    // Based on FridgeStatus.cs: Available (In Stock) and Retired (Scrapped)
+                    f.Status != FridgeStatus.Available &&
+                    f.Status != FridgeStatus.Retired)
+
+                // ❌ REMOVED FILTER: The line 'f.TechnicianUserId == null' was removed 
+                // to show *all* fridges needing maintenance, even if they have a technician already assigned.
+
+                .Select(f => new MaintenanceAssignmentViewModel
+                {
+                    FridgeId = f.Id,
+                    SerialNumber = f.SerialNumber,
+                    Model = f.Model,
+
+                    // Handle null Customer case gracefully for display
+                    CustomerBusinessName = f.Customer != null ? f.Customer.BusinessName : "N/A",
+                    CustomerAddress = f.Customer != null ? f.Customer.PhysicalAddress : "N/A",
+
+                    Condition = f.Condition.ToString(),
+                    AllocatedTechnicianId = f.TechnicianUserId,
+                    // Display 'Unassigned' if the TechnicianUserId is null
+                    AllocatedTechnicianName = f.Technician != null ? f.Technician.FullName : "Unassigned"
+                })
+                .OrderBy(f => f.CustomerBusinessName)
+                .ToListAsync();
+
+            return View(fridgesNeedingAssignment);
+        }
+
+        //=========================================================
+        // ASSIGN TECHNICIAN (POST)
+        //=========================================================
+        [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult> AssignMaintenanceTechnician(int fridgeId, string technicianId)
+            {
+                var fridge = await context.Fridges.FindAsync(fridgeId);
+
+                if (fridge == null)
+                {
+                    TempData["ErrorMessage"] = "Error: Fridge not found.";
+                    return RedirectToAction(nameof(MaintenanceOversight));
+                }
+
+                // CRITICAL FIX: Use the correct property: fridge.TechnicianUserId
+                fridge.TechnicianUserId = technicianId;
+
+                try
+                {
+                    context.Update(fridge);
+                    // Add audit trail logic here...
+                    await context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = $"Fridge {fridge.SerialNumber} successfully assigned to new technician.";
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = $"Assignment failed: {ex.Message}";
+                }
+
+                return RedirectToAction(nameof(MaintenanceOversight));
+            }
+    }
 }

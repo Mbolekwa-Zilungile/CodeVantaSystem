@@ -2,6 +2,8 @@
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.ViewModels.Customer;
+using Code_Vanta_Systems.ViewModels.FaultTechnician;
+using Code_Vanta_Systems.ViewModels.Maintenance_Schedule;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -245,5 +247,199 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(fault);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ProcessRepair(ProcessRepairViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                // Add model errors to TempData for display on the Details page
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                TempData["ErrorMessage"] = $"Validation failed: {string.Join(", ", errors)}";
+                return RedirectToAction(nameof(Details), new { id = model.FaultId });
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            // 1. Fetch the fault and related fridge
+            var fault = await _context.FridgeFaults
+                .Include(f => f.Fridge)
+                .FirstOrDefaultAsync(f => f.Id == model.FaultId && f.AssignedTechnicianId == currentUser.Id);
+
+            if (fault == null)
+            {
+                TempData["ErrorMessage"] = "Fault not found, or you are not assigned to this fault.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // 2. Process fault / Repair fridge (Update Fault Record)
+            fault.Status = FaultStatus.Resolved; // Assumes FaultStatus.Resolved exists
+            fault.ResolutionDate = DateTime.Now;
+            fault.RepairDescription = model.RepairDescription;
+            fault.PartsUsed = model.PartsUsed;
+
+            // 3. Update fridge condition (Update Fridge Record)
+            // Assumes Fridge.Condition property exists and model.NewFridgeCondition is a valid enum value
+            fault.Fridge.Condition = model.NewFridgeCondition;
+
+            // Save changes and create an Audit Trail entry
+            try
+            {
+                _context.Update(fault);
+                _context.Update(fault.Fridge); // Update the related Fridge entity
+
+                // Add Audit Trail for fault resolution
+                var audit = new AuditTrail
+                {
+                    EntityName = "FridgeFault",
+                    EntityId = fault.Id,
+                    ChangeType = "Resolved & Repaired",
+                    ChangeDetails = $"Fault resolved. Fridge condition updated to {model.NewFridgeCondition} with parts: {model.PartsUsed ?? "None"}.",
+                    ChangeDate = DateTime.Now,
+                    ChangedByUserId = currentUser.Id // Use current user ID for audit
+                };
+                _context.AuditTrails.Add(audit);
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"Fault {model.FaultId} successfully resolved and fridge condition updated to {model.NewFridgeCondition}.";
+            }
+            catch (Exception)
+            {
+                // Log the exception (recommended)
+                TempData["ErrorMessage"] = "An error occurred while saving the repair details. Please check the database connection and try again.";
+                return RedirectToAction(nameof(Details), new { id = model.FaultId });
+            }
+
+            return RedirectToAction(nameof(Details), new { id = model.FaultId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStatus(int id, FaultStatus newStatus)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                TempData["ErrorMessage"] = "User not found. Please log in again.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var fault = await _context.FridgeFaults
+                .FirstOrDefaultAsync(f => f.Id == id && f.AssignedTechnicianId == currentUser.Id);
+
+            if (fault == null)
+            {
+                TempData["ErrorMessage"] = "Fault not found or you are not assigned to this fault.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Only allow update if the fault is not already resolved/scrapped.
+            if (fault.Status == FaultStatus.Resolved || fault.Status == FaultStatus.Scrapped)
+            {
+                TempData["ErrorMessage"] = "Cannot change the status of a resolved or scrapped fault. Use the Details page if re-opening.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // 1. Update the status
+            fault.Status = newStatus;
+
+            // 2. Add Audit Trail entry for the quick status change
+            var audit = new AuditTrail
+            {
+                EntityName = "FridgeFault",
+                EntityId = fault.Id,
+                ChangeType = "Status Update",
+                ChangeDetails = $"Status changed to {newStatus} via quick update.",
+                ChangeDate = DateTime.Now,
+                ChangedByUserId = currentUser.Id
+            };
+
+            try
+            {
+                _context.Update(fault);
+                _context.AuditTrails.Add(audit);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"Status for Fault {id} successfully updated to {newStatus}.";
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = $"An error occurred while updating the status. Please try again.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResolveFault(int faultId, bool requiresMaintenance, string resolutionNotes)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                TempData["ErrorMessage"] = "User not found. Please login again.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // CRITICAL: Include Fridge to allow condition update
+            var fault = await _context.FridgeFaults
+                .Include(f => f.Fridge)
+                .FirstOrDefaultAsync(f => f.Id == faultId && f.AssignedTechnicianId == currentUser.Id);
+
+            if (fault == null || fault.Fridge == null)
+            {
+                TempData["ErrorMessage"] = "Fault not found or you are not assigned to this fault.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // 1. Update the Fault Status
+            fault.Status = FaultStatus.Resolved;
+            fault.ResolutionDate = DateTime.Now;
+
+            // 2. Update the Fridge Condition based on technician input
+            if (requiresMaintenance)
+            {
+                // If the fault is resolved but further maintenance is required, flag for Maintenance Oversight.
+                fault.Fridge.Condition = FridgeCondition.RequireMaintenance;
+
+                // 🔥 CRITICAL FIX: Clear the TechnicianUserId so it becomes 'unassigned'
+                // and visible in the Admin's Maintenance Oversight view.
+                fault.Fridge.TechnicianUserId = null;
+
+                TempData["SuccessMessage"] = $"Fault {faultId} resolved. Fridge flagged for Maintenance Oversight.";
+            }
+            else
+            {
+                // If the fault is resolved and no further maintenance is required, set to Operational.
+                fault.Fridge.Condition = FridgeCondition.Operational;
+                TempData["SuccessMessage"] = $"Fault {faultId} resolved. Fridge condition set to Operational.";
+            }
+
+            // 3. Create Audit Trail Entry (using resolutionNotes)
+            var audit = new AuditTrail
+            {
+                EntityName = "FridgeFault",
+                EntityId = fault.Id,
+                ChangeType = "Fault Resolution",
+                ChangeDetails = $"Fault Resolved. Notes: {resolutionNotes}. Fridge Condition set to {fault.Fridge.Condition}.",
+                ChangeDate = DateTime.Now,
+                ChangedByUserId = currentUser.Id
+            };
+
+            try
+            {
+                _context.Update(fault);
+                _context.Update(fault.Fridge); // Ensure the Fridge object changes are saved
+                _context.AuditTrails.Add(audit);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "An error occurred during fault resolution. Please try again.";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
     }
 }

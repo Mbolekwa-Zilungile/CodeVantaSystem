@@ -43,11 +43,11 @@
             text-decoration: none;
         }
 
-        .sidebar-link:hover, .sidebar-link.active {
+            .sidebar-link:hover, .sidebar-link.active {
                 color: #fff;
                 background-color: #0d6efd;
                 border-radius: 5px;
-        }
+            }
     </style>
 </head>
 <body>
@@ -126,6 +126,14 @@
                     <i class="bi bi-universal-access me-2"></i>User Roles
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "MaintenanceOversight" ? "active" : "")"
+                   asp-controller="Admin" asp-action="MaintenanceOversight">
+                    <i class="bi bi-tools"></i> Maintenance Oversight
+                </a>
+            </li>
+
             <li class="nav-item">
                 <a class="sidebar-link @(currentAction == "Suppliers" ? "active" : "")"
                    asp-controller="Admin" asp-action="Suppliers">

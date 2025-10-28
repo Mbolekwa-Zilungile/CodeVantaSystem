@@ -1,14 +1,21 @@
 ﻿@model IEnumerable<Code_Vanta_Systems.Models.FridgeFault>
+@using Code_Vanta_Systems.Models.Enums
 
 @{
     Layout = "~/Views/Shared/_TechnicianDashboard.cshtml";
     ViewData["Title"] = "My Assigned Fridge Faults";
-    int counter = ((int)ViewData["currentPage"] - 1) * 10 + 1;
+    // *** FIX: Initialize counter here to be available in the loop ***
+    int counter = 1; // Start counter at 1, or use the pagination logic if available
+
+    // Using the original pagination logic for a more accurate counter:
+    if (ViewData["currentPage"] != null)
+    {
+        counter = ((int)ViewData["currentPage"] - 1) * 10 + 1;
+    }
 }
 
 <h3 class="text-center mb-5 display-5">My Assigned Fridge Faults</h3>
 
-<!-- TempData Alerts -->
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -24,25 +31,14 @@
     </div>
 }
 
-<!-- Search Bar -->
-<div class="d-flex mb-3">
-    <form class="d-flex flex-grow-1 me-2" method="get" asp-action="Index">
-        <input type="text" name="search" class="form-control me-2"
-               value="@ViewData["search"]"
-               placeholder="Search by serial number or description" />
-        <button type="submit" class="btn btn-secondary">Search</button>
-    </form>
-</div>
-
-<!-- Table -->
-<table class="table table-striped">
+<table class="table table-striped table-hover table-bordered">
     <thead>
         <tr>
             <th>#</th>
+            <th>Fault ID</th>
             <th>Fridge Serial</th>
-            <th>Reported By</th>
             <th>Date Reported</th>
-            <th>Description</th>
+            <th>Severity</th>
             <th>Status</th>
             <th>Resolution Date</th>
             <th>Actions</th>
@@ -51,36 +47,40 @@
     <tbody>
         @if (Model.Any())
         {
-            @foreach (var fault in Model)
+            foreach (var fault in Model)
             {
                 <tr>
                     <td>@counter</td>
+                    <td>@fault.Id</td>
                     <td>@fault.Fridge.SerialNumber</td>
-                    <td>@fault.ReportedBy.FullName</td>
-                    <td>@fault.DateReported.ToString("yyyy-MM-dd HH:mm")</td>
-                    <td>@fault.FaultDescription</td>
+                    <td>@fault.DateReported.ToString("yyyy-MM-dd")</td>
+                    <td>@fault.Severity.ToString()</td>
                     <td>
-                        <form asp-action="EditStatus" method="post" class="d-flex">
+                        <form asp-action="UpdateStatus" method="post" class="d-flex align-items-center">
                             <input type="hidden" name="id" value="@fault.Id" />
-
-                            <select class="form-select form-select-sm me-2" name="status">
-                                @foreach (var s in Enum.GetValues(typeof(Code_Vanta_Systems.Models.Enums.FaultStatus)))
+                            <select name="newStatus" class="form-select form-select-sm me-2">
+                                @foreach (var s in Enum.GetValues(typeof(FaultStatus)).Cast<FaultStatus>())
                                 {
-                                    if (s.Equals(fault.Status))
+                                    // Prevent quick update to final states (Resolved/Scrapped)
+                                    if (s != FaultStatus.Resolved && s != FaultStatus.Scrapped)
                                     {
-                                        <option value="@s" selected>@s</option>
+                                        <option value="@s" selected="@(fault.Status == s)">@s</option>
                                     }
-                                    else
+                                    // If the current status IS a final state, display it as disabled
+                                    else if (fault.Status == s)
                                     {
-                                        <option value="@s">@s</option>
+                                        <option value="@fault.Status" selected disabled>@fault.Status</option>
                                     }
                                 }
                             </select>
 
-                            <button type="submit" class="btn btn-sm btn-success">Update</button>
+                            <button type="submit" class="btn btn-sm btn-success"
+                                    @(fault.Status == FaultStatus.Resolved || fault.Status == FaultStatus.Scrapped ? "disabled" : "")>
+                                Update
+                            </button>
                         </form>
                     </td>
-                    <td>@(fault.ResolutionDate.HasValue? fault.ResolutionDate.Value.ToString("yyyy-MM-dd HH:mm") : "-")</td>
+                    <td>@(fault.ResolutionDate.HasValue? fault.ResolutionDate.Value.ToString("yyyy-MM-dd") : "-")</td>
                     <td>
                         <a asp-action="Details" asp-route-id="@fault.Id" class="btn btn-sm btn-info">Details</a>
                     </td>
@@ -91,23 +91,8 @@
         else
         {
             <tr>
-                <td colspan="8" class="text-center text-muted">No fridge faults found.</td>
+                <td colspan="8" class="text-center text-muted">No assigned fridge faults found.</td>
             </tr>
         }
     </tbody>
 </table>
-
-<!-- Pagination -->
-<nav>
-    <ul class="pagination justify-content-end">
-        @for (int i = 1; i <= (int)ViewData["totalPages"]; i++)
-        {
-            <li class="page-item @(i == (int)ViewData["currentPage"] ? "active" : "")">
-                <a class="page-link"
-                   asp-action="Index"
-                   asp-route-pageIndex="@i"
-                   asp-route-search="@ViewData["search"]">@i</a>
-            </li>
-        }
-    </ul>
-</nav>

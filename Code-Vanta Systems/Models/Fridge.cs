@@ -70,6 +70,10 @@ namespace Code_Vanta_Systems.Models
         [Required]
         public int StockQuantity { get; set; }
 
+        [Required]
+        // track the permanent state of the fridge
+        public FridgeCondition Condition { get; set; }
+
         public Fridge()
         {
             Faults = new HashSet<FridgeFault>();

@@ -27,6 +27,12 @@ namespace Code_Vanta_Systems.Models
 
         public FaultSeverity Severity { get; set; }
 
+        [StringLength(1000)]
+        public string? RepairDescription { get; set; } // Detailed notes on the fix
+
+        [StringLength(500)]
+        public string? PartsUsed { get; set; } // List of parts replaced
+
         [Required]
         public FaultStatus Status { get; set; }
 
