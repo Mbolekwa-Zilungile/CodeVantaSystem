@@ -21,8 +21,8 @@ namespace Code_Vanta_Systems.ViewModels.SupplierQoutation
         [Display(Name = "Warranty (months)")]
         public int WarrantyMonths { get; set; }
 
-        [Required]
-        [Display(Name = "Expected Delivery Date")]
+       
+        [Display(Name = "Estimated Delivery Date")]
         [DataType(DataType.Date)]
         public DateTime ExpectedDeliveryDate { get; set; }
     }

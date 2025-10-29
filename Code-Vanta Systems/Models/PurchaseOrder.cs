@@ -13,6 +13,11 @@ namespace Code_Vanta_Systems.Models
 
         [Required, DataType(DataType.Date)]
         public DateTime OrderDate { get; set; } = DateTime.Now;
+        [ForeignKey("Quotation")]
+        public int? QuotationId { get; set; } // Nullable, as POs might not always come from a quote
+        public virtual Quotation Quotation { get; set; }
+
+        public DateTime? ExpectedDeliveryDate { get; set; }
 
         [Required]
         public int SupplierId { get; set; }
@@ -21,6 +26,7 @@ namespace Code_Vanta_Systems.Models
         [Required]
         public string OrderedByUserId { get; set; }
         public ApplicationUser OrderedBy { get; set; }
+
 
         [Required]
         public OrderStatus Status { get; set; } = OrderStatus.Pending;
@@ -32,5 +38,9 @@ namespace Code_Vanta_Systems.Models
 
         [NotMapped]
         public decimal TotalAmount => Items?.Sum(i => i.Quantity * i.UnitPrice) ?? 0;
+
+        public string DeliveryAddress { get; set; }
+        public string DeliveryTerms { get; set; }
+        public string PaymentTerms { get; set; }
     }
 }

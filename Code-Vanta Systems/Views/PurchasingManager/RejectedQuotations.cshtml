@@ -74,10 +74,8 @@
                                 <th>Quotation ID</th>
                                 <th>RFQ ID</th>
                                 <th>Supplier</th>
-                                <th>Supplier Email</th>
                                 <th>Date Received</th>
                                 <th>Quoted Items</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -87,13 +85,12 @@
                                     <td>@q.Id</td>
                                     <td>@q.RequestQuotation?.RFQId</td>
                                     <td>@q.Supplier?.Name</td>
-                                    <td>@q.Supplier?.User?.Email</td>
                                     <td>@q.DateReceived.ToString("dd MMM yyyy")</td>
                                     <td>
                                         @if (q.Items != null && q.Items.Any())
                                         {
                                             <table class="table table-sm table-bordered mb-0">
-                                                <thead class="table-light">
+                                                <thead>
                                                     <tr>
                                                         <th>Fridge Model</th>
                                                         <th>Quoted Quantity</th>
@@ -107,8 +104,9 @@
                                                         <tr>
                                                             <td>@item.FridgeModel</td>
                                                             <td>@item.QuotedQuantity</td>
-                                                            <td>@String.Format("{0:C}", item.QuotedUnitPrice)</td>
-                                                            <td>@String.Format("{0:C}", item.QuotedQuantity * item.QuotedUnitPrice)</td>
+                                                            <td>@item.QuotedUnitPrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA"))</td>
+                                                            <td>@((item.QuotedQuantity * item.QuotedUnitPrice).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA")))</td>
+
 
                                                         </tr>
                                                     }
@@ -120,16 +118,7 @@
                                             <span class="text-muted">No items quoted.</span>
                                         }
                                     </td>
-                                    <td>
-                                        <a asp-controller="PurchasingManager" asp-action="Edit"
-                                           class="btn btn-primary btn-sm me-1">
-                                            <i class="bi bi-pencil-square"></i> Accept
-                                        </a>
-                                        <a asp-controller="PurchasingManager" asp-action="Edit"
-                                           class="btn btn-danger btn-sm me-1">
-                                            <i class="bi bi-pencil-square"></i> Reject
-                                        </a>
-                                    </td>
+
                                 </tr>
                             }
                         </tbody>
@@ -141,5 +130,3 @@
                 <p class="text-muted text-center">No quotations have been submitted yet.</p>
             }
         </div>
-    </div>
-</div>

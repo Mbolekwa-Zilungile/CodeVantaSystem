@@ -1,8 +1,10 @@
-﻿using Code_Vanta_Systems.Data;
+﻿using Code_Vanta_Systems.Constants;
+using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Services;
 using Code_Vanta_Systems.ViewModels;
+using Code_Vanta_Systems.ViewModels.PurchaseOrder;
 using Code_Vanta_Systems.ViewModels.SupplierQoutation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -655,18 +657,18 @@ namespace Code_Vanta_Systems.Controllers
         {
             var purchaseRequest = await context.PurchaseRequests
                 .Include(r => r.RequestedItems)
-                    .ThenInclude(ri => ri.Fridge)  // Load the Fridge entity for each requested item
+                    .ThenInclude(ri => ri.Fridge)
                 .Include(r => r.RequestedBy)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (purchaseRequest == null)
                 return NotFound();
 
-           
             var suppliers = await context.Suppliers
                 .Include(s => s.User)
                 .Where(s => s.IsActive)
                 .ToListAsync();
+
             var company = await context.Company.FirstOrDefaultAsync();
 
             var viewModel = new RQFViewModel
@@ -674,31 +676,28 @@ namespace Code_Vanta_Systems.Controllers
                 PurchaseRequestId = purchaseRequest.Id,
                 PurchaseRequestNotes = purchaseRequest.Notes,
                 RequestedDate = DateTime.Now,
-                ExpectedDate = purchaseRequest.ExpectedDate,
+                ExpectedDate = purchaseRequest.ExpectedDate, // read-only
                 Status = purchaseRequest.Status,
                 Priority = purchaseRequest.Priority,
                 Suppliers = suppliers,
                 SelectedSupplierIds = new List<int>(),
                 Company = company,
-
                 PurchaseRequestItems = purchaseRequest.RequestedItems.Select(item => new PurchaseRequestItemViewModel
                 {
                     FridgeId = item.FridgeId,
                     Quantity = item.Quantity,
-                    FridgeModel = item.Fridge?.Model ?? "Unknown"  // <-- Assign fridge model here safely
+                    FridgeModel = item.Fridge?.Model ?? "Unknown"
                 }).ToList()
             };
 
             return View(viewModel);
         }
 
-
         // POST: Handle RFQ submission
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateRFQ(RQFViewModel model)
         {
-            // Validate supplier selection
             if (model.SelectedSupplierIds == null || !model.SelectedSupplierIds.Any())
             {
                 ModelState.AddModelError(nameof(model.SelectedSupplierIds), "Please select at least one supplier.");
@@ -706,26 +705,23 @@ namespace Code_Vanta_Systems.Controllers
 
             if (!ModelState.IsValid)
             {
-                // Reload suppliers list
+                // Reload suppliers for form
                 model.Suppliers = await context.Suppliers
                     .Include(s => s.User)
                     .Where(s => s.IsActive)
                     .ToListAsync();
 
-                // Reload fridge dropdown items
+                // Reload fridge items
                 var allFridges = await context.Fridges
                     .Where(f => !f.IsDeleted)
                     .Select(f => new SelectListItem
                     {
                         Value = f.Id.ToString(),
                         Text = $"{f.Model} ({f.StockQuantity} in stock)"
-                    })
-                    .ToListAsync();
+                    }).ToListAsync();
 
                 foreach (var item in model.PurchaseRequestItems)
-                {
                     item.AvailableItems = allFridges;
-                }
 
                 return View(model);
             }
@@ -733,7 +729,7 @@ namespace Code_Vanta_Systems.Controllers
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var purchaseRequest = await context.PurchaseRequests
-       .FirstOrDefaultAsync(r => r.Id == model.PurchaseRequestId);
+                .FirstOrDefaultAsync(r => r.Id == model.PurchaseRequestId);
 
             if (purchaseRequest != null)
             {
@@ -741,8 +737,7 @@ namespace Code_Vanta_Systems.Controllers
                 context.PurchaseRequests.Update(purchaseRequest);
             }
 
-
-            // Get the latest RFQ number once
+            // Generate next RFQ number
             string lastRFQId = await context.RequestQuotations
                 .OrderByDescending(r => r.RequestQuotationId)
                 .Select(r => r.RFQId)
@@ -751,24 +746,22 @@ namespace Code_Vanta_Systems.Controllers
             int nextNumber = 1;
             if (!string.IsNullOrEmpty(lastRFQId))
             {
-                var parts = lastRFQId.Split('-'); // e.g., "RFQ-2025-004"
+                var parts = lastRFQId.Split('-'); // e.g., RFQ-2025-004
                 if (parts.Length == 3 && int.TryParse(parts[2], out int lastNum))
-                {
                     nextNumber = lastNum + 1;
-                }
             }
 
-            // Loop through suppliers and create RFQs + notifications
             foreach (var supplierId in model.SelectedSupplierIds)
             {
                 string newRFQId = $"RFQ-{DateTime.Now.Year}-{nextNumber:000}";
                 nextNumber++;
 
-                // Create RFQ
+                // Create RFQ - ExpectedDate is always from PurchaseRequest
                 var requestQuotation = new RequestQuotation
                 {
                     RFQId = newRFQId,
                     RequestDate = DateTime.Now,
+                    ExpectedDate = purchaseRequest?.ExpectedDate,
                     RequestedByUserId = currentUserId,
                     SupplierId = supplierId,
                     PurchaseRequestId = model.PurchaseRequestId,
@@ -777,20 +770,20 @@ namespace Code_Vanta_Systems.Controllers
 
                 context.RequestQuotations.Add(requestQuotation);
 
-                // Create Notification for Supplier
+                // Notify supplier
                 var supplier = await context.Suppliers
                     .Include(s => s.User)
                     .FirstOrDefaultAsync(s => s.Id == supplierId);
 
-                if (supplier != null && supplier.User != null)
+                if (supplier?.User != null)
                 {
                     var notification = new Notification
                     {
-                        RecipientUserId = supplier.User.Id,  // Use correct property
+                        RecipientUserId = supplier.User.Id,
                         Title = "New RFQ Created",
                         Message = $"A new RFQ ({newRFQId}) has been created for you. Please respond.",
                         TargetController = "Supplier",
-                        TargetAction = "RFQ" // Replace with actual action for viewing RFQ
+                        TargetAction = "RFQ"
                     };
                     context.Notifications.Add(notification);
 
@@ -798,15 +791,14 @@ namespace Code_Vanta_Systems.Controllers
                     {
                         string subject = $"New RFQ Created: {newRFQId}";
                         string body = $@"
-                    <p>Hello {supplier.Name},</p>
-                    <p>A new RFQ (<strong>{newRFQId}</strong>) has been created for you. Please log in to your dashboard to view and respond.</p>
-                    <p>Best regards,<br/>CodeVanta Team</p>";
+                        <p>Hello {supplier.Name},</p>
+                        <p>A new RFQ (<strong>{newRFQId}</strong>) has been created for you. Please log in to your dashboard to view and respond.</p>
+                        <p>Best regards,<br/>CodeVanta Team</p>";
 
                         await emailService.SendEmailAsync(supplier.User.Email, subject, body);
                     }
                     catch (Exception ex)
                     {
-                        // Log the email failure
                         Console.WriteLine($"Failed to send email to {supplier.User.Email}: {ex.Message}");
                     }
                 }
@@ -816,7 +808,6 @@ namespace Code_Vanta_Systems.Controllers
 
             return RedirectToAction("RFQ", "PurchasingManager", new { id = model.PurchaseRequestId });
         }
-
         public async Task<IActionResult> RFQDetails(int id)
         {
             // Fetch the RFQ with related data
@@ -839,6 +830,7 @@ namespace Code_Vanta_Systems.Controllers
             {
                 RFQId = rfq.RFQId,
                 RequestDate = rfq.RequestDate,
+                ExpectedDate = rfq.PurchaseRequest?.ExpectedDate,
                 Notes = rfq.Notes,
                 // Supplier Info
                 SupplierName = rfq.Supplier?.Name ?? rfq.Supplier?.ContactName,
@@ -879,11 +871,13 @@ namespace Code_Vanta_Systems.Controllers
         {
             var quotations = await context.Quotations
          .Where(q => q.Status == "Approved")
-         .Include(q => q.RequestQuotation)
-         .Include(q => q.Supplier)
-             .ThenInclude(s => s.User)
-         .OrderByDescending(q => q.DateReceived)
-         .ToListAsync();
+          .Include(q => q.RequestQuotation)
+             .Include(q => q.Supplier)
+                 .ThenInclude(s => s.User)
+             .Include(q => q.Items) // <-- Include the line items
+                 .ThenInclude(i => i.PurchaseRequestItem) // optional, if you want requested quantity
+             .OrderByDescending(q => q.DateReceived)
+             .ToListAsync();
 
             return View(quotations);
         }
@@ -891,11 +885,13 @@ namespace Code_Vanta_Systems.Controllers
         {
             var quotations = await context.Quotations
          .Where(q => q.Status == "Rejected")
-         .Include(q => q.RequestQuotation)
-         .Include(q => q.Supplier)
-             .ThenInclude(s => s.User)
-         .OrderByDescending(q => q.DateReceived)
-         .ToListAsync();
+          .Include(q => q.RequestQuotation)
+             .Include(q => q.Supplier)
+                 .ThenInclude(s => s.User)
+             .Include(q => q.Items) // <-- Include the line items
+                 .ThenInclude(i => i.PurchaseRequestItem) // optional, if you want requested quantity
+             .OrderByDescending(q => q.DateReceived)
+             .ToListAsync();
 
             return View(quotations);
         }
@@ -1120,6 +1116,152 @@ namespace Code_Vanta_Systems.Controllers
 
             TempData["Success"] = $"Quotation #{quotation.Id} rejected.";
             return RedirectToAction("QuotationsByRequest", new { purchaseRequestId = quotation.PurchaseRequestId });
+        }
+        #endregion
+
+        #region Purchase order
+
+
+
+        [HttpGet]
+        public async Task<IActionResult> CreatePurchaseOrder(int quotationId)
+        {
+            var quotation = await context.Quotations
+                .Include(q => q.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(q => q.PurchaseRequest)
+                .Include(q => q.Items)
+                    .ThenInclude(i => i.Fridge) // load fridge for each item
+                .FirstOrDefaultAsync(q => q.Id == quotationId && q.Status == "Approved");
+
+            if (quotation == null)
+                return NotFound("Approved quotation not found.");
+
+            if (quotation.Supplier == null)
+                return BadRequest("The supplier for this quotation does not exist in the system.");
+
+            var company = await context.Company.FirstOrDefaultAsync();
+            var managerUser = await userManager.GetUserAsync(User);
+            var roles = await userManager.GetRolesAsync(managerUser);
+
+            var model = new PurchaseOrderCreateViewModel
+            {
+                QuotationId = quotation.Id,
+                SupplierId = quotation.SupplierId,
+                SupplierName = quotation.Supplier.Name,
+                SupplierEmail = quotation.Supplier.User?.Email,
+                SupplierPhone = quotation.Supplier.Phone,
+                SupplierAddress = quotation.Supplier.Address,
+
+                CompanyName = company?.Name,
+                CompanyEmail = company?.Email,
+                CompanyPhone = company?.Phone,
+                CompanyAddress = company?.Address,
+
+                ManagerName = managerUser?.FullName ?? managerUser?.UserName,
+                ManagerEmail = managerUser?.Email,
+                ManagerRole = roles.FirstOrDefault(),
+                OrderDate = DateTime.Now,
+
+                // Use expected delivery date from purchase request
+                ExpectedDeliveryDate = quotation.PurchaseRequest?.ExpectedDate,
+
+                Items = quotation.Items.Select(i => new PurchaseOrderItemViewModel
+                {
+                    InventoryItemId = i.FridgeId, // now maps to Fridge
+                    ItemName = i.Fridge?.Model ?? "Unknown Model",
+                    Quantity = i.QuotedQuantity,
+                    UnitPrice = i.QuotedUnitPrice,
+                    Subtotal = i.QuotedQuantity * i.QuotedUnitPrice
+                }).ToList()
+            };
+
+            return View(model);
+        }
+
+        // POST: Create Purchase Order
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreatePurchaseOrder(PurchaseOrderCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var managerUser = await userManager.GetUserAsync(User);
+
+            // Ensure supplier exists
+            var supplier = await context.Suppliers
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.Id == model.SupplierId);
+
+            if (supplier == null)
+            {
+                ModelState.AddModelError("", "The supplier for this quotation no longer exists.");
+                return View(model);
+            }
+
+            var purchaseOrder = new PurchaseOrder
+            {
+                SupplierId = model.SupplierId,
+                OrderedByUserId = managerUser.Id,
+                DeliveryAddress = model.DeliveryAddress,
+                OrderDate = model.OrderDate,
+                Status = OrderStatus.Pending,
+
+                // Terms
+                DeliveryTerms = "FOB Johannesburg",              // fixed
+                PaymentTerms = model.PaymentTerms               // entered manually
+            };
+
+            // Add items using Fridge table
+            foreach (var item in model.Items)
+            {
+                var fridge = await context.Fridges.FindAsync(item.InventoryItemId);
+                if (fridge == null)
+                {
+                    ModelState.AddModelError("", $"Fridge '{item.ItemName}' does not exist.");
+                    return View(model);
+                }
+
+                purchaseOrder.Items.Add(new PurchaseOrderItem
+                {
+                    FridgeId = fridge.Id,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice
+                });
+            }
+
+            context.PurchaseOrders.Add(purchaseOrder);
+            await context.SaveChangesAsync();
+
+            // Notify Supplier
+            if (supplier.User != null)
+            {
+                var notification = new Notification
+                {
+                    RecipientUserId = supplier.User.Id,
+                    Title = "New Purchase Order",
+                    Message = $"A new Purchase Order #{purchaseOrder.PurchaseOrderId} has been created for you.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
+                    TargetController = "Supplier",
+                    TargetAction = "ViewPurchaseOrders"
+                };
+                context.Notifications.Add(notification);
+
+                if (!string.IsNullOrEmpty(supplier.User.Email))
+                {
+                    await emailService.SendEmailAsync(
+                        supplier.User.Email,
+                        $"New Purchase Order #{purchaseOrder.PurchaseOrderId}",
+                        $"Dear {supplier.Name},<br/>A new purchase order has been created based on your approved quotation. Please prepare delivery.");
+                }
+
+                await context.SaveChangesAsync();
+            }
+
+            TempData["Success"] = $"Purchase Order #{purchaseOrder.PurchaseOrderId} created successfully!";
+            return RedirectToAction("PurchaseOrders");
         }
         #endregion
     }

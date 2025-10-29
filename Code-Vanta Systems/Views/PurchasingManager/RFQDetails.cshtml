@@ -30,6 +30,12 @@
     <div class="card-body">
         <p><strong>RFQ #:</strong> @Model.RFQId</p>
         <p><strong>Request Date:</strong> @Model.RequestDate.ToString("dd MMM yyyy")</p>
+        <p>
+            <strong>Expected Delivery Date:</strong>
+            @(Model.ExpectedDate.HasValue
+                ? Model.ExpectedDate.Value.ToString("dd MMM yyyy")
+                : "Not specified")
+        </p>
         <p><strong>Requested By:</strong> @Model.IssuedByName</p>
         <p><strong>Notes:</strong> @Model.Notes</p>
     </div>

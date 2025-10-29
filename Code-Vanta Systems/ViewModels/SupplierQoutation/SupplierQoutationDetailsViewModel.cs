@@ -14,7 +14,7 @@
         public string CompanyEmail { get; set; }
         public string CompanyPhone { get; set; }
         public string CompanyAddress { get; set; }
-
+        public DateTime? ExpectedDate { get; set; }
         // Items
         public List<SupplierQuotationItemViewModel> Items { get; set; } = new();
     }

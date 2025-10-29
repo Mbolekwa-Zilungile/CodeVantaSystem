@@ -11,7 +11,8 @@ namespace Code_Vanta_Systems.Models
 
         [Required]
         public int QuotationId { get; set; }
-
+        [ForeignKey("FridgeId")]
+        public virtual Fridge Fridge { get; set; } // ✅ ADD THIS
         public int FridgeId { get; set; }
         public string FridgeModel { get; set; }
         public int Quantity { get; set; }

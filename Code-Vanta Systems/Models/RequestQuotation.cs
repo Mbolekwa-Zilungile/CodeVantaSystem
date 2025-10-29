@@ -25,6 +25,8 @@ namespace Code_Vanta_Systems.Models
         public int SupplierId { get; set; }
         public Supplier Supplier { get; set; }
 
+        public DateTime? ExpectedDate { get; set; }
+
         [MaxLength(500)]
         public string Notes { get; set; }
 

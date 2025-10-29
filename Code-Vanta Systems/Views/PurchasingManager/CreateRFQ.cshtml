@@ -33,29 +33,24 @@
         </div>
         <div class="card-body">
             <div class="row mb-3">
-                <div class="row mb-3">
-                    <!-- Requested Date -->
-                    <div class="col-md-3">
-                        <p><strong>Requested Date:</strong> @Model.RequestedDate.ToString("dd MMM yyyy")</p>
-                    </div>
+                <!-- Requested & Expected Dates stacked -->
+                <div class="col-md-3">
+                    <p><strong>Requested Date:</strong> @Model.RequestedDate?.ToString("dd MMM yyyy")</p>
+                    <p><strong>Expected Date:</strong> @Model.ExpectedDate?.ToString("dd MMM yyyy")</p>
+                </div>
 
-                    <div class="col-md-3">
-                        <label asp-for="ExpectedDate" class="form-label fw-bold">Expected Date</label>
-                        <input asp-for="ExpectedDate" class="form-control" type="date" min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
-                        <span asp-validation-for="ExpectedDate" class="text-danger"></span>
-                    </div>
-
-                    <div class="col-md-3">
-                        <label asp-for="Priority" class="form-label fw-bold">Priority</label>
-                        <select asp-for="Priority" class="form-select">
-                            <option value="">-- Select Priority --</option> <!-- placeholder -->
-                            <option value="Low">Low</option>
-                            <option value="Medium">Medium</option>
-                            <option value="High">High</option>
-                            <option value="Urgent">Urgent</option>
-                        </select>
-                        <span asp-validation-for="Priority" class="text-danger"></span>
-                    </div>
+                <!-- Priority next to the dates -->
+                <div class="col-md-3">
+                    <label asp-for="Priority" class="form-label fw-bold">Priority</label>
+                    <select asp-for="Priority" class="form-select">
+                        <option value="">-- Select Priority --</option>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Urgent">Urgent</option>
+                    </select>
+                    <span asp-validation-for="Priority" class="text-danger"></span>
+                </div>
             </div>
         </div>
     </div>

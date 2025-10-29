@@ -49,6 +49,7 @@
                 <div class="card-body">
                     <p><strong>RFQ No:</strong> @Model.RFQCode</p>
                     <p><strong>Request Date:</strong> @Model.RequestDate.ToString("dd MMM yyyy")</p>
+                    <p><strong>Expected Delivery Date:</strong> @Model.ExpectedDate?.ToString("dd MMM yyyy")</p>
                     <p><strong>Requested By:</strong> @Model.IssuedByName</p>
                     <div class="card mb-3">
                         <div class="card-header bg-info text-white">
@@ -71,8 +72,8 @@
                 <th>Requested Quantity</th>
                 <th>Quoted Quantity</th>
                 <th>Quoted Unit Price</th>
-                <th>Warranty</th>
-                <th>Expected Delivery Date</th>
+                <th>Warranty (months)</th>
+                <th>Supplier Expected Delivery Date</th>
             </tr>
         </thead>
         <tbody>
@@ -102,7 +103,7 @@
                         <input asp-for="Items[i].ExpectedDeliveryDate"
                                class="form-control"
                                type="date"
-                               min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                               min="@DateTime.Now.ToString("dd MMM yyyy")" />
                         <span asp-validation-for="Items[i].ExpectedDeliveryDate" class="text-danger"></span>
                     </td>
 

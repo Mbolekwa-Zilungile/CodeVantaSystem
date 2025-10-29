@@ -872,12 +872,30 @@ namespace Code_Vanta_Systems.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PurchaseOrderId"));
 
+                    b.Property<string>("DeliveryAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DeliveryTerms")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ExpectedDeliveryDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("OrderedByUserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PaymentTerms")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("QuotationId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -889,6 +907,8 @@ namespace Code_Vanta_Systems.Migrations
                     b.HasKey("PurchaseOrderId");
 
                     b.HasIndex("OrderedByUserId");
+
+                    b.HasIndex("QuotationId");
 
                     b.HasIndex("SupplierId");
 
@@ -1222,6 +1242,9 @@ namespace Code_Vanta_Systems.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RequestQuotationId"));
+
+                    b.Property<DateTime?>("ExpectedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Notes")
                         .IsRequired()
@@ -1903,6 +1926,10 @@ namespace Code_Vanta_Systems.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Code_Vanta_Systems.Models.Quotation", "Quotation")
+                        .WithMany()
+                        .HasForeignKey("QuotationId");
+
                     b.HasOne("Code_Vanta_Systems.Models.Supplier", "Supplier")
                         .WithMany("PurchaseOrders")
                         .HasForeignKey("SupplierId")
@@ -1910,6 +1937,8 @@ namespace Code_Vanta_Systems.Migrations
                         .IsRequired();
 
                     b.Navigation("OrderedBy");
+
+                    b.Navigation("Quotation");
 
                     b.Navigation("Supplier");
                 });

@@ -13,8 +13,8 @@ namespace Code_Vanta_Systems.Models
         public PurchaseOrder PurchaseOrder { get; set; }
 
         [Required]
-        public int InventoryItemId { get; set; }
-        public InventoryItem InventoryItem { get; set; }
+        public int FridgeId { get; set; }
+        public virtual Fridge Fridge { get; set; }
 
         [Required]
         [Range(1, int.MaxValue)]

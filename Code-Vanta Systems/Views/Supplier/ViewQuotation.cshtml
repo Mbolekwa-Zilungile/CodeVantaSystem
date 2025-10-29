@@ -28,6 +28,7 @@
     <div class="card-body">
         <p><strong>RFQ #:</strong> @Model.RFQCode</p>
         <p><strong>Request Date:</strong> @Model.RequestDate.ToString("dd MMM yyyy")</p>
+        <p><strong>Expected Delivery Date:</strong> @Model.ExpectedDate?.ToString("dd MMM yyyy")</p>
         <p><strong>Requested By:</strong> @Model.IssuedByName</p>
         <p><strong>Notes:</strong> @Model.Notes</p>
     </div>

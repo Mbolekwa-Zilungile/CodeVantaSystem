@@ -130,13 +130,11 @@
                                         }
                                     </td>
                                     <td>
-                                        <a asp-controller="PurchasingManager" asp-action="Edit"
+                                        <a asp-controller="PurchasingManager"
+                                           asp-action="CreatePurchaseOrder"
+                                           asp-route-quotationId="@q.Id"
                                            class="btn btn-primary btn-sm me-1">
-                                            <i class="bi bi-pencil-square"></i> Accept
-                                        </a>
-                                        <a asp-controller="PurchasingManager" asp-action="Edit"
-                                           class="btn btn-danger btn-sm me-1">
-                                            <i class="bi bi-pencil-square"></i> Reject
+                                            <i class="bi bi-pencil-square"></i> Create A PO
                                         </a>
                                     </td>
                                 </tr>

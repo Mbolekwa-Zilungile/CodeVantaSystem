@@ -113,7 +113,7 @@
                             </ul>
                         </td>
                         <td>@request.RequestedBy?.UserName</td>
-                        <td>@request.RequestDate.ToShortDateString()</td>
+                        <td>@request.RequestDate.ToString("dd MMM yyyy")</td>
                         <td>@request.Status</td>
                         <td>
                             @{
@@ -128,7 +128,7 @@
                             }
                             <span class="@priorityClass">@request.Priority</span>
                         </td>
-                        <td>@(request.ExpectedDate.HasValue ? request.ExpectedDate.Value.ToShortDateString() : "N/A")</td>
+                        <td>@(request.ExpectedDate.HasValue ? request.ExpectedDate.Value.ToString("dd MMM yyyy") : "N/A")</td>
                         <td>@request.Notes</td>
                         <td class="text-center">
                             <a asp-controller="PurchasingManager"
