@@ -1,0 +1,52 @@
+﻿@model IEnumerable<Code_Vanta_Systems.Models.RentalRequest>
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+
+@{
+    ViewData["Title"] = "Pay Later";
+    Layout = "~/Views/Shared/_CustomerLayout.cshtml";
+}
+
+<h2 class="mb-4 text-info"><i class="bi bi-credit-card me-2"></i> Pay Later</h2>
+
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Fridge</th>
+            <th>Quantity</th>
+            <th>Price/Month</th>
+            <th>Paid?</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model)
+        {
+            <tr id="rental-@r.Id">
+                <td>@r.Fridge?.Model</td>
+                <td>@r.Quantity</td>
+                <td>R @r.Fridge?.RentalPricePerMonth</td>
+                <td>
+                    <span class="badge @(r.IsPaid ? "bg-success" : "bg-warning text-dark")">
+                        @(r.IsPaid ? "Yes" : "No")
+                    </span>
+                </td>
+                <td>@r.Status</td>
+                <td>
+                    @if (!r.IsPaid)
+                    {
+
+                        <form method="get" asp-action="Payment" asp-controller="Customer" style="display:inline;">
+                            <input type="hidden" name="rentalIds" value="@r.Id" />
+                            <button type="submit" class="btn btn-success btn-sm">Pay Now</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Paid</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

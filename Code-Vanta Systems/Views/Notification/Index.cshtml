@@ -35,6 +35,10 @@
     {
         Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
     }
+    else if (roles.Contains("Customer Liaison"))
+    {
+        Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
+    }
 }
 
 <div class="container mt-5">

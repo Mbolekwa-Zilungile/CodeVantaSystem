@@ -103,23 +103,13 @@
             <i class="bi bi-speedometer2 me-2"></i>Dashboard
         </a>
 
-        <a class="sidebar-link @(currentController == "InventoryLiaison" && (currentAction == "Suppliers" || currentAction == "Create" || currentAction == "Edit" || currentAction == "Delete") ? "active" : "")"
-           asp-controller="InventoryLiaison" asp-action="Suppliers">
-            <i class="bi bi-person-lines-fill me-2"></i>Suppliers
-        </a>
-
         <a class="sidebar-link @(currentController == "InventoryLiaison" && currentAction == "PurchaseRequests" ? "active" : "")"
            asp-controller="InventoryLiaison" asp-action="PurchaseRequests">
             <i class="bi bi-receipt me-2"></i>Purchase requests
         </a>
 
-        <a class="sidebar-link @(currentController == "Admin" && (currentAction == "ManageRoles" || currentAction == "EditUserRoles") ? "active" : "")"
-           asp-controller="Admin" asp-action="ManageRoles">
-            <i class="bi bi-send me-2"></i>RFQs
-        </a>
-
         <a class="sidebar-link @(currentController == "Reports" ? "active" : "")"
-           asp-controller="Reports" asp-action="Index">
+           asp-controller="InventoryAnalytics" asp-action="InventoryOverview">
             <i class="bi bi-graph-up me-2"></i>Reports
         </a>
 

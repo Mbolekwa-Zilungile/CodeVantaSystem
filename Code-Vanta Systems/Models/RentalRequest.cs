@@ -21,6 +21,8 @@ namespace Code_Vanta_Systems.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+
+        public bool IsPaid { get; set; } = false;
     }
 
 
