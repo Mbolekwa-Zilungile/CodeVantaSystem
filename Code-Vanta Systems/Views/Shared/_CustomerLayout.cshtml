@@ -120,7 +120,7 @@
     <!-- Top Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" asp-controller="Admin" asp-action="Index">
+            <a class="navbar-brand fw-bold" asp-controller="Customer" asp-action="MyProfile">
                 <i class="bi bi-gear-fill me-2"></i>Customer Portal
             </a>
 
@@ -170,12 +170,13 @@
         <span class="sidebar-toggle-btn d-none d-lg-block mb-3" id="sidebarToggle">
             <i class="bi bi-list"></i>
         </span>
-        <a asp-controller="Customer" asp-action="Index" class="active"><i class="bi bi-house-door-fill"></i><span>Home</span></a>
-        <a asp-controller="Customer" asp-action="Rentals"><i class="bi bi-box-seam"></i><span>Browse Fridges</span></a>
+        @* <a asp-controller="Customer" asp-action="Index" class="active"><i class="bi bi-house-door-fill"></i><span>Home</span></a> *@
+        <a asp-controller="Customer" asp-action="MyProfile" class="active"><i class="bi bi-person-circle"></i><span>My Profile</span></a>
+        <a asp-controller="Customer" asp-action="Index"><i class="bi bi-box-seam"></i><span>Browse Fridges</span></a>
         <a asp-controller="Customer" asp-action="MyRentalRequests"><i class="bi bi-card-list"></i><span>Rental Requests</span></a>
         <a asp-controller="Customer" asp-action="MyRentedFridges"><i class="bi bi-snow"></i><span>My Fridges</span></a>
-        <a asp-controller="Customer" asp-action="ServiceHistory"><i class="bi bi-clipboard-check"></i><span>Service History</span></a>
         <a asp-controller="Customer" asp-action="LoggedFault"><i class="bi bi-bug"></i><span>Logged Faults</span></a>
+        <a asp-controller="Customer" asp-action="ServiceHistory"><i class="bi bi-clipboard-check"></i><span>Service History</span></a>
     </div>
 
     <!-- Main content -->

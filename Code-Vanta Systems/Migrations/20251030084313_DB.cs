@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class NEW : Migration
+    public partial class DB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -312,6 +312,7 @@ namespace Code_Vanta_Systems.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    RequestNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     RequestDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RequestedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
@@ -645,7 +646,8 @@ namespace Code_Vanta_Systems.Migrations
                     DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RentalPricePerMonth = table.Column<decimal>(type: "decimal(10,1)", precision: 10, scale: 1, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    StockQuantity = table.Column<int>(type: "int", nullable: false)
+                    StockQuantity = table.Column<int>(type: "int", nullable: false),
+                    Condition = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -745,7 +747,8 @@ namespace Code_Vanta_Systems.Migrations
                     DateReceived = table.Column<DateTime>(type: "datetime2", nullable: false),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
                     PurchaseRequestId = table.Column<int>(type: "int", nullable: false),
-                    RequestQuotationId = table.Column<int>(type: "int", nullable: true)
+                    RequestQuotationId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -817,6 +820,8 @@ namespace Code_Vanta_Systems.Migrations
                     DateReported = table.Column<DateTime>(type: "datetime2", nullable: false),
                     FaultDescription = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     Severity = table.Column<int>(type: "int", nullable: false),
+                    RepairDescription = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    PartsUsed = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ResolutionDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -1057,7 +1062,8 @@ namespace Code_Vanta_Systems.Migrations
                     RequestedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     AllocationId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsPaid = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -1128,7 +1134,9 @@ namespace Code_Vanta_Systems.Migrations
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     PurchaseRequestItemId = table.Column<int>(type: "int", nullable: false),
                     QuotedUnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    QuotedQuantity = table.Column<int>(type: "int", nullable: false)
+                    QuotedQuantity = table.Column<int>(type: "int", nullable: false),
+                    WarrantyMonths = table.Column<int>(type: "int", nullable: false),
+                    ExpectedDeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {

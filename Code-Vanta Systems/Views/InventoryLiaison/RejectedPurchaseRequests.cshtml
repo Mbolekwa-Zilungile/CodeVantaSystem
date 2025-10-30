@@ -57,7 +57,7 @@
                 <div class="card-body">
                     <div class="text-xs fw-bold text-uppercase mb-2">Approved</div>
                     <div class="h4 mb-0 fw-bold">
-                        <i class="bi bi-cart3 me-2"></i> @ViewBag.ApprovedRequestsCount
+                        <i class="bi bi-cart3 me-2"></i>@ViewBag.ApprovedCount
                     </div>
                 </div>
             </div>
@@ -79,47 +79,47 @@
     </div>
 </div>
 
-   
-    @if (!Model.Any())
-    {
-        <div class="alert alert-info">You have not submitted any purchase requests yet.</div>
-    }
-    else
-    {
-        <table class="table table-striped">
-            <thead class="table-dark">
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">You have not submitted any purchase requests yet.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Expected Delivery</th>
+                <th>Items</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var request in Model)
+            {
                 <tr>
-                    <th>ID</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Priority</th>
-                    <th>Expected Delivery</th>
-                    <th>Items</th>
-                     <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var request in Model)
-                {
-                    <tr>
-                        <td>@request.Id</td>
-                        <td>@request.RequestDate.ToShortDateString()</td>
-                        <td>@request.Status</td>
-                        <td>@request.Priority</td>
-                        <td>@request.ExpectedDate?.ToShortDateString()</td>
-                        <td>@request.RequestedItems.Count()</td>
-                        <td class="text-center">
+                    <td>@request.Id</td>
+                    <td>@request.RequestDate.ToShortDateString()</td>
+                    <td>@request.Status</td>
+                    <td>@request.Priority</td>
+                    <td>@request.ExpectedDate?.ToShortDateString()</td>
+                    <td>@request.RequestedItems.Count()</td>
+                    <td class="text-center">
                         <a asp-controller="InventoryLiaison"
-                               asp-action="Details"
-                               asp-route-id="@request.Id"
-                               class="btn btn-outline-primary btn-sm me-1">
-                                <i class="bi bi-eye"></i> View
-                            </a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        
-        </table>
-    }
+                           asp-action="Details"
+                           asp-route-id="@request.Id"
+                           class="btn btn-outline-primary btn-sm me-1">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+
+    </table>
+}
 

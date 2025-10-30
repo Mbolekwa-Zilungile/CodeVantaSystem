@@ -1,62 +1,195 @@
 ﻿@model IEnumerable<Code_Vanta_Systems.ViewModels.FridgeTrackingViewModel>
 
 @{
-    Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
     ViewData["Title"] = "Fridge Tracking";
+    Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
 }
 
-<div class="container mt-5">
-    <h2 class="mb-4 text-warning">
-        <i class="bi bi-map me-2"></i> Fridge Tracking
-    </h2>
+<!-- 🧭 Fridge Tracking -->
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-warning">
+            <i class="bi bi-map me-2"></i> Fridge Tracking
+        </h2>
+    </div>
 
-    @if (!Model.Any())
+    @if (TempData["InfoMessage"] != null)
     {
-        <div class="alert alert-info">
-            No approved rentals or allocated fridges found.
-        </div>
+        <div class="alert alert-info">@TempData["InfoMessage"]</div>
     }
-    else
+
+    @if (TempData["ErrorMessage"] != null)
     {
-        <div class="table-responsive">
-            <table class="table table-striped table-hover shadow-sm align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Fridge Model</th>
-                        <th>Serial Number</th>
-                        <th>Customer</th>
-                        <th>Physical Address</th>
-                        <th>Quantity</th>
-                        <th>Status</th>
-                        <th>Allocated By</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var fridge in Model)
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="table-responsive shadow-sm rounded-3">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Fridge Model</th>
+                    <th>Customer</th>
+                    <th>Address (Click to View)</th>
+                    <th>Quantity</th>
+                    <th>Allocated By</th>
+                    <th>Allocation Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var item in Model)
                     {
                         <tr>
-                            <td>@fridge.FridgeModel</td>
-                            <td>@fridge.SerialNumber</td>
-                            <td>@fridge.CustomerName</td>
-                            <td>@fridge.PhysicalAddress</td>
-                            <td>@fridge.Quantity</td>
+                            <td class="fw-bold text-primary">@item.FridgeModel</td>
+                            <td>@item.CustomerName</td>
+
+                            <!-- Clickable Address -->
                             <td>
-                                @if (fridge.Status == "Allocated")
-                                {
-                                    <span class="badge bg-success">@fridge.Status</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-warning text-dark">@fridge.Status</span>
-                                }
+                                <a href="#" class="text-decoration-none text-info fw-semibold address-link"
+                                   data-address="@item.CustomerAddress"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#mapModal">
+                                    <i class="bi bi-geo-alt-fill me-1"></i>@item.CustomerAddress
+                                </a>
                             </td>
-                            <td>@fridge.AllocatedBy</td>
-                            <td>@(fridge.Date?.ToLocalTime().ToString("g") ?? "N/A")</td>
+
+                            <td>@item.Quantity</td>
+                            <td>@item.AllocatedBy</td>
+                            <td>@item.AllocationDate.ToLocalTime().ToString("g")</td>
                         </tr>
                     }
-                </tbody>
-            </table>
-        </div>
-    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-info-circle me-2"></i>No fridge allocations found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<!-- 🌍 OpenStreetMap Modal -->
+<div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="mapModalLabel">
+                    <i class="bi bi-geo-alt-fill me-2"></i>Customer Location
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="height:500px;">
+                <div id="map" style="width: 100%; height: 100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- 🗺️ Leaflet.js (OpenStreetMap) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script>
+        let map;
+        let marker;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const addressLinks = document.querySelectorAll('.address-link');
+            const mapModal = document.getElementById('mapModal');
+            const mapLabel = document.getElementById('mapModalLabel');
+
+            addressLinks.forEach(link => {
+                link.addEventListener('click', async function (e) {
+                    e.preventDefault();
+                    const address = this.dataset.address.trim();
+
+                    // Update modal title
+                    mapLabel.innerHTML = `<i class="bi bi-geo-alt-fill me-2"></i> Location: ${address}`;
+
+                    // Geocode the address (convert text → coordinates)
+                    const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+                    const response = await fetch(geoUrl);
+                    const data = await response.json();
+
+                    // Fallback if location not found
+                    if (!data || data.length === 0) {
+                        alert("Couldn't find this address on the map.");
+                        return;
+                    }
+
+                    const lat = parseFloat(data[0].lat);
+                    const lon = parseFloat(data[0].lon);
+
+                    // Initialize map if not already done
+                    setTimeout(() => {
+                        if (!map) {
+                            map = L.map('map').setView([lat, lon], 14);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                attribution: '&copy; OpenStreetMap contributors'
+                            }).addTo(map);
+                        } else {
+                            map.setView([lat, lon], 14);
+                        }
+
+                        // Remove old marker if exists
+                        if (marker) marker.remove();
+
+                        // Add new marker
+                        marker = L.marker([lat, lon]).addTo(map)
+                            .bindPopup(`<b>${address}</b>`)
+                            .openPopup();
+                    }, 300);
+                });
+            });
+
+            // Clear map when modal closes
+            mapModal.addEventListener('hidden.bs.modal', function () {
+                if (marker) marker.remove();
+            });
+        });
+    </script>
+}
+
+<style>
+    .table thead th {
+        background-color: #212529 !important;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .table tbody tr:hover {
+        background-color: rgba(255, 215, 0, 0.1);
+        transition: 0.3s ease;
+    }
+
+    .address-link:hover {
+        text-decoration: underline;
+        color: #0d6efd !important;
+    }
+
+    .table td, .table th {
+        vertical-align: middle !important;
+    }
+
+    .container {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>

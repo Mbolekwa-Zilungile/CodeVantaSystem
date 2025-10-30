@@ -1,0 +1,174 @@
+﻿@model Code_Vanta_Systems.ViewModels.ProfileViewModel
+
+@{
+    Layout = "~/Views/Shared/_CustomerLayout.cshtml";
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="container mt-4">
+
+
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h2 class="text-primary">
+                <i class="bi bi-person-circle me-2"></i>
+                Welcome, @(Model?.ContactName ?? "Customer")!
+            </h2>
+            <p class="text-muted">Here is your business profile and account overview.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card shadow-sm h-100 border-primary hover-shadow">
+                <div class="card-header bg-primary text-white d-flex align-items-center">
+                    <i class="bi bi-building me-2 fs-4"></i>
+                    <span class="fs-5">Business Profile</span>
+                </div>
+
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5 text-muted">Business Name</dt>
+                        <dd class="col-sm-7 fw-bold">@Model.BusinessName</dd>
+
+                        <dt class="col-sm-5 text-muted">Business Type</dt>
+                        <dd class="col-sm-7 fw-bold">@Model.BusinessType</dd>
+
+                        <dt class="col-sm-5 text-muted">Contact Name</dt>
+                        <dd class="col-sm-7 fw-bold">@Model.ContactName</dd>
+
+                        <dt class="col-sm-5 text-muted">Phone</dt>
+                        <dd class="col-sm-7 fw-bold">@Model.Phone</dd>
+
+                        <dt class="col-sm-5 text-muted">Email</dt>
+                        <dd class="col-sm-7 fw-bold">@Model.Email</dd>
+
+                        <dt class="col-sm-5 text-muted">Address</dt>
+                        <dd class="col-sm-7 fw-bold">@Model.PhysicalAddress</dd>
+
+                        <dt class="col-sm-5 text-muted">Location/Depot</dt>
+                        <dd class="col-sm-7 fw-bold">@Model.Location?.Description</dd>
+                    </dl>
+                </div>
+
+                <div class="card-footer d-flex justify-content-between flex-wrap gap-2">
+
+                    <a asp-controller="Customer" asp-action="EditProfile" class="btn vivid-btn-edit">
+                        <i class="bi bi-pencil-square me-1"></i> Edit Profile
+                    </a>
+
+                    <a asp-controller="Customer" asp-action="Index" class="btn vivid-btn-rent">
+                        <i class="bi bi-box-seam me-1"></i> Rent A Fridge
+                    </a>
+
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                        <button type="submit" class="btn vivid-btn-logout">
+                            <i class="bi bi-box-arrow-right me-1"></i> Logout
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-lg-8 col-md-6">
+            <div class="card shadow-sm h-100 hover-shadow">
+                <div class="card-header bg-secondary text-white d-flex align-items-center">
+                    <i class="bi bi-speedometer2 me-2"></i> Account Overview
+                </div>
+                <div class="card-body d-flex flex-wrap justify-content-around text-center">
+
+                    <div class="p-3">
+                        <i class="bi bi-box-seam fs-2 text-primary"></i>
+                        <h5 class="mt-2">Total Rentals</h5>
+                        <p class="fw-bold fs-4">@Model.RentalsCount</p>
+                    </div>
+
+
+
+                    <div class="p-3">
+                        <i class="bi bi-hourglass-split fs-2 text-warning"></i>
+                        <h5 class="mt-2">Approved Orders</h5>
+                        <p class="fw-bold fs-4">@Model.ApprovedOrders</p>
+                    </div>
+
+                    <div class="p-3">
+                        <i class="bi bi-hourglass-split fs-2 text-warning"></i>
+                        <h5 class="mt-2">Rejected Orders</h5>
+                        <p class="fw-bold fs-4">@Model.RejectedOrders</p>
+                    </div>
+
+                    <div class="p-3">
+                        <i class="bi bi-hourglass-split fs-2 text-warning"></i>
+                        <h5 class="mt-2">Paid Orders</h5>
+                        <p class="fw-bold fs-4">@Model.PaidOrders</p>
+                    </div>
+
+                    <div class="p-3">
+                        <i class="bi bi-hourglass-split fs-2 text-warning"></i>
+                        <h5 class="mt-2">Unpaid Orders</h5>
+                        <p class="fw-bold fs-4">@Model.UnPaidOrders</p>
+                    </div>
+
+
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+
+    .hover-shadow:hover {
+        box-shadow: 0 0.75rem 1.5rem rgba(0,0,0,.25) !important;
+        transition: all 0.3s ease-in-out;
+    }
+
+
+    .vivid-btn-edit {
+        background: linear-gradient(45deg, #4facfe, #00f2fe);
+        color: white;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .vivid-btn-edit:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.25);
+        }
+
+    .vivid-btn-rent {
+        background: linear-gradient(45deg, #43e97b, #38f9d7);
+        color: white;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .vivid-btn-rent:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.25);
+        }
+
+    .vivid-btn-logout {
+        background: linear-gradient(45deg, #f5576c, #f093fb);
+        color: white;
+        font-weight: 600;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .vivid-btn-logout:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.25);
+        }
+</style>
+
+@section Scripts {
+    <script>
+
+    </script>
+}

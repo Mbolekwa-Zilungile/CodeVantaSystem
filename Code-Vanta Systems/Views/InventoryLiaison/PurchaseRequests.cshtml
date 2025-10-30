@@ -65,7 +65,7 @@
                 <div class="card-body">
                     <div class="text-xs fw-bold text-uppercase mb-2">Approved</div>
                     <div class="h4 mb-0 fw-bold">
-                        <i class="bi bi-cart3 me-2"></i>@ViewBag.ApprovedRequestsCount
+                        <i class="bi bi-cart3 me-2"></i>@ViewBag.ApprovedCount
                     </div>
                 </div>
             </div>
@@ -87,47 +87,47 @@
     </div>
 </div>
 
- 
-    <a asp-action="Create" class="btn btn-primary mb-3">+ Create New Purchase Request</a>
 
-    @if (!Model.Any())
-    {
-        <div class="alert alert-info">You have not submitted any purchase requests yet.</div>
-    }
-    else
-    {
-        <table class="table table-striped">
-            <thead class="table-dark">
+<a asp-action="Create" class="btn btn-primary mb-3">+ Create New Purchase Request</a>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">You have not submitted any purchase requests yet.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Expected Delivery</th>
+                <th>Items</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var request in Model)
+            {
                 <tr>
-                    <th>ID</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Priority</th>
-                    <th>Expected Delivery</th>
-                    <th>Items</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var request in Model)
-                {
-                    <tr>
-                        <td>@request.Id</td>
-                        <td>@request.RequestDate.ToShortDateString()</td>
-                        <td>@request.Status</td>
-                        <td>@request.Priority</td>
-                        <td>@request.ExpectedDate?.ToShortDateString()</td>
-                        <td>@request.RequestedItems.Count()</td>
+                    <td>@request.Id</td>
+                    <td>@request.RequestDate.ToShortDateString()</td>
+                    <td>@request.Status</td>
+                    <td>@request.Priority</td>
+                    <td>@request.ExpectedDate?.ToShortDateString()</td>
+                    <td>@request.RequestedItems.Count()</td>
                     <td>
                         <form method="post" asp-action="SendRequest" asp-route-id="@request.Id" class="d-inline send-request-form">
                             <button type="submit" class="btn btn-sm btn-primary">Send</button>
                         </form>
                     </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 <script>
     $(".send-request-form").submit(function (e) {
