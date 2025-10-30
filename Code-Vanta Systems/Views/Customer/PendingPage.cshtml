@@ -63,26 +63,26 @@
 <script>
     @if (TempData["Success"] != null)
     {
-        <text>
-                Swal.fire({
-                    icon: 'success',
-                title: 'Success!',
-                text: '@TempData["Success"]',
-                confirmButtonText: 'OK'
-                            });
-        </text>
+            <text>
+                    Swal.fire({
+                        icon: 'success',
+                    title: 'Success!',
+                    text: '@TempData["Success"]',
+                    confirmButtonText: 'OK'
+                                });
+            </text>
     }
 
     @if (TempData["Error"] != null)
     {
-        <text>
-                Swal.fire({
-                    icon: 'error',
-                title: 'Error!',
-                text: '@TempData["Error"]',
-                confirmButtonText: 'OK'
-                            });
-        </text>
+            <text>
+                    Swal.fire({
+                        icon: 'error',
+                    title: 'Error!',
+                    text: '@TempData["Error"]',
+                    confirmButtonText: 'OK'
+                                });
+            </text>
     }
 </script>
 @*

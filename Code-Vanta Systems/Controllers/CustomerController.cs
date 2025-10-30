@@ -1,13 +1,14 @@
 ﻿using Code_Vanta_Systems.Data;
-using Code_Vanta_Systems.ViewModels;
-using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using Code_Vanta_Systems.Models.Enums;
+using Code_Vanta_Systems.ViewModels;
 using Code_Vanta_Systems.ViewModels.Customer;
 using Code_Vanta_Systems.ViewModels.Log_Fault;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Code_Vanta_Systems.Controllers
 {
@@ -23,6 +24,7 @@ namespace Code_Vanta_Systems.Controllers
             _userManager = userManager;
             _webHostEnvironment = webHostEnvironment;
         }
+        #region Index
 
         public async Task<IActionResult> Index(string searchModel, int? category, int? status, int? supplier, int? location)
         {
@@ -81,11 +83,13 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(model);
         }
+        #endregion
 
 
+        #region Pendig Page
         public async Task<IActionResult> PendingPage()
         {
-            var userId = _userManager.GetUserId(User); // safer way to get user Id
+            var userId = _userManager.GetUserId(User);
 
             var customer = await _context.Customers
         .FirstOrDefaultAsync(c => c.UserId == userId &&
@@ -93,13 +97,12 @@ namespace Code_Vanta_Systems.Controllers
 
             if (customer == null)
             {
-                // Either the customer is active or doesn't exist, redirect to dashboard
+
                 return RedirectToAction("Index", "Home");
             }
 
             return View(customer);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> PendingPage(IFormFile document)
@@ -172,9 +175,10 @@ namespace Code_Vanta_Systems.Controllers
 
             return RedirectToAction("PendingPage");
         }
+        #endregion
 
 
-
+        #region Active Customers
         public async Task<IActionResult> ActiveCustomers()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -191,6 +195,10 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(customer);
         }
+        #endregion
+
+
+        #region Rejected Customers
         // GET: CustomerDashboard/Rejected/5
         public async Task<IActionResult> Rejected()
         {
@@ -204,7 +212,9 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(customer);
         }
+        #endregion
 
+        #region My Profile
         public async Task<IActionResult> MyProfile()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -257,7 +267,9 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(model);
         }
+        #endregion
 
+        #region Rentals
         public async Task<IActionResult> Rentals(string searchModel, int? category, int? status, int? supplier, int? location)
         {
             var fridgesQuery = _context.Fridges.AsQueryable().Where(f => !f.IsDeleted);
@@ -316,9 +328,9 @@ namespace Code_Vanta_Systems.Controllers
             return View(model);
         }
 
-      
 
 
+       
         // List rental requests
         public async Task<IActionResult> MyRentalRequests()
         {
@@ -336,16 +348,50 @@ namespace Code_Vanta_Systems.Controllers
         public async Task<IActionResult> MyRentedFridges()
         {
             var user = await _userManager.GetUserAsync(User);
-            var rentals = await _context.RentalRequests
+
+            // Rentals (Approved & Paid)
+            var rentalFridges = await _context.RentalRequests
                 .Include(r => r.Fridge)
-                .Where(r => r.RequestedByUserId == user.Id && r.Status == "Approved")
-                .OrderByDescending(r => r.CreatedAt)
+                .Where(r => r.RequestedByUserId == user.Id && r.Status == "Approved" && r.IsPaid)
+                .Select(r => new FridgeAllocationDisplayViewModel
+                {
+                    FridgeModel = r.Fridge.Model,
+                    ImageUrl = r.Fridge.ImageUrl,
+                    Quantity = r.Quantity,
+                    AllocatedOn = r.UpdatedAt ?? r.CreatedAt,
+                    Source = "Rental",
+                    RentalId = r.Id
+                })
                 .ToListAsync();
 
-            return View(rentals);
+            // Manual allocations
+            var manualAllocations = await _context.FridgeAllocations
+                .Include(a => a.Fridge)
+                .Include(a => a.Customer)
+                .Where(a => a.Customer.UserId == user.Id)
+                .Select(a => new FridgeAllocationDisplayViewModel
+                {
+                    FridgeModel = a.Fridge.Model,
+                    ImageUrl = a.Fridge.ImageUrl,
+                    Quantity = a.Quantity,
+                    AllocatedOn = a.AllocationDate,
+                    Source = "Manual",
+                    RentalId = null
+                })
+                .ToListAsync();
+
+            // ✅ Merge both safely
+            var combined = rentalFridges.Concat(manualAllocations)
+                .OrderByDescending(x => x.AllocatedOn)
+                .ToList();
+
+            return View(combined);
         }
 
+        #endregion
+
         // New endpoints for the Customer Portal
+        #region Fault 
 
         // Dashboard
         [HttpGet]
@@ -769,7 +815,7 @@ namespace Code_Vanta_Systems.Controllers
 
             return RedirectToAction(nameof(LoggedFault));
         }
-
+#endregion
 
         #region Checkout Logic
         [HttpPost]
@@ -991,5 +1037,118 @@ namespace Code_Vanta_Systems.Controllers
             return Json(new { success = true, message = "Payment successful!" });
         }
         #endregion
+
+
+        #region Fridge more info
+        public async Task<IActionResult> FridgeMoreInfo(int id)
+        {
+            var fridge = await _context.Fridges
+                .Include(f => f.Supplier)
+                .Include(f => f.Location)
+                .FirstOrDefaultAsync(f => f.Id == id);
+
+            if (fridge == null)
+                return NotFound();
+
+            return View("FridgeMoreInfo", fridge);
+        }
+        #endregion
+
+        #region Edit Profile
+        [HttpGet]
+        public async Task<IActionResult> EditProfile()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var customer = await _context.Customers
+                .Include(c => c.Location)
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (customer == null)
+            {
+                TempData["ErrorMessage"] = "Customer profile not found.";
+                return RedirectToAction("MyProfile");
+            }
+
+            var locations = await _context.Locations
+                .Select(l => new SelectListItem
+                {
+                    Value = l.Id.ToString(),
+                    Text = $"{l.Description} ({l.City}, {l.Province})"
+                })
+                .ToListAsync();
+
+            var model = new UpdateCustomerViewModel
+            {
+                Id = customer.Id,
+                BusinessName = customer.BusinessName,
+                ContactName = customer.ContactName,
+                Phone = customer.Phone,
+                Email = customer.Email,
+                BusinessType = customer.BusinessType,
+                PhysicalAddress = customer.PhysicalAddress,
+                LocationId = customer.LocationId,
+                AvailableLocations = locations
+            };
+
+            ///ViewData["Title"] = "Edit My Profile";
+            return View(model);
+        }
+
+        // POST: Customer/EditProfile
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditProfile(UpdateCustomerViewModel model)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var customer = await _context.Customers.Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (customer == null)
+            {
+                TempData["ErrorMessage"] = "Unable to find your profile.";
+                return RedirectToAction("MyProfile");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.AvailableLocations = await _context.Locations
+                    .Select(l => new SelectListItem
+                    {
+                        Value = l.Id.ToString(),
+                        Text = $"{l.Description} ({l.City}, {l.Province})"
+                    })
+                    .ToListAsync();
+
+                return View(model);
+            }
+
+            // ✅ Update profile fields
+            customer.BusinessName = model.BusinessName;
+            customer.ContactName = model.ContactName;
+            customer.Phone = model.Phone;
+            customer.Email = model.Email;
+            customer.BusinessType = model.BusinessType;
+            customer.PhysicalAddress = model.PhysicalAddress;
+            customer.LocationId = model.LocationId;
+
+            // ✅ Update linked ApplicationUser
+            if (customer.User != null)
+            {
+                customer.User.Email = model.Email;
+                customer.User.UserName = model.Email;
+                customer.User.FullName = model.ContactName;
+                _context.Users.Update(customer.User);
+            }
+
+            _context.Customers.Update(customer);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Your profile has been updated successfully!";
+            return RedirectToAction("MyProfile");
+        }
+
+        #endregion
+
     }
 }

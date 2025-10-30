@@ -32,25 +32,103 @@ namespace Code_Vanta_Systems.Controllers
 
         #region Index / Dashboards With Filters
 
+        //public IActionResult Index(string searchModel, int? category, int? status, int? supplier, int? location)
+        //{
+        //    var allFridges = _context.Fridges.AsQueryable();
+
+        //    // Only active fridges
+        //    var fridges = allFridges.Where(f => !f.IsDeleted);
+
+        //    // Filter by search
+        //    if (!string.IsNullOrEmpty(searchModel))
+        //        fridges = fridges.Where(f => f.Model.Contains(searchModel));
+
+        //    // Filter by category (compare string enum)
+        //    if (category.HasValue)
+        //    {
+        //        var categoryString = ((FridgeCategory)category.Value).ToString();
+        //        fridges = fridges.Where(f => f.Category.ToString() == categoryString);
+        //    }
+
+        //    // Filter by status (compare string enum)
+        //    if (status.HasValue)
+        //    {
+        //        var statusString = ((FridgeStatus)status.Value).ToString();
+        //        fridges = fridges.Where(f => f.Status.ToString() == statusString);
+        //    }
+
+        //    if (supplier.HasValue)
+        //        fridges = fridges.Where(f => f.SupplierId == supplier.Value);
+
+        //    if (location.HasValue)
+        //        fridges = fridges.Where(f => f.LocationId == location.Value);
+
+        //    // Dropdowns
+        //    ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory))
+        //        .Cast<FridgeCategory>()
+        //        .Select(c => new SelectListItem { Value = ((int)c).ToString(), Text = c.ToString() })
+        //        .ToList();
+
+        //    ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
+        //        .Cast<FridgeStatus>()
+        //        .Select(s => new SelectListItem { Value = ((int)s).ToString(), Text = s.ToString() })
+        //        .ToList();
+
+        //    ViewBag.Suppliers = _context.Suppliers
+        //        .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name })
+        //        .ToList();
+
+        //    ViewBag.Locations = _context.Locations
+        //        .Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description })
+        //        .ToList();
+
+        //    // Counts
+        //    ViewBag.TotalFridges = allFridges.Count();
+        //    ViewBag.ActiveFridges = allFridges.Count(f => !f.IsDeleted);
+        //    ViewBag.DeletedFridges = allFridges.Count(f => f.IsDeleted);
+        //    ViewBag.AvailableFridges = allFridges.Count(f => f.Status == FridgeStatus.Available && !f.IsDeleted);
+        //    ViewBag.OutOfStockFridges = allFridges.Count(f => f.StockQuantity == 0 && !f.IsDeleted);
+        //    ViewBag.InRepairFridges = allFridges.Count(f => f.Status == FridgeStatus.InRepair && !f.IsDeleted);
+        //    ViewBag.RetiredFridges = allFridges.Count(f => f.Status == FridgeStatus.Retired && !f.IsDeleted);
+        //    ViewBag.TotalSuppliers = _context.Suppliers.Count();
+
+        //    // Map to ViewModel
+        //    var vmList = fridges.Select(f => new CreateFridgeViewModel
+        //    {
+        //        Id = f.Id,
+        //        Model = f.Model,
+        //        SerialNumber = f.SerialNumber,
+        //        Category = f.Category,
+        //        Status = f.Status,
+        //        SupplierId = f.SupplierId,
+        //        LocationId = f.LocationId,
+        //        RentalPricePerMonth = f.RentalPricePerMonth,
+        //        StockQuantity = f.StockQuantity,
+        //        Description = f.Description,
+        //        ImageUrl = f.ImageUrl
+        //    }).ToList();
+
+        //    return View(vmList);
+        //}
+
         public IActionResult Index(string searchModel, int? category, int? status, int? supplier, int? location)
         {
+            // Get all fridges
             var allFridges = _context.Fridges.AsQueryable();
 
-            // Only active fridges
+            // Only non-deleted fridges for filtering
             var fridges = allFridges.Where(f => !f.IsDeleted);
 
-            // Filter by search
+            // Filters
             if (!string.IsNullOrEmpty(searchModel))
                 fridges = fridges.Where(f => f.Model.Contains(searchModel));
 
-            // Filter by category (compare string enum)
             if (category.HasValue)
             {
                 var categoryString = ((FridgeCategory)category.Value).ToString();
                 fridges = fridges.Where(f => f.Category.ToString() == categoryString);
             }
 
-            // Filter by status (compare string enum)
             if (status.HasValue)
             {
                 var statusString = ((FridgeStatus)status.Value).ToString();
@@ -63,7 +141,7 @@ namespace Code_Vanta_Systems.Controllers
             if (location.HasValue)
                 fridges = fridges.Where(f => f.LocationId == location.Value);
 
-            // Dropdowns
+            // Dropdown lists
             ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory))
                 .Cast<FridgeCategory>()
                 .Select(c => new SelectListItem { Value = ((int)c).ToString(), Text = c.ToString() })
@@ -82,17 +160,26 @@ namespace Code_Vanta_Systems.Controllers
                 .Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description })
                 .ToList();
 
-            // Counts
+            // Analytics counts
             ViewBag.TotalFridges = allFridges.Count();
             ViewBag.ActiveFridges = allFridges.Count(f => !f.IsDeleted);
             ViewBag.DeletedFridges = allFridges.Count(f => f.IsDeleted);
-            ViewBag.AvailableFridges = allFridges.Count(f => f.Status == FridgeStatus.Available && !f.IsDeleted);
+
+            ViewBag.TotalStock = allFridges.Sum(f => f.StockQuantity); // Sum of all stock
+            ViewBag.AvailableStock = allFridges
+                .Where(f => f.Status == FridgeStatus.Available && !f.IsDeleted)
+                .Sum(f => f.StockQuantity);
+            ViewBag.InRepairStock = allFridges
+                .Where(f => f.Status == FridgeStatus.InRepair && !f.IsDeleted)
+                .Sum(f => f.StockQuantity);
+            ViewBag.RetiredStock = allFridges
+                .Where(f => f.Status == FridgeStatus.Retired && !f.IsDeleted)
+                .Sum(f => f.StockQuantity);
+
             ViewBag.OutOfStockFridges = allFridges.Count(f => f.StockQuantity == 0 && !f.IsDeleted);
-            ViewBag.InRepairFridges = allFridges.Count(f => f.Status == FridgeStatus.InRepair && !f.IsDeleted);
-            ViewBag.RetiredFridges = allFridges.Count(f => f.Status == FridgeStatus.Retired && !f.IsDeleted);
             ViewBag.TotalSuppliers = _context.Suppliers.Count();
 
-            // Map to ViewModel
+            // Map to view model
             var vmList = fridges.Select(f => new CreateFridgeViewModel
             {
                 Id = f.Id,
@@ -112,7 +199,14 @@ namespace Code_Vanta_Systems.Controllers
         }
 
 
+
+
+
+
         #endregion
+
+
+
 
 
         #region PURCHASE REQUESTS
@@ -187,29 +281,8 @@ namespace Code_Vanta_Systems.Controllers
                .CountAsync(s => s.Status == RequestStatus.Completed);
             return View(SubmitedRequests);
         }
-        public async Task<IActionResult> ApprovedPurchaseRequests()
-        {
-            var SubmitedRequests = await _context.PurchaseRequests
-               .Include(pr => pr.RequestedBy)
-               .Include(pr => pr.RequestedItems)
-               .Where(pr => pr.Status == Code_Vanta_Systems.Models.Enums.RequestStatus.Approved)
-               .OrderByDescending(pr => pr.RequestDate)
-               .ToListAsync();
 
-            ViewBag.PendingCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Pending);
-            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Submitted);
 
-            ViewBag.RejectedRequests = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Rejected);
-
-            ViewBag.ApprovedRequestsCount = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Approved);
-            ViewBag.CompletedRequestsCount = await _context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Completed);
-            return View(SubmitedRequests);
-        }
 
 
         [HttpGet]
@@ -236,32 +309,30 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(model);
         }
-
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreatePurchaseRequestViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
 
-            // Validate priority
+            // ✅ Validation
             if (model.Priority == null)
             {
                 ModelState.AddModelError(nameof(model.Priority), "Priority is required.");
             }
 
-            // Validate expected date
             if (model.ExpectedDate.HasValue && model.ExpectedDate.Value.Date < DateTime.Now.Date)
             {
                 ModelState.AddModelError("ExpectedDate", "Expected date cannot be in the past.");
             }
 
-            // Validate fridge selection
             if (model.Items == null || !model.Items.Any(i => i.FridgeId > 0))
             {
                 ModelState.AddModelError("", "You must select at least one fridge.");
             }
 
-            // Remove ModelState errors for FridgeModel fields
+            // Remove unneeded model state errors
             var keysToRemove = ModelState.Keys.Where(k => k.EndsWith("FridgeModel")).ToList();
             foreach (var key in keysToRemove)
             {
@@ -282,7 +353,6 @@ namespace Code_Vanta_Systems.Controllers
                 foreach (var item in model.Items)
                 {
                     item.AvailableItems = allFridges;
-
                     if (item.FridgeId > 0)
                     {
                         var fridge = await _context.Fridges.FirstOrDefaultAsync(f => f.Id == item.FridgeId);
@@ -294,30 +364,10 @@ namespace Code_Vanta_Systems.Controllers
                 }
 
                 model.AvailableItems = allFridges;
-
                 return View(model);
             }
 
-            // ---- Generate RequestNumber ----
-            var year = DateTime.Now.Year;
-            var lastRequest = await _context.PurchaseRequests
-                .Where(r => r.RequestDate.Year == year)
-                .OrderByDescending(r => r.Id)
-                .FirstOrDefaultAsync();
-
-            int nextNumber = 1;
-            if (lastRequest != null)
-            {
-                var lastNumStr = lastRequest.RequestNumber?.Split('-').Last();
-                if (int.TryParse(lastNumStr, out int lastNum))
-                {
-                    nextNumber = lastNum + 1;
-                }
-            }
-
-            var requestNumber = $"PR-{year}-{nextNumber:000}";
-
-            // Create PurchaseRequest
+            
             var request = new PurchaseRequest
             {
                 RequestedByUserId = user.Id,
@@ -326,13 +376,13 @@ namespace Code_Vanta_Systems.Controllers
                 Priority = model.Priority,
                 Notes = model.Notes,
                 Status = RequestStatus.Submitted,
-                RequestNumber = requestNumber // <-- set generated number
+                RequestNumber = $"REQ-{DateTime.Now:yyyyMMddHHmmss}"
             };
 
             _context.PurchaseRequests.Add(request);
             await _context.SaveChangesAsync();
 
-            // Add request items
+            // Create related items
             var fridgeIds = model.Items.Where(i => i.FridgeId > 0).Select(i => i.FridgeId).Distinct();
             var fridgesDict = await _context.Fridges
                 .Where(f => fridgeIds.Contains(f.Id))
@@ -388,7 +438,7 @@ namespace Code_Vanta_Systems.Controllers
             var request = await _context.PurchaseRequests
                          .Include(r => r.RequestedBy)
                          .Include(r => r.RequestedItems)
-                         /*.ThenInclude(i => i.ItemCatalog) */// <--- This is correct for eager loading
+                         //.ThenInclude(i => i.ItemCatalog) 
                          .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null) return NotFound();
@@ -674,6 +724,7 @@ namespace Code_Vanta_Systems.Controllers
         #endregion
 
 
+
         #region EDIT FRIDGE
 
 
@@ -859,14 +910,13 @@ namespace Code_Vanta_Systems.Controllers
 
         #endregion
 
-
         #region SOFT HEAD DELETE
 
         // DeleteConfirmation/5
         public async Task<IActionResult> DeleteConfirmation(int id)
         {
             var fridge = await _context.Fridges
-                .Include(f => f.Supplier)
+                .Include(f => f.Supplier)  
                 .Include(f => f.Location)
                 .Include(f => f.Maintenances)
                 .Include(f => f.UsageLogs)

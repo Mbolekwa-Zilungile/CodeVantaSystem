@@ -1,23 +1,48 @@
-﻿@model IEnumerable<Code_Vanta_Systems.Models.RentalRequest>
+﻿@model IEnumerable<Code_Vanta_Systems.ViewModels.FridgeAllocationDisplayViewModel>
 
 @{
     Layout = "~/Views/Shared/_CustomerLayout.cshtml";
-    ViewData["Title"] = "My Rented Fridges";
+    ViewData["Title"] = "My Active Fridges";
 }
 
-<h2>My Active Rented Fridges</h2>
+<h2 class="mb-4 text-success">My Active Fridges</h2>
 
 <div class="row">
-    @foreach (var r in Model)
+    @if (!Model.Any())
+    {
+        <div class="col-12">
+            <div class="alert alert-info">
+                You currently have no active fridge allocations or rentals.
+            </div>
+        </div>
+    }
+
+    @foreach (var item in Model)
     {
         <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                <img src="@r.Fridge.ImageUrl" class="card-img-top" style="height:200px; object-fit:cover;" />
+            <div class="card h-100 shadow-sm">
+                <img src="@item.ImageUrl" class="card-img-top" style="height:200px; object-fit:cover;" />
                 <div class="card-body">
-                    <h5 class="card-title">@r.Fridge.Model</h5>
-                    <p><strong>Quantity:</strong> @r.Quantity</p>
-                    <p><strong>Rented On:</strong> @r.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</p>
-                    <a asp-controller="Customer" asp-action="LogFault" asp-route-id="@r.Id" class="btn btn-warning">Report Issue</a>
+                    <h5 class="card-title">@item.FridgeModel</h5>
+                    <p><strong>Quantity:</strong> @item.Quantity</p>
+                    <p><strong>Allocated On:</strong> @item.AllocatedOn.ToLocalTime().ToString("dd/MM/yyyy")</p>
+                    <p><span class="badge @(item.Source == "Rental" ? "bg-primary" : "bg-success")">@item.Source</span></p>
+
+                    @if (item.Source == "Rental" && item.RentalId != null)
+                    {
+                        <a asp-controller="Customer" asp-action="LogFault" asp-route-id="@item.RentalId" class="btn btn-warning btn-sm">
+                            Report Issue
+                        </a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-secondary btn-sm" disabled>
+                            Manual Allocation
+                        </button>
+                        <a asp-controller="Customer" asp-action="LogFault" asp-route-id="@item.RentalId" class="btn btn-warning btn-sm">
+                            Report Issue
+                        </a>
+                    }
                 </div>
             </div>
         </div>

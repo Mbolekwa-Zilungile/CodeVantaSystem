@@ -1,11 +1,14 @@
 ﻿@model IEnumerable<Code_Vanta_Systems.Models.RentalRequest>
-
+@using Microsoft.AspNetCore.Antiforgery
+@inject IAntiforgery Antiforgery
 
 @{
     Layout = "~/Views/Shared/_CustomerLayout.cshtml";
     ViewData["Title"] = "My Rental Requests";
+    var antiforgeryToken = Antiforgery.GetAndStoreTokens(ViewContext.HttpContext).RequestToken;
 }
 
+<input type="hidden" id="RequestVerificationToken" value="@antiforgeryToken" />
 
 <h2>My Rental Requests</h2>
 
@@ -17,6 +20,7 @@
             <th>Status</th>
             <th>Requested On</th>
             <th>Last Updated</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -29,11 +33,29 @@
                     <span class="badge @(r.Status == "Pending" ? "bg-warning" : r.Status == "Approved" ? "bg-success" : "bg-danger")">
                         @r.Status
                     </span>
+                    @if (!r.IsPaid)
+                    {
+                        <span class="badge bg-info ms-1">Unpaid</span>
+                    }
                 </td>
                 <td>@r.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
                 <td>@(r.UpdatedAt.HasValue? r.UpdatedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "-")</td>
+                <td>
+                    @if (!r.IsPaid)
+                    {
+                        <form method="get" action="@Url.Action("Payment", "Customer")" class="d-inline">
+                            <input type="hidden" name="rentalIds" value="@r.Id" />
+                            <button type="submit" class="btn btn-sm btn-primary">Pay Later</button>
+                        </form>
+                    }
+                </td>
             </tr>
         }
     </tbody>
 </table>
 
+@section Scripts {
+    <script>
+
+    </script>
+}

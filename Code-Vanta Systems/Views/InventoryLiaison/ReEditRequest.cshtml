@@ -82,10 +82,10 @@
             var allItems = [];
         @if (Model.Items != null && Model.Items.Count > 0 && Model.Items[0].AvailableItems != null)
         {
-            foreach (var item in Model.Items[0].AvailableItems)
-            {
-                @:allItems.push({ value: "@item.Value", text: "@item.Text" });
-            }
+                foreach (var item in Model.Items[0].AvailableItems)
+                {
+                        @:allItems.push({ value: "@item.Value", text: "@item.Text" });
+                }
         }
 
                 // Add fridge button
