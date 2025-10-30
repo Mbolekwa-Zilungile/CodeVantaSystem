@@ -1,4 +1,5 @@
 ﻿using Code_Vanta_Systems.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace Code_Vanta_Systems.ViewModels
 {
@@ -7,6 +8,10 @@ namespace Code_Vanta_Systems.ViewModels
         public int RequestQuotationId { get; set; }
         public string RFQId { get; set; }
         public DateTime RequestDate { get; set; }
+
+        [Display(Name = "Expected Date")]
+        [DataType(DataType.Date)]
+        public DateTime? ExpectedDate { get; set; }
         public string Notes { get; set; }
         public string IssuedByName { get; set; }
 

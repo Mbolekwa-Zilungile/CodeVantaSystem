@@ -309,30 +309,32 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(model);
         }
-        
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreatePurchaseRequestViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
 
-            // ✅ Validation
+            // Validate priority
             if (model.Priority == null)
             {
                 ModelState.AddModelError(nameof(model.Priority), "Priority is required.");
             }
 
+            // Validate expected date
             if (model.ExpectedDate.HasValue && model.ExpectedDate.Value.Date < DateTime.Now.Date)
             {
                 ModelState.AddModelError("ExpectedDate", "Expected date cannot be in the past.");
             }
 
+            // Validate fridge selection
             if (model.Items == null || !model.Items.Any(i => i.FridgeId > 0))
             {
                 ModelState.AddModelError("", "You must select at least one fridge.");
             }
 
-            // Remove unneeded model state errors
+            // Remove ModelState errors for FridgeModel fields
             var keysToRemove = ModelState.Keys.Where(k => k.EndsWith("FridgeModel")).ToList();
             foreach (var key in keysToRemove)
             {
@@ -353,6 +355,7 @@ namespace Code_Vanta_Systems.Controllers
                 foreach (var item in model.Items)
                 {
                     item.AvailableItems = allFridges;
+
                     if (item.FridgeId > 0)
                     {
                         var fridge = await _context.Fridges.FirstOrDefaultAsync(f => f.Id == item.FridgeId);
@@ -364,10 +367,30 @@ namespace Code_Vanta_Systems.Controllers
                 }
 
                 model.AvailableItems = allFridges;
+
                 return View(model);
             }
 
-            
+            // ---- Generate RequestNumber ----
+            var year = DateTime.Now.Year;
+            var lastRequest = await _context.PurchaseRequests
+                .Where(r => r.RequestDate.Year == year)
+                .OrderByDescending(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            int nextNumber = 1;
+            if (lastRequest != null)
+            {
+                var lastNumStr = lastRequest.RequestNumber?.Split('-').Last();
+                if (int.TryParse(lastNumStr, out int lastNum))
+                {
+                    nextNumber = lastNum + 1;
+                }
+            }
+
+            var requestNumber = $"PR-{year}-{nextNumber:000}";
+
+            // Create PurchaseRequest
             var request = new PurchaseRequest
             {
                 RequestedByUserId = user.Id,
@@ -376,13 +399,13 @@ namespace Code_Vanta_Systems.Controllers
                 Priority = model.Priority,
                 Notes = model.Notes,
                 Status = RequestStatus.Submitted,
-                RequestNumber = $"REQ-{DateTime.Now:yyyyMMddHHmmss}"
+                RequestNumber = requestNumber // <-- set generated number
             };
 
             _context.PurchaseRequests.Add(request);
             await _context.SaveChangesAsync();
 
-            // Create related items
+            // Add request items
             var fridgeIds = model.Items.Where(i => i.FridgeId > 0).Select(i => i.FridgeId).Distinct();
             var fridgesDict = await _context.Fridges
                 .Where(f => fridgeIds.Contains(f.Id))

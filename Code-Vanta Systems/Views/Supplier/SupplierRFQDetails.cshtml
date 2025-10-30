@@ -6,38 +6,44 @@
 }
 
 <h2 class="mb-4">RFQ Details</h2>
- 
 
-    <!-- Company Info Card -->
-    <div>
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Company Information</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Name:</strong> @Model.CompanyName</p>
-                <p><strong>Email:</strong> <a href="mailto:@Model.CompanyEmail">@Model.CompanyEmail</a></p>
-                <p><strong>Phone:</strong> @Model.CompanyPhone</p>
-                <p><strong>Address:</strong> @Model.CompanyAddress</p>
-            </div>
+
+<!-- Company Info Card -->
+<div>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Company Information</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Name:</strong> @Model.CompanyName</p>
+            <p><strong>Email:</strong> <a href="mailto:@Model.CompanyEmail">@Model.CompanyEmail</a></p>
+            <p><strong>Phone:</strong> @Model.CompanyPhone</p>
+            <p><strong>Address:</strong> @Model.CompanyAddress</p>
         </div>
     </div>
+</div>
 
-    <!-- RFQ Info Card -->
-    <div>
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">RFQ Information</h5>
-            </div>
-            <div class="card-body">
+<!-- RFQ Info Card -->
+<div>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">RFQ Information</h5>
+        </div>
+        <div class="card-body">
             <p><strong>Purchase Request:</strong> @Model.PurchaseRequestNumber</p>
-                <p><strong>RFQ #:</strong> @Model.RFQId</p>
-                <p><strong>Request Date:</strong> @Model.RequestDate.ToString("dd MMM yyyy")</p>
-                <p><strong>Requested By:</strong> @Model.IssuedByName</p>
-                <p><strong>Notes:</strong> @Model.Notes</p>
-            </div>
+            <p><strong>RFQ #:</strong> @Model.RFQId</p>
+            <p><strong>Request Date:</strong> @Model.RequestDate.ToString("dd MMM yyyy")</p>
+            <p>
+                <strong>Expected Delivery Date:</strong>
+                @(Model.ExpectedDate.HasValue
+                    ? Model.ExpectedDate.Value.ToString("dd MMM yyyy")
+                    : "Not specified")
+            </p>
+            <p><strong>Requested By:</strong> @Model.IssuedByName</p>
+            <p><strong>Notes:</strong> @Model.Notes</p>
         </div>
     </div>
+</div>
 
 
 

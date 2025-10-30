@@ -168,6 +168,7 @@ namespace Code_Vanta_Systems.Controllers
                 RFQId = rfq.RFQId,
                 RequestQuotationId = rfq.RequestQuotationId,
                 RequestDate = rfq.RequestDate,
+                ExpectedDate = rfq.PurchaseRequest?.ExpectedDate,
                 Notes = rfq.Notes,
                 IssuedByName = rfq.RequestedBy?.UserName ?? "Unknown",
                 CompanyName = company?.Name,
@@ -181,6 +182,7 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(vm);
         }
+
 
         #endregion
 
@@ -199,11 +201,9 @@ namespace Code_Vanta_Systems.Controllers
             if (rfq == null)
                 return NotFound();
 
-            // Fetch the user who requested this RFQ
             var requestedByUser = await context.Users
                 .FirstOrDefaultAsync(u => u.Id == rfq.RequestedByUserId);
 
-            // Fetch your company info (assuming only one company record)
             var company = await context.Company.FirstOrDefaultAsync();
 
             var model = new SupplierQuotationCreateViewModel
@@ -212,23 +212,22 @@ namespace Code_Vanta_Systems.Controllers
                 RFQCode = rfq.RFQId,
                 PurchaseRequestId = rfq.PurchaseRequestId,
                 RequestDate = rfq.RequestDate,
-                Notes = rfq.Notes ?? "", // <-- Populate the Notes
+                ExpectedDate = rfq.PurchaseRequest?.ExpectedDate, // ✅ pull from PurchaseRequest
+                Notes = rfq.Notes ?? "",
 
                 Items = rfq.PurchaseRequest.RequestedItems.Select(i => new SupplierQuotationItemViewModel
                 {
                     PurchaseRequestItemId = i.Id,
                     FridgeId = i.FridgeId,
                     FridgeModel = i.Fridge?.Model ?? "Unknown",
-                    RequestedQuantity = i.Quantity
+                    RequestedQuantity = i.Quantity,
                 }).ToList(),
 
-                // Populate company info
                 CompanyName = company?.Name,
                 CompanyEmail = company?.Email,
                 CompanyPhone = company?.Phone,
                 CompanyAddress = company?.Address,
 
-                // Requested by
                 IssuedByName = requestedByUser?.FullName ?? requestedByUser?.UserName
             };
 

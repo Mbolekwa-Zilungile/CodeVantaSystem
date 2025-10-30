@@ -11,15 +11,16 @@
 </div>
 
 <div class="row">
+    <!-- Pending Quotations -->
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="@Url.Action("SupplerQuotations", "PurchasingManager")" class="text-decoration-none">
-            <div class="card shadow h-100 py-2 ">
+            <div class="card shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
                             <div class="text-xs fw-bold text-uppercase mb-2">Pending Quotations</div>
                             <div class="h4 mb-0 fw-bold">
-                                <i class="bi bi-box me-2"></i> @ViewBag.SubmitedCount
+                                <i class="bi bi-box me-2"></i> @ViewBag.PendingCount
                             </div>
                         </div>
                     </div>
@@ -27,16 +28,17 @@
             </div>
         </a>
     </div>
-    <!-- Card 2: approved -->
+
+    <!-- Approved Quotations -->
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="@Url.Action("ApprovedQuotations", "PurchasingManager")" class="text-decoration-none">
-            <div class="card shadow h-100 py-2 ">
+            <div class="card shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
                             <div class="text-xs fw-bold text-uppercase mb-2">Approved Quotations</div>
                             <div class="h4 mb-0 fw-bold">
-                                <i class="bi bi-cart3 me-2"></i>@ViewBag.RejectedRequests
+                                <i class="bi bi-cart3 me-2"></i> @ViewBag.ApprovedCount
                             </div>
                         </div>
                     </div>
@@ -45,16 +47,16 @@
         </a>
     </div>
 
-    <!-- Card 3: Rejected -->
+    <!-- Rejected Quotations -->
     <div class="col-xl-3 col-md-6 mb-4">
         <a href="@Url.Action("RejectedQuotations", "PurchasingManager")" class="text-decoration-none">
-            <div class="card shadow h-100 py-2 ">
+            <div class="card shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
                             <div class="text-xs fw-bold text-uppercase mb-2">Rejected Quotations</div>
                             <div class="h4 mb-0 fw-bold">
-                                <i class="bi bi-cart3 me-2"></i>@ViewBag.ApprovedRequestsCount
+                                <i class="bi bi-cart3 me-2"></i> @ViewBag.RejectedCount
                             </div>
                         </div>
                     </div>
@@ -62,10 +64,11 @@
             </div>
         </a>
     </div>
+</div>
 
 
- <a asp-controller="PurchasingManager" asp-action="SelectPurchaseRequest" class="btn btn-primary mb-3">
-    Select Purchase Request
+<a asp-controller="PurchasingManager" asp-action="SelectPurchaseRequest" class="btn btn-primary mb-3">
+    Price Comparison Sheet
 </a>
 
     <div class="row">

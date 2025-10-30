@@ -40,9 +40,7 @@
                     </div>
 
                     <div class="col-md-3">
-                        <label asp-for="ExpectedDate" class="form-label fw-bold">Expected Date</label>
-                        <input asp-for="ExpectedDate" class="form-control" type="date" min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
-                        <span asp-validation-for="ExpectedDate" class="text-danger"></span>
+                        <p><strong>Expected Date:</strong> @(Model.ExpectedDate.HasValue ? Model.ExpectedDate.Value.ToString("dd MMM yyyy") : "-")</p>
                     </div>
 
                     <div class="col-md-3">
@@ -57,6 +55,7 @@
                         <span asp-validation-for="Priority" class="text-danger"></span>
                     </div>
             </div>
+        </div>
         </div>
     </div>
 

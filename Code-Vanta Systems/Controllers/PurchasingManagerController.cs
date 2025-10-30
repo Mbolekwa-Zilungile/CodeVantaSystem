@@ -772,7 +772,8 @@ namespace Code_Vanta_Systems.Controllers
                     RequestedByUserId = currentUserId,
                     SupplierId = supplierId,
                     PurchaseRequestId = model.PurchaseRequestId,
-                    Notes = model.Notes ?? ""
+                    Notes = model.Notes ?? "",
+                    ExpectedDeliveryDate = purchaseRequest?.ExpectedDate
                 };
 
                 context.RequestQuotations.Add(requestQuotation);
@@ -798,10 +799,9 @@ namespace Code_Vanta_Systems.Controllers
                     {
                         string subject = $"New RFQ Created: {newRFQId}";
                         string body = $@"
-                    <p>Hello {supplier.Name},</p>
-                    <p>A new RFQ (<strong>{newRFQId}</strong>) has been created for you. Please log in to your dashboard to view and respond.</p>
-                    <p>Best regards,<br/>CodeVanta Team</p>";
-
+                    <p>A new RFQ (<strong>{newRFQId}</strong>) has been created for you. Expected delivery date: <strong>{purchaseRequest.ExpectedDate:dd MMM yyyy}</strong>.</p>
+<p>Please log in to your dashboard to view and respond.</p>
+<p>Best regards,<br/>CodeVanta Team</p>";
                         await emailService.SendEmailAsync(supplier.User.Email, subject, body);
                     }
                     catch (Exception ex)
@@ -839,6 +839,7 @@ namespace Code_Vanta_Systems.Controllers
             {
                 RFQId = rfq.RFQId,
                 RequestDate = rfq.RequestDate,
+                ExpectedDate = rfq.PurchaseRequest?.ExpectedDate,
                 Notes = rfq.Notes,
                 // Supplier Info
                 SupplierName = rfq.Supplier?.Name ?? rfq.Supplier?.ContactName,
@@ -863,39 +864,62 @@ namespace Code_Vanta_Systems.Controllers
 
         public async Task<IActionResult> SupplerQuotations()
         {
-                    var quotations = await context.Quotations
-             .Where(q => q.Status == "Pending")
-             .Include(q => q.RequestQuotation)
-             .Include(q => q.Supplier)
-                 .ThenInclude(s => s.User)
-             .Include(q => q.Items) // <-- Include the line items
-                 .ThenInclude(i => i.PurchaseRequestItem) // optional, if you want requested quantity
-             .OrderByDescending(q => q.DateReceived)
-             .ToListAsync();
+            // Full counts (from all quotations)
+            var allQuotations = await context.Quotations.ToListAsync();
+            ViewBag.PendingCount = allQuotations.Count(q => q.Status == "Pending");
+            ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
+            ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
+
+            // Only pending quotations for this page
+            var quotations = await context.Quotations
+                .Where(q => q.Status == "Pending")
+                .Include(q => q.RequestQuotation)
+                .Include(q => q.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(q => q.Items)
+                    .ThenInclude(i => i.PurchaseRequestItem)
+                .OrderByDescending(q => q.DateReceived)
+                .ToListAsync();
 
             return View(quotations);
         }
+
         public async Task<IActionResult> ApprovedQuotations()
         {
+            var allQuotations = await context.Quotations.ToListAsync();
+            ViewBag.PendingCount = allQuotations.Count(q => q.Status == "Pending");
+            ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
+            ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
+
             var quotations = await context.Quotations
-         .Where(q => q.Status == "Approved")
-         .Include(q => q.RequestQuotation)
-         .Include(q => q.Supplier)
-             .ThenInclude(s => s.User)
-         .OrderByDescending(q => q.DateReceived)
-         .ToListAsync();
+                .Where(q => q.Status == "Approved")
+               .Include(q => q.RequestQuotation)
+                .Include(q => q.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(q => q.Items)
+                    .ThenInclude(i => i.PurchaseRequestItem)
+                .OrderByDescending(q => q.DateReceived)
+                .ToListAsync();
 
             return View(quotations);
         }
+
         public async Task<IActionResult> RejectedQuotations()
         {
+            var allQuotations = await context.Quotations.ToListAsync();
+            ViewBag.PendingCount = allQuotations.Count(q => q.Status == "Pending");
+            ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
+            ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
+
             var quotations = await context.Quotations
-         .Where(q => q.Status == "Rejected")
-         .Include(q => q.RequestQuotation)
-         .Include(q => q.Supplier)
-             .ThenInclude(s => s.User)
-         .OrderByDescending(q => q.DateReceived)
-         .ToListAsync();
+                .Where(q => q.Status == "Rejected")
+              .Include(q => q.RequestQuotation)
+                .Include(q => q.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(q => q.Items)
+                    .ThenInclude(i => i.PurchaseRequestItem)
+                .OrderByDescending(q => q.DateReceived)
+                .ToListAsync();
 
             return View(quotations);
         }

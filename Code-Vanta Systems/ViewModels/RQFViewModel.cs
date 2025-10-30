@@ -12,7 +12,7 @@ namespace Code_Vanta_Systems.ViewModels
         [DataType(DataType.Date)]
         public DateTime RequestedDate { get; set; } = DateTime.Now;
 
-        [Required(ErrorMessage = "Expected Date is required.")]
+       
         [Display(Name = "Expected Date")]
         [DataType(DataType.Date)]
         public DateTime? ExpectedDate { get; set; }
