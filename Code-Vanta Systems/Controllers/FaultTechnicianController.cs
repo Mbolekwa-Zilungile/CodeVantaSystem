@@ -399,20 +399,24 @@ namespace Code_Vanta_Systems.Controllers
             // 2. Update the Fridge Condition based on technician input
             if (requiresMaintenance)
             {
-                // If the fault is resolved but further maintenance is required, flag for Maintenance Oversight.
+                // Correct: Fridge needs maintenance. It's still at the customer.
                 fault.Fridge.Condition = FridgeCondition.RequireMaintenance;
-
-                // 🔥 CRITICAL FIX: Clear the TechnicianUserId so it becomes 'unassigned'
-                // and visible in the Admin's Maintenance Oversight view.
-                fault.Fridge.TechnicianUserId = null;
-
+                fault.Fridge.TechnicianUserId = null; // Clear technician
+                                                      // *** DO NOT CLEAR fault.Fridge.CustomerId ***
                 TempData["SuccessMessage"] = $"Fault {faultId} resolved. Fridge flagged for Maintenance Oversight.";
+            }
+            else if (fault.Fridge.Status == FridgeStatus.ReturnedToStock)
+            {
+                // Correct: Fridge is being returned. Clear everything.
+                fault.Fridge.Condition = FridgeCondition.ReturnedToStock; // Or Scrapped
+                fault.Fridge.CustomerId = null; // This is correct here
+                fault.Fridge.TechnicianUserId = null;
             }
             else
             {
-                // If the fault is resolved and no further maintenance is required, set to Operational.
+                // Correct: Fault resolved, fridge remains operational at customer site.
                 fault.Fridge.Condition = FridgeCondition.Operational;
-                TempData["SuccessMessage"] = $"Fault {faultId} resolved. Fridge condition set to Operational.";
+                // *** DO NOT CLEAR fault.Fridge.CustomerId ***
             }
 
             // 3. Create Audit Trail Entry (using resolutionNotes)

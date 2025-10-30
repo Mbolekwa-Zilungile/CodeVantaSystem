@@ -4,6 +4,8 @@
     {
         Available,
         Allocated,
+        Operational,
+        ReturnedToStock,
         InRepair,
         Retired
     }

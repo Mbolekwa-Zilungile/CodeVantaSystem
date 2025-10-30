@@ -1,10 +1,26 @@
-﻿@using Code_Vanta_Systems.Data
+﻿@* FILE: _Layout.cshtml
+ * A distinctive, modern layout featuring a Teal/Indigo palette and polished effects.
+ *@
+
+@using Code_Vanta_Systems.Data
 @using Code_Vanta_Systems.Models
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 @inject ApplicationDbContext _context
 
+@{
+    // Define dashboardUrl once at the top for universal availability and scope.
+    string dashboardUrl = "/";
+    if (SignInManager.IsSignedIn(User))
+    {
+        if (User.IsInRole("Admin")) { dashboardUrl = "/Admin/Employees"; }
+        else if (User.IsInRole("Purchasing Manager")) { dashboardUrl = "/PurchasingManager/Index"; }
+        else if (User.IsInRole("Inventory Liaison")) { dashboardUrl = "/InventoryLiaison/Index"; }
+        else if (User.IsInRole("Customer Liaison")) { dashboardUrl = "/CustomerLiaison/PendingCustomers"; }
+        else if (User.IsInRole("Supplier")) { dashboardUrl = "/Supplier/Index"; }
+    }
+}
 
 
 <!DOCTYPE html>
@@ -13,156 +29,211 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - CodeVanta Systems</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="~/css/site.css" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</head>
-<body class="flex flex-col min-h-screen bg-gray-50">
 
-    <!-- ✅ Navbar -->
-    <header class="bg-white shadow-md fixed w-full z-50">
-        <nav class="container mx-auto flex justify-between items-center py-3 px-6">
-            <!-- Logo -->
-            <a href="/" class="flex items-center space-x-2">
-                <img src="~/images/logo.jpg" alt="CodeVanta Logo" class="h-10 w-10 object-cover rounded-full shadow-md" />
-                <span class="text-xl font-bold text-blue-700">CodeVanta</span>
+    @* New Professional Font: Poppins (More stylistic than Inter) *@
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    @* Font Awesome for icons *@
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" integrity="sha512-1ycn6IcaQQ40B70sB2V08h20K6i5i/c6B1t+9gH+gE3oV+9xJ0t3T5w/I/z/VzGq+h/d+Fz/3J4A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="~/css/site.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    @* Tailwind Configuration with new custom colors *@
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-teal': '#009688', // A strong, distinctive Teal
+                        'secondary-indigo': '#4F46E5', // A deep Indigo for contrast
+                        'background-light': '#F3F4F6', // Slightly warmer light background (was F9FAFB)
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="flex flex-col min-h-screen bg-background-light font-sans antialiased">
+
+    @* HEADER: Sticky with blur and enhanced shadow for depth *@
+    <header class="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-sm shadow-xl transition-all duration-300">
+        <nav class="container mx-auto flex justify-between items-center py-4 px-6 lg:px-8">
+            <a asp-controller="Home" asp-action="Index" class="flex items-center space-x-3 group">
+                @* Logo style improved for prominence *@
+                <img src="~/images/logo.jpg" alt="CodeVanta Logo" class="h-10 w-10 object-cover rounded-full border-2 border-primary-teal shadow-xl transition-transform group-hover:scale-105" />
+                <span class="text-2xl font-extrabold text-secondary-indigo tracking-tight">CodeVanta</span>
             </a>
 
-            <!-- Desktop Menu -->
-            <div class="hidden md:flex items-center space-x-6">
-                <a href="/" class="hover:text-blue-600">Home</a>
-                <a href="/Home/Services" class="hover:text-blue-600">Services</a>
-                <a href="/Home/About" class="hover:text-blue-600">About</a>
-                <a href="/Home/Contact" class="hover:text-blue-600">Contact</a>
+            @* DESKTOP NAVIGATION *@
+            <div class="hidden md:flex items-center space-x-7 text-gray-700 font-medium">
+                <a asp-controller="Home" asp-action="Index" class="hover:text-primary-teal transition-colors border-b-2 border-transparent hover:border-primary-teal pb-1">Home</a>
+                <a asp-controller="Home" asp-action="Services" class="hover:text-primary-teal transition-colors border-b-2 border-transparent hover:border-primary-teal pb-1">Services</a>
+                <a asp-controller="Home" asp-action="About" class="hover:text-primary-teal transition-colors border-b-2 border-transparent hover:border-primary-teal pb-1">About</a>
+                <a asp-controller="Home" asp-action="Contact" class="hover:text-primary-teal transition-colors border-b-2 border-transparent hover:border-primary-teal pb-1">Contact</a>
 
                 @if (SignInManager.IsSignedIn(User))
                 {
-                    @* Admin Dashboard *@
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <a href="/Admin/Employees" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
-                    }
-                    @* Purchasing Manager Dashboard + Notifications *@
-                    else if (User.IsInRole("Purchasing Manager"))
-                    {
-                        <a href="/PurchasingManager/Index" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
+                    @* Dashboard Button - Clear Call to Action *@
+                    <a href="@dashboardUrl" class="bg-primary-teal text-white px-5 py-2.5 rounded-xl shadow-lg hover:bg-secondary-indigo transition-all duration-300 transform hover:-translate-y-0.5 font-bold uppercase text-sm">
+                        <i class="fas fa-columns mr-2"></i> Dashboard
+                    </a>
 
-                    }
-                    @* Inventory Liaison Dashboard *@
-                    else if (User.IsInRole("Inventory Liaison"))
-                    {
-                        <a href="/InventoryLiaison/Index" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
-                    }
-                    else if (User.IsInRole("Customer Liaison"))
-                    {
-                        <a href="/CustomerLiaison/PendingCustomers" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
-                       
-                    }
-                    else if (User.IsInRole("Supplier"))
-                    {
-                        <a href="/Supplier/Index" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Dashboard</a>
+                    @* Profile/Logout Dropdown - Enhanced focus ring *@
+                    <div class="relative group">
+                        <button type="button" class="flex items-center space-x-2 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition focus:outline-none focus:ring-4 focus:ring-primary-teal/50 focus:ring-offset-2">
+                            <i class="fas fa-user-circle text-xl text-secondary-indigo"></i>
+                        </button>
 
-                    }
-
-                    @* Logout Form *@
-                    <form method="post" asp-controller="Account" asp-action="Logout" class="inline">
-                        <button type="submit" class="ml-2 text-red-500 hover:underline">Logout</button>
-                    </form>
+                        @* Dropdown Content *@
+                        <div class="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform scale-95 group-hover:scale-100 origin-top-right z-50">
+                            <p class="px-4 py-2 text-xs text-gray-500 border-b">Signed in as: <span class="font-semibold text-gray-800">@UserManager.GetUserName(User)</span></p>
+                            <a href="/Account/Manage" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"><i class="fas fa-cog mr-2"></i> Profile Settings</a>
+                            <form method="post" asp-controller="Account" asp-action="Logout">
+                                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-xl transition">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 }
                 else
                 {
-                    <a href="/Account/Login" class="text-blue-600 hover:underline">Login</a>
-                    <a href="/Account/Register" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition">Register</a>
+                    <a asp-controller="Account" asp-action="Login" class="text-secondary-indigo hover:text-primary-teal font-bold transition-colors">Sign In</a>
+                    <a asp-controller="Account" asp-action="Register" class="bg-secondary-indigo text-white px-5 py-2.5 rounded-xl shadow-xl hover:bg-primary-teal transition-all duration-300 transform hover:-translate-y-0.5 font-bold uppercase text-sm">
+                        <i class="fas fa-user-plus mr-2"></i> Get Started
+                    </a>
                 }
             </div>
 
-            <!-- Mobile Menu Button -->
+            @* MOBILE MENU BUTTON *@
             <div class="md:hidden">
-                <button id="menu-btn" class="text-gray-700 focus:outline-none">
-                    ☰
+                <button id="menu-btn" class="text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition focus:outline-none focus:ring-2 focus:ring-primary-teal" aria-label="Toggle navigation">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                 </button>
             </div>
         </nav>
 
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-md border-t">
-            <div class="flex flex-col px-6 py-4 space-y-3">
-                <a href="/" class="hover:text-blue-600">Home</a>
-                <a href="/Home/Services" class="hover:text-blue-600">Services</a>
-                <a href="/Home/About" class="hover:text-blue-600">About</a>
-                <a href="/Home/Contact" class="hover:text-blue-600">Contact</a>
+        @* MOBILE MENU CONTENT *@
+        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-2xl border-t absolute w-full z-40">
+            <div class="flex flex-col px-6 py-4 space-y-3 text-gray-700 font-medium">
+                <a asp-controller="Home" asp-action="Index" class="block py-2 px-3 hover:bg-gray-50 rounded-lg">Home</a>
+                <a asp-controller="Home" asp-action="Services" class="block py-2 px-3 hover:bg-gray-50 rounded-lg">Services</a>
+                <a asp-controller="Home" asp-action="About" class="block py-2 px-3 hover:bg-gray-50 rounded-lg">About</a>
+                <a asp-controller="Home" asp-action="Contact" class="block py-2 px-3 hover:bg-gray-50 rounded-lg">Contact</a>
 
                 @if (SignInManager.IsSignedIn(User))
                 {
-                    <a href="/Dashboard" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-center">Dashboard</a>
+                    <a href="@dashboardUrl" class="bg-primary-teal text-white px-4 py-3 rounded-xl text-center font-bold">Dashboard</a>
                     <form method="post" asp-controller="Account" asp-action="Logout">
-                        <button type="submit" class="text-red-500 hover:underline w-full text-left">Logout</button>
+                        <button type="submit" class="text-red-600 hover:bg-red-50 transition w-full text-left py-2 px-3 rounded-lg"><i class="fas fa-sign-out-alt mr-2"></i> Logout</button>
                     </form>
                 }
                 else
                 {
-                    <a href="/Account/Login" class="text-blue-600 hover:underline">Login</a>
-                    <a href="/Account/Register" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-center">Register</a>
+                    <a asp-controller="Account" asp-action="Login" class="text-secondary-indigo hover:text-primary-teal block py-2 px-3">Sign In</a>
+                    <a asp-controller="Account" asp-action="Register" class="bg-secondary-indigo text-white px-4 py-3 rounded-xl text-center font-bold">Get Started</a>
                 }
             </div>
         </div>
     </header>
 
-    <!-- ✅ Hero Section -->
-    <section class="relative bg-gray-100 pt-24">
-        <img src="~/images/Repair.jpg" alt="Fridge Repair Service"
-             class="w-full h-96 object-cover opacity-80" />
-        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div class="text-center text-white space-y-4">
-                <h1 class="text-4xl md:text-5xl font-bold">Reliable Fridge Repair Services</h1>
-                <p class="text-lg md:text-xl">Fast, affordable, and trusted by households & businesses.</p>
-                <a href="/Home/Services"
-                   class="bg-blue-600 px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition">Explore Services</a>
+    @* HERO SECTION: Minimal background change for contrast *@
+    <section class="relative bg-background-light pt-[68px] overflow-hidden border-b border-gray-200">
+        <div class="container mx-auto flex flex-col md:flex-row items-center px-6 lg:px-8 py-16 md:py-24">
+            <div class="md:w-1/2 space-y-6 z-10 text-center md:text-left">
+                <p class="text-lg font-semibold text-primary-teal uppercase tracking-widest">CodeVanta Systems</p>
+                <h1 class="text-5xl lg:text-7xl font-extrabold text-gray-900 leading-tight">
+                    Smart, <span class="text-secondary-indigo">Reliable</span> Fridge Repair.
+                </h1>
+                <p class="text-xl text-gray-600 max-w-lg mx-auto md:mx-0">
+                    Your trusted partner for integrated fridge management, fast repairs, and reliable inventory solutions.
+                </p>
+                <div class="pt-4">
+                    <a asp-controller="Home" asp-action="Services"
+                       class="inline-block bg-secondary-indigo text-white font-bold px-8 py-4 rounded-full shadow-2xl shadow-secondary-indigo/50 hover:bg-primary-teal transition-all duration-300 transform hover:scale-[1.03] uppercase tracking-wider text-sm">
+                        Book a Service Today <i class="fas fa-wrench ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="md:w-1/2 mt-10 md:mt-0 flex justify-center z-0">
+                <img src="~/images/Repair.jpg" alt="Technician repairing fridge"
+                     class="w-full max-w-md object-cover rounded-2xl shadow-2xl shadow-primary-teal/30 transform hover:rotate-1 hover:translate-y-2 transition-all duration-500" />
             </div>
         </div>
     </section>
 
-    <!-- ✅ Main Content -->
-    <main class="flex-grow container mx-auto px-6 py-10">
+    <main class="flex-grow container mx-auto px-6 lg:px-8 py-16">
         @RenderBody()
     </main>
 
-    <!-- ✅ Footer -->
-    <footer class="bg-gray-900 text-gray-300 py-10">
-        <div class="container mx-auto grid md:grid-cols-3 gap-8 px-6">
-            <div>
-                <h3 class="text-white font-bold text-xl mb-4">CodeVanta Systems</h3>
-                <p>Your trusted partner in fridge management & repair solutions.</p>
+    @* FOOTER: Darkened background for deeper contrast *@
+    <footer class="bg-gray-900 text-gray-400 pt-12 pb-6 border-t-4 border-primary-teal">
+        <div class="container mx-auto grid md:grid-cols-4 gap-10 px-6 lg:px-8">
+            <div class="md:col-span-1">
+                <h3 class="text-white font-extrabold text-2xl mb-4">CodeVanta</h3>
+                <p class="text-sm">Driven by technology, built on trust. We ensure your essential appliances run flawlessly.</p>
+                <div class="flex space-x-3 mt-6">
+                    <a href="#" class="text-gray-500 hover:text-primary-teal transition"><i class="fab fa-facebook-f fa-lg"></i></a>
+                    <a href="#" class="text-gray-500 hover:text-primary-teal transition"><i class="fab fa-twitter fa-lg"></i></a>
+                    <a href="#" class="text-gray-500 hover:text-primary-teal transition"><i class="fab fa-linkedin-in fa-lg"></i></a>
+                </div>
             </div>
+
             <div>
-                <h3 class="text-white font-bold text-xl mb-4">Quick Links</h3>
-                <ul class="space-y-2">
-                    <li><a href="/" class="hover:text-white">Home</a></li>
-                    <li><a href="/Home/Services" class="hover:text-white">Services</a></li>
-                    <li><a href="/Home/About" class="hover:text-white">About</a></li>
-                    <li><a href="/Home/Contact" class="hover:text-white">Contact</a></li>
+                <h3 class="text-white font-bold text-lg mb-4 border-b border-gray-700 pb-2">Navigation</h3>
+                <ul class="space-y-3 text-sm">
+                    <li><a asp-controller="Home" asp-action="Index" class="hover:text-primary-teal transition">Home</a></li>
+                    <li><a asp-controller="Home" asp-action="Services" class="hover:text-primary-teal transition">Our Services</a></li>
+                    <li><a asp-controller="Home" asp-action="About" class="hover:text-primary-teal transition">Who We Are</a></li>
+                    <li><a asp-controller="Home" asp-action="Contact" class="hover:text-primary-teal transition">Get In Touch</a></li>
                 </ul>
             </div>
+
             <div>
-                <h3 class="text-white font-bold text-xl mb-4">Contact</h3>
-                <p>Email: support@codevanta.com</p>
-                <p>Phone: +27 66 205 0721</p>
-                <p>Address: Port Elizabeth, South Africa</p>
+                <h3 class="text-white font-bold text-lg mb-4 border-b border-gray-700 pb-2">Account</h3>
+                <ul class="space-y-3 text-sm">
+                    @if (SignInManager.IsSignedIn(User))
+                    {
+                        <li><a href="@dashboardUrl" class="hover:text-primary-teal transition">My Dashboard</a></li>
+                        <li><a href="/Account/Manage" class="hover:text-primary-teal transition">Profile Settings</a></li>
+                    }
+                    else
+                    {
+                        <li><a asp-controller="Account" asp-action="Login" class="hover:text-primary-teal transition">Client Login</a></li>
+                        <li><a asp-controller="Account" asp-action="Register" class="hover:text-primary-teal transition">Register</a></li>
+                    }
+                </ul>
+            </div>
+
+            <div>
+                <h3 class="text-white font-bold text-lg mb-4 border-b border-gray-700 pb-2">Contact Info</h3>
+                <ul class="space-y-3 text-sm">
+                    <li class="flex items-center space-x-2"><i class="fas fa-envelope text-primary-teal"></i><span class="hover:text-primary-teal">support@@codevanta.com</span></li>
+                    <li class="flex items-center space-x-2"><i class="fas fa-phone text-primary-teal"></i><span class="hover:text-primary-teal">+27 66 205 0721</span></li>
+                    <li class="flex items-center space-x-2"><i class="fas fa-map-marker-alt text-primary-teal"></i><span class="hover:text-primary-teal">Port Elizabeth, SA</span></li>
+                </ul>
             </div>
         </div>
-        <div class="text-center text-gray-500 mt-6">
-            © @DateTime.Now.Year CodeVanta Systems. All Rights Reserved.
+
+        <div class="text-center text-gray-500 text-sm border-t border-gray-700 mt-10 pt-6">
+            © @DateTime.Now.Year CodeVanta Systems. All Rights Reserved. | Designed with <i class="fas fa-heart text-red-500 mx-1"></i>
         </div>
     </footer>
 
-    <!-- ✅ Mobile Menu Script -->
     <script>
-        const menuBtn = document.getElementById('menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuBtn = document.getElementById('menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
 
-        menuBtn.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
+            menuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
         });
     </script>
 

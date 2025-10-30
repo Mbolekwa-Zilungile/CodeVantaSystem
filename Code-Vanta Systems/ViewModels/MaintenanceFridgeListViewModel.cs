@@ -12,6 +12,8 @@
         public string CustomerAddress { get; set; } // Using Customer's address
 
         public DateTime AllocationDate { get; set; }
+
         public DateTime? NextScheduledVisit { get; set; }
+
     }
 }

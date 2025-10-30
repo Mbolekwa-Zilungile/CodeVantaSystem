@@ -3,6 +3,13 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 
+@{
+    const string PrimaryColor = "#2C3E50";
+    const string AccentColor = "#009688";
+    const string SecondaryAccent = "#FFC107";
+    const string BgColor = "#F8F9FA";
+}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,21 +22,21 @@
 
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: @BgColor;
         }
 
-        /* Sidebar */
         #sidebar {
             height: 100vh;
             width: 250px;
             position: fixed;
-            top: 56px; /* navbar height */
+            top: 56px;
             left: 0;
-            background-color: #343a40; /* Dark gray */
+            background-color: @PrimaryColor;
             color: #fff;
             padding-top: 20px;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
-            z-index: 1020; /* Below the main navbar */
+            z-index: 1020;
             display: flex;
             flex-direction: column;
         }
@@ -39,17 +46,17 @@
                 display: flex;
                 align-items: center;
                 font-size: 1.05rem;
-                color: #adb5bd; /* Light gray text */
+                color: #adb5bd;
                 text-decoration: none;
                 transition: all 0.2s;
             }
 
                 #sidebar .sidebar-link:hover,
                 #sidebar .sidebar-link.active {
-                    background-color: #495057; /* Slightly lighter gray on hover/active */
-                    color: #fff; /* White text on hover/active */
-                    border-left: 5px solid #ffc107; /* Orange/Warning color for active border */
-                    padding-left: 15px; /* Adjust padding due to border */
+                    background-color: #3B5061;
+                    color: #fff;
+                    border-left: 5px solid @AccentColor;
+                    padding-left: 15px;
                 }
 
                 #sidebar .sidebar-link i {
@@ -57,36 +64,33 @@
                     font-size: 1.2rem;
                 }
 
-        /* Main Content */
         #main-content {
-            margin-left: 250px; /* Space for the fixed sidebar */
-            padding-top: 56px; /* Space for the fixed top navbar */
+            margin-left: 250px;
+            padding-top: 56px;
             transition: margin-left 0.3s ease;
             width: calc(100% - 250px);
         }
 
-        /* Top Navbar */
         #top-navbar {
             height: 56px;
             position: fixed;
             top: 0;
             width: 100%;
             z-index: 1030;
-            /* Using standard bootstrap classes for dark navbar */
+            background-color: @PrimaryColor !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
-        /* -------------------------------------------------- */
     </style>
 </head>
 <body>
-    <nav id="top-navbar" class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+    <nav id="top-navbar" class="navbar navbar-expand-lg navbar-dark shadow">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">FMS</a>
+            <a class="navbar-brand fw-bold" href="#" style="color: @SecondaryAccent;">FMS Tech Portal</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    {{-- Left-aligned nav links can go here --}}
                 </ul>
                 <div class="d-flex">
                     <partial name="_LoginPartial" />
@@ -97,7 +101,7 @@
 
     <div id="sidebar">
         <div class="p-3">
-            <h5 class="text-warning mb-4">Maintenance Panel</h5>
+            <h5 class="mb-4" style="color: @SecondaryAccent;">Maintenance Panel</h5>
         </div>
 
         <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"
@@ -105,14 +109,14 @@
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
 
-        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "AllocatedFridges" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="AllocatedFridges">
-            <i class="bi bi-tools"></i> My Assigned Fridges
+        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "AllFridges" ? "active" : "")"
+           asp-controller="MaintenanceTechnician" asp-action="AllFridges">
+            <i class="bi bi-list-columns-reverse"></i> All Fridges
         </a>
 
-        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "CreateFaultReport" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="CreateFaultReport">
-            <i class="bi bi-exclamation-triangle"></i> Report Fault
+        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "AllocatedFridges" ? "active" : "")"
+           asp-controller="MaintenanceTechnician" asp-action="AllocatedFridges">
+            <i class="bi bi-box-seam-fill"></i> Allocated Fridges
         </a>
 
         <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "CreateServiceRecord" ? "active" : "")"
@@ -120,9 +124,9 @@
             <i class="bi bi-wrench"></i> Log Service
         </a>
 
-        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "CreateMaintenanceSchedule" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="CreateMaintenanceSchedule">
-            <i class="bi bi-calendar-check"></i> Schedule Visit
+        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "MaintenanceSchedules" ? "active" : "")"
+           asp-controller="MaintenanceTechnician" asp-action="MaintenanceSchedules">
+            <i class="bi bi-calendar-check"></i> Maintenance Schedules
         </a>
 
         <hr class="bg-secondary my-3 mx-3">

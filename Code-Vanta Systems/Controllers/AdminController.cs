@@ -1133,24 +1133,19 @@ namespace Code_Vanta_Systems.Controllers
                 })
                 .ToList();
 
-            // 2. Query for fridges requiring maintenance oversight
+            // 2. Query for ALL fridges that require maintenance AND are unassigned.
             var fridgesNeedingAssignment = await context.Fridges
                 .Include(f => f.Customer)
                 .Include(f => f.Technician)
                 .Where(f =>
-                    // 🚩 PRIMARY FILTER: Only show fridges that the Fault Technician flagged.
+                    // 🚩 1. PRIMARY FILTER: Must be flagged for maintenance
                     f.Condition == FridgeCondition.RequireMaintenance &&
 
-                    // 🚩 CRITICAL FIX 1: Must be linked to a customer (i.e., not a fridge in stock)
-                    f.CustomerId.HasValue &&
+                    // 🚩 2. ALLOCATION FILTER: Must be allocated to a customer (i.e., in service)
+                    //f.CustomerId.HasValue &&
 
-                    // 🚩 CRITICAL FIX 2: Exclude fridges that are officially out of service
-                    // Based on FridgeStatus.cs: Available (In Stock) and Retired (Scrapped)
-                    f.Status != FridgeStatus.Available &&
-                    f.Status != FridgeStatus.Retired)
-
-                // ❌ REMOVED FILTER: The line 'f.TechnicianUserId == null' was removed 
-                // to show *all* fridges needing maintenance, even if they have a technician already assigned.
+                    // 🔥 3. CRITICAL FIX: Must be unassigned (TechnicianUserId is explicitly set to null by Fault Technician)
+                    f.TechnicianUserId == null)
 
                 .Select(f => new MaintenanceAssignmentViewModel
                 {
@@ -1158,13 +1153,11 @@ namespace Code_Vanta_Systems.Controllers
                     SerialNumber = f.SerialNumber,
                     Model = f.Model,
 
-                    // Handle null Customer case gracefully for display
                     CustomerBusinessName = f.Customer != null ? f.Customer.BusinessName : "N/A",
                     CustomerAddress = f.Customer != null ? f.Customer.PhysicalAddress : "N/A",
 
                     Condition = f.Condition.ToString(),
                     AllocatedTechnicianId = f.TechnicianUserId,
-                    // Display 'Unassigned' if the TechnicianUserId is null
                     AllocatedTechnicianName = f.Technician != null ? f.Technician.FullName : "Unassigned"
                 })
                 .OrderBy(f => f.CustomerBusinessName)

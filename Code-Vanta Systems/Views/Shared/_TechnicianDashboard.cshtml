@@ -1,6 +1,11 @@
 ﻿@{
     string currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     string currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+
+    const string PrimaryColor = "#2C3E50";
+    const string AccentColor = "#DC3545";
+    const string SecondaryAccent = "#FFC107";
+    const string BgColor = "#F8F9FA";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -16,7 +21,7 @@
 
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: @BgColor;
         }
 
         #sidebar {
@@ -25,62 +30,92 @@
             position: fixed;
             top: 56px;
             left: 0;
-            background-color: #343a40;
+            background-color: @PrimaryColor;
             color: #fff;
             padding-top: 20px;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1020;
+            display: flex;
+            flex-direction: column;
         }
+
+            #sidebar .sidebar-link {
+                padding: 15px 20px;
+                display: flex;
+                align-items: center;
+                font-size: 1.05rem;
+                color: #adb5bd;
+                text-decoration: none;
+                transition: all 0.2s;
+            }
+
+                #sidebar .sidebar-link:hover,
+                #sidebar .sidebar-link.active {
+                    background-color: #3B5061;
+                    color: #fff;
+                    border-left: 5px solid @AccentColor;
+                    padding-left: 15px;
+                }
+
+                #sidebar .sidebar-link i {
+                    margin-right: 10px;
+                    font-size: 1.2rem;
+                }
 
         #main-content {
             margin-left: 250px;
-            padding: 20px;
-            padding-top: 80px;
+            padding-top: 56px;
+            transition: margin-left 0.3s ease;
+            width: calc(100% - 250px);
         }
 
-        .sidebar-link {
-            padding: 10px 15px;
-            display: block;
-            color: #adb5bd;
-            text-decoration: none;
+        #top-navbar {
+            height: 56px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1030;
+            background-color: @PrimaryColor !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
-            .sidebar-link:hover, .sidebar-link.active {
-                color: #fff;
-                background-color: #0d6efd;
-                border-radius: 5px;
-            }
+        .navbar-brand {
+            color: @SecondaryAccent !important;
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <nav id="top-navbar" class="navbar navbar-expand-lg navbar-dark shadow">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" asp-controller="FaultTechnician" asp-action="Dashboard">
-                <i class="bi bi-gear-fill me-2"></i>Fault Technician Portal
+            <a class="navbar-brand fw-bold fs-5" asp-controller="FaultTechnician" asp-action="Dashboard">
+                <i class="bi bi-tools me-2"></i>Fault Technician Portal
             </a>
 
             <div class="collapse navbar-collapse justify-content-end">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item d-flex align-items-center me-3">
-                        <a class="nav-link position-relative d-flex align-items-center"
+                        <a class="nav-link position-relative d-flex align-items-center text-white"
                            asp-controller="Notification" asp-action="Index" title="Notifications">
-                            <i class="bi bi-bell me-1" style="font-size:1.2rem;"></i>
+                            <i class="bi bi-bell-fill me-1" style="font-size:1.4rem; color: @AccentColor;"></i>
                             <span id="notificationBadge"
-                                  class="position-absolute translate-middle badge rounded-pill bg-danger"
-                                  style="top:0.6rem; right:0.2rem; font-size:0.65rem; min-width:1.2rem; height:1.2rem; line-height:1.2rem; padding:0; display:none;">
+                                         class="position-absolute translate-middle badge rounded-pill"
+                                         style="top:0.6rem; right:0.2rem; font-size:0.65rem; min-width:1.2rem; height:1.2rem; line-height:1.2rem; padding:0; display:none; background-color: @AccentColor !important;">
                             </span>
                         </a>
                     </li>
 
                     <li class="nav-item dropdown d-flex align-items-center">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#"
+                        <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#"
                            id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle me-1"></i> @User.Identity.Name
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="#">Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="post" asp-controller="Account" asp-action="Logout">
-                                    <button type="submit" class="dropdown-item">Logout</button>
+                                    <button type="submit" class="dropdown-item text-danger">Logout <i class="bi bi-box-arrow-right ms-2"></i></button>
                                 </form>
                             </li>
                         </ul>
@@ -91,31 +126,35 @@
     </nav>
 
     <div id="sidebar">
-        <h6 class="text-uppercase text-light px-3 mt-2 mb-3">Management</h6>
+        <h6 class="text-uppercase text-light opacity-75 px-3 mt-2 mb-3">Fault Management</h6>
         <ul class="nav flex-column px-2">
             <li class="nav-item">
                 <a class="sidebar-link @(currentController == "FaultTechnician" && currentAction == "Dashboard" ? "active" : "")"
                    asp-controller="FaultTechnician" asp-action="Dashboard">
-                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                    <i class="bi bi-speedometer2"></i> Dashboard
                 </a>
             </li>
             <li class="nav-item">
                 <a class="sidebar-link @(currentController == "FaultTechnician" && currentAction == "Index" ? "active" : "")"
                    asp-controller="FaultTechnician" asp-action="Index">
-                    <i class="bi bi-file-earmark-plus me-2"></i>Manage Faults
+                    <i class="bi bi-tools"></i> My Assigned Faults
                 </a>
             </li>
             <li class="nav-item">
                 <a class="sidebar-link @(currentController == "Maintenance" && currentAction == "Index" ? "active" : "")"
                    asp-controller="Maintenance" asp-action="Index">
-                    <i class="bi bi-bookmark-plus me-2"></i>Manage Maintenances
+                    <i class="bi bi-calendar-check"></i> Maintenance Schedules
                 </a>
             </li>
         </ul>
+        
+        <div class="px-3 py-2 mt-auto">
+            <small class="text-white opacity-50">FMS Fault Tech v1.0</small>
+        </div>
     </div>
 
     <div id="main-content">
-        <main role="main" class="pb-3">
+        <main role="main" class="pb-3 p-4">
             @RenderBody()
         </main>
     </div>
@@ -125,6 +164,7 @@
 
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const accentColor = "@AccentColor";
 
         async function updateNotificationBadge() {
             try {
@@ -135,18 +175,17 @@
                 if (badge) {
                     badge.textContent = count > 0 ? count : '';
                     badge.style.display = count > 0 ? 'inline-block' : 'none';
+                    badge.style.backgroundColor = accentColor;
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Notification Error:", err);
             }
         }
 
         $(document).ready(function () {
-            // Initial badge load & refresh
             updateNotificationBadge();
             setInterval(updateNotificationBadge, 30000);
 
-            // Use event delegation for dynamically generated buttons
             $(document).on('click', '.mark-read', function (e) {
                 e.stopPropagation();
                 const btn = $(this);
@@ -161,7 +200,6 @@
                         btn.closest('.card-body').find('.badge').removeClass('bg-danger').addClass('bg-secondary').text('Read');
                         btn.remove();
 
-                        // Update bell count
                         const badge = $('#notificationBadge');
                         let count = parseInt(badge.text() || '0') - 1;
                         if (count > 0) badge.text(count);
@@ -173,7 +211,6 @@
                 });
             });
 
-            // Navigate on card click
             $(document).on('click', '.card', function () {
                 const controller = $(this).data('controller');
                 const action = $(this).data('action');
