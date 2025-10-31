@@ -188,7 +188,7 @@ namespace Code_Vanta_Systems.Controllers
                 Category = f.Category,
                 Status = f.Status,
                 SupplierId = f.SupplierId,
-                LocationId = f.LocationId,
+                //LocationId = f.LocationId,
                 RentalPricePerMonth = f.RentalPricePerMonth,
                 StockQuantity = f.StockQuantity,
                 Description = f.Description,
@@ -1030,6 +1030,27 @@ namespace Code_Vanta_Systems.Controllers
         {
             Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine(bug);
+        }
+
+        #endregion
+
+
+        #region Delivered Fridges
+
+        public async Task<IActionResult> PendingFridges()
+        {
+            var pendingFridges = await _context.Fridges
+                .Where(f => f.Status == FridgeStatus.Pending)
+                .Select(f => new PendingFridgeEditViewModel
+                {
+                    Id = f.Id,
+                    SerialNumber = f.SerialNumber,
+                    Category = f.Category,
+                    Condition = f.Condition,
+                    RentalPricePerMonth = f.RentalPricePerMonth
+                }).ToListAsync();
+
+            return View(pendingFridges);
         }
 
         #endregion

@@ -684,6 +684,7 @@ namespace Code_Vanta_Systems.Controllers
 
             await context.SaveChangesAsync(); // Save all changes at once
 
+            TempData["SuccessMessage"] = $"Purchase Order {purchaseOrder.PONumber} has been successfully approved.";
             return RedirectToAction("AllPurchaseOrders");
         }
 
@@ -752,7 +753,7 @@ namespace Code_Vanta_Systems.Controllers
             var deliveryNote = new DeliveryNote
             {
                 PurchaseOrderId = purchaseOrder.PurchaseOrderId,
-                SupplierId = purchaseOrder.SupplierId, // ✅ FIXED: set valid supplier foreign key
+                SupplierId = purchaseOrder.SupplierId,
                 GeneratedDate = DateTime.Now,
                 ReceivedById = userId,
                 Notes = "Delivery generated from approved purchase order."
@@ -760,11 +761,13 @@ namespace Code_Vanta_Systems.Controllers
 
             context.DeliveryNotes.Add(deliveryNote);
 
+            // ✅ Update the Purchase Order status instead of storing it in the DeliveryNote
             purchaseOrder.Status = OrderStatus.Shipped;
             context.PurchaseOrders.Update(purchaseOrder);
 
             await context.SaveChangesAsync();
 
+            // Notify all purchase managers
             var managers = await userManager.GetUsersInRoleAsync("PurchaseManager");
             foreach (var manager in managers)
             {
@@ -786,8 +789,9 @@ namespace Code_Vanta_Systems.Controllers
 
             TempData["SuccessMessage"] = $"Delivery Note for {purchaseOrder.PONumber} sent successfully.";
 
-            return RedirectToAction("ApprovedPurchaseOrders", "Supplier");
+            return RedirectToAction("ShippedPurchaseOrders", "Supplier");
         }
+
 
         [HttpGet]
         public IActionResult DetailDeliveryNote(int id)

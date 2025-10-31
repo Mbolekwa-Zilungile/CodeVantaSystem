@@ -20,6 +20,8 @@
     <input type="hidden" asp-for="DeliveryTerms" value="@Model.DeliveryTerms" />
     <input type="hidden" asp-for="PaymentTerms" value="@Model.PaymentTerms" />
     <input type="hidden" asp-for="GeneratedDate" value="@Model.GeneratedDate?.ToString("yyyy-MM-dd")" />
+    <input type="hidden" asp-for="ReceivedById" value="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value" />
+    <input type="hidden" asp-for="Status" value="@Model.Status ?? " Approved"" />
 
     <div class="card mb-4 shadow-sm p-3">
         <!-- Header: Delivery Note Number & Date -->

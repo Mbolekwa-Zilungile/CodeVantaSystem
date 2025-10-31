@@ -1505,6 +1505,100 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(viewModel);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveDeliveryNote(int id)
+        {
+            // Load the delivery note and related entities
+            var deliveryNote = await context.DeliveryNotes
+                .Include(dn => dn.PurchaseOrder)
+                    .ThenInclude(po => po.Items)
+                        .ThenInclude(i => i.Fridge)
+                .Include(dn => dn.Supplier)
+                .FirstOrDefaultAsync(dn => dn.Id == id);
+
+            if (deliveryNote == null)
+                return NotFound();
+
+            var purchaseOrder = deliveryNote.PurchaseOrder;
+
+            // 1. Update PO status
+            purchaseOrder.Status = OrderStatus.Delivered;
+            context.PurchaseOrders.Update(purchaseOrder);
+
+            // 2. Approve the delivery note
+            deliveryNote.IsApproved = true;
+            deliveryNote.GeneratedDate = DateTime.Now;
+            context.DeliveryNotes.Update(deliveryNote);
+
+            // 3. Update existing fridge records
+            foreach (var item in purchaseOrder.Items)
+            {
+                if (item.Fridge != null)
+                {
+                    var fridge = item.Fridge;
+
+                    // Add delivered quantity to existing stock
+                    fridge.StockQuantity += item.Quantity;
+
+                    // Update other fields if missing
+                    fridge.PurchaseDate = fridge.PurchaseDate == default ? DateTime.Now : fridge.PurchaseDate;
+                    fridge.ImageUrl ??= "/images/fridge-placeholder.png";
+                    fridge.Description ??= "Awaiting Inventory Liaison completion.";
+                    fridge.Condition = fridge.Condition == 0 ? FridgeCondition.New : fridge.Condition;
+                    fridge.Status = FridgeStatus.Pending; // indicates it still needs liaison review
+                    fridge.LocationId = fridge.LocationId == 0 ? 1 : fridge.LocationId;
+                    fridge.IsDeleted = false;
+
+                    context.Fridges.Update(fridge);
+                }
+            }
+
+            // 4. Notify Inventory Liaison(s)
+            var liaisons = await userManager.GetUsersInRoleAsync("InventoryLiaison");
+            foreach (var liaison in liaisons)
+            {
+                var notification = new Notification
+                {
+                    RecipientUserId = liaison.Id,
+                    Title = "Fridges Awaiting Completion",
+                    Message = $"Fridges from Purchase Order {purchaseOrder.PONumber} have been updated. Please complete their details in the inventory module.",
+                    TargetController = "Inventory",
+                    TargetAction = "PendingFridges",
+                    CreatedAt = DateTime.Now,
+                    IsRead = false
+                };
+                context.Notifications.Add(notification);
+            }
+
+            // 5. Notify Supplier
+            if (deliveryNote.Supplier != null && deliveryNote.Supplier.User != null)
+            {
+                var supplierUser = await userManager.FindByIdAsync(deliveryNote.Supplier.ApplicationUserId);
+                if (supplierUser != null)
+                {
+                    var supplierNotification = new Notification
+                    {
+                        RecipientUserId = supplierUser.Id,
+                        Title = "Delivery Approved",
+                        Message = $"Your delivery for Purchase Order {purchaseOrder.PONumber} has been approved and stock is pending inventory processing.",
+                        TargetController = "Supplier",
+                        TargetAction = "ApprovedPurchaseOrders",
+                        CreatedAt = DateTime.Now,
+                        IsRead = false
+                    };
+                    context.Notifications.Add(supplierNotification);
+                }
+            }
+
+            // 6. Save all changes
+            await context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Delivery Note {deliveryNote.Id} approved successfully. Fridges updated and stock quantity increased. Awaiting completion by the Inventory Liaison.";
+
+            return RedirectToAction("AllPurchaseOrders", "PurchasingManager");
+        } 
         #endregion
     }
 

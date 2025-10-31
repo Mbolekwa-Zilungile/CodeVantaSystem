@@ -1,0 +1,56 @@
+﻿@model List<Code_Vanta_Systems.ViewModels.PendingFridgeEditViewModel>
+
+@{
+    ViewData["Title"] = "Pending Fridges";
+}
+
+<h2>Pending Fridges</h2>
+
+<form asp-action="UpdatePendingFridges" asp-controller="Inventory" method="post">
+    @Html.AntiForgeryToken()
+
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Serial Number</th>
+                <th>Category</th>
+                <th>Condition</th>
+                <th>Rental Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                <tr>
+                    <td>
+                        @Model[i].Id
+                        <input type="hidden" asp-for="@Model[i].Id" />
+                    </td>
+
+                    <td>
+                        <input asp-for="@Model[i].SerialNumber" class="form-control" />
+                    </td>
+
+                    <td>
+                        <select asp-for="@Model[i].Category" class="form-select"
+                                asp-items="Html.GetEnumSelectList<Code_Vanta_Systems.Models.Enums.FridgeCategory>()">
+                        </select>
+                    </td>
+
+                    <td>
+                        <select asp-for="@Model[i].Condition" class="form-select"
+                                asp-items="Html.GetEnumSelectList<Code_Vanta_Systems.Models.Enums.FridgeCondition>()">
+                        </select>
+                    </td>
+
+                    <td>
+                        <input asp-for="@Model[i].RentalPricePerMonth" class="form-control" />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-success mt-3">Save All Changes</button>
+</form>

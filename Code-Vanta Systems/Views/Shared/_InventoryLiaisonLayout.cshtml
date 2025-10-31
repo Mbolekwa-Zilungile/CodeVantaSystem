@@ -158,7 +158,11 @@
            asp-controller="InventoryLiaison" asp-action="PurchaseRequests">
             <i class="bi bi-receipt me-2"></i>Purchase Request
         </a>
-
+         
+         <a class="sidebar-link @(currentController == "InventoryLiaison" && currentAction == "PurchaseRequests" ? "active" : "")"
+           asp-controller="InventoryLiaison" asp-action="PendingFridges">
+            <i class="bi bi-receipt me-2"></i>Delivered Fridges
+        </a> 
       @*   <a class="sidebar-link @(currentController == "Admin" && (currentAction == "ManageRoles" || currentAction == "EditUserRoles") ? "active" : "")"
            asp-controller="Admin" asp-action="ManageRoles">
             <i class="bi bi-send me-2"></i>RFQS

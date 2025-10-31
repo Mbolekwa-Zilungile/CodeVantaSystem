@@ -2,6 +2,7 @@
 {
     public enum FridgeStatus
     {
+        Pending,
         Available,
         Allocated,
         Operational,

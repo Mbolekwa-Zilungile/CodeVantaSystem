@@ -123,7 +123,7 @@
                     <th>Category</th>
                     <th>Status</th>
                     <th>Supplier</th>
-                    <th>Location</th>
+               
                     <th>Price/Month</th>
                     <th>Stock</th>
                     <th>Stock Level</th>
@@ -164,7 +164,7 @@
                             <td>@fridge.Category</td>
                             <td>@fridge.Status</td>
                             <td>@suppliers.FirstOrDefault(s => s.Value == fridge.SupplierId.ToString())?.Text</td>
-                            <td>@locations.FirstOrDefault(l => l.Value == fridge.LocationId.ToString())?.Text</td>
+                            
                             <td>@fridge.RentalPricePerMonth.ToString("C")</td>
                             <td>@fridge.StockQuantity</td>
                             <td class="@levelClass">@levelText</td>
