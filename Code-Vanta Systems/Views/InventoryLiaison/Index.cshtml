@@ -138,12 +138,12 @@
                         string levelText;
                         string levelClass;
 
-                        if (fridge.StockQuantity < 50)
+                        if (fridge.StockQuantity < 20)
                         {
                             levelText = "Low";
                             levelClass = "text-danger fw-bold";
                         }
-                        else if (fridge.StockQuantity < 100)
+                        else if (fridge.StockQuantity < 50)
                         {
                             levelText = "Medium";
                             levelClass = "text-warning fw-bold";
@@ -176,7 +176,7 @@
                                     <i class="bi bi-trash"></i> Delete
                                 </a>
                                 <a asp-action="Create" asp-route-fridgeId="@fridge.Id" class="btn btn-sm btn-primary mb-1">
-                                    <i class="bi bi-envelope"></i> Email PM
+                                    <i class="bi bi-envelope"></i> Create PR
                                 </a>
                             </td>
                         </tr>

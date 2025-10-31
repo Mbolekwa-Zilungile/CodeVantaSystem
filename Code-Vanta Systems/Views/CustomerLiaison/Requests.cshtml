@@ -50,7 +50,7 @@
                             <button class="btn btn-success btn-sm" onclick="approve(@r.Id)">Approve</button>
                             <button class="btn btn-danger btn-sm" onclick="reject(@r.Id)">Reject</button>
                         }
-                        else if (r.Status == "Approved" && r.IsPaid && r.AllocationId == null)
+                       @*  else if (r.Status == "Approved" && r.IsPaid && r.AllocationId == null)
                         {
                             <a class="btn btn-primary btn-sm" href="@Url.Action("CreateAllocationFromRental", "CustomerLiaison", new { rentalId = r.Id })">Allocate Fridge</a>
                         }
@@ -61,7 +61,7 @@
                         else
                         {
                             <span class="text-muted">No actions</span>
-                        }
+                        } *@
                     </div>
                 </td>
             </tr>
