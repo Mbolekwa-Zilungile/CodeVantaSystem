@@ -3,8 +3,8 @@
 
 @{
     ViewData["Title"] = "Delivery Note";
-    Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
-}
+    Layout = "~/Views/Shared/_SupplierLayout.cshtml";
+    }
 
 <form asp-action="SendDeliveryNote" asp-controller="Supplier" method="post">
     @Html.AntiForgeryToken()
@@ -106,13 +106,17 @@
                 <i class="bi bi-arrow-left-circle me-1"></i> Back to Approved Orders
             </a>
 
-            <a asp-action="ApprovedPurchaseOrders" asp-controller="Supplier" class="btn btn-primary me-2">
-                <i class="bi bi-arrow-left-circle me-1"></i>Approve
-            </a>
+            @* Only show buttons if user is Purchase Manager *@
+            @if (User.IsInRole("PurchaseManager"))
+            {
+                <button type="submit" formaction="@Url.Action("ApproveDeliveryNote", "Supplier", new { id = Model.Id })" class="btn btn-success me-2">
+                    <i class="bi bi-check-circle me-1"></i> Approve
+                </button>
 
-            <a asp-action="ApprovedPurchaseOrders" asp-controller="Supplier" class="btn btn-secondary me-2">
-                <i class="bi bi-arrow-left-circle me-1"></i> Cancel
-            </a>
+                <button type="submit" formaction="@Url.Action("CancelDeliveryNote", "Supplier", new { id = Model.Id })" class="btn btn-danger">
+                    <i class="bi bi-x-circle me-1"></i> Cancel
+                </button>
+            }
         </div>
     </div>
 </form>

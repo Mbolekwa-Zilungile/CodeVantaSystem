@@ -60,7 +60,7 @@ namespace Code_Vanta_Systems.Controllers
             }
             return View();
         }
-  
+
         public async Task<IActionResult> Suppliers()
         {
             var activeSuppliers = await context.Suppliers.Include(s => s.User)
@@ -156,7 +156,7 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
-            } 
+            }
 
             return View(model);
         }
@@ -410,7 +410,7 @@ namespace Code_Vanta_Systems.Controllers
         {
             return View();
         }
-       
+
         public async Task<IActionResult> Details(int id)
         {
             var request = await context.PurchaseRequests
@@ -504,7 +504,7 @@ namespace Code_Vanta_Systems.Controllers
             // 3. Update main request fields
             request.ExpectedDate = model.ExpectedDate;
             request.Priority = model.Priority;
-            request.Status = Code_Vanta_Systems.Models.Enums.RequestStatus.Submitted; 
+            request.Status = Code_Vanta_Systems.Models.Enums.RequestStatus.Submitted;
             request.Notes = model.Notes;
 
             // 4. Manage line items (Delete, Update, Add)
@@ -664,7 +664,7 @@ namespace Code_Vanta_Systems.Controllers
             if (purchaseRequest == null)
                 return NotFound();
 
-           
+
             var suppliers = await context.Suppliers
                 .Include(s => s.User)
                 .Where(s => s.IsActive)
@@ -1325,8 +1325,8 @@ namespace Code_Vanta_Systems.Controllers
                 .Select(s => s.User.Email)
                 .FirstOrDefaultAsync();
 
-           
-            return RedirectToAction("PurchaseOrderDetails", new { id = purchaseOrder.PurchaseOrderId });
+
+            return RedirectToAction("AllPurchaseOrders");
         }
 
         public async Task<IActionResult> PurchaseOrderDetails(int id)
@@ -1342,28 +1342,28 @@ namespace Code_Vanta_Systems.Controllers
      .FirstOrDefaultAsync(po => po.PurchaseOrderId == id);
 
             if (purchaseOrder == null)
-                    return NotFound();
+                return NotFound();
 
-                // Total amount calculated via Items
-                ViewBag.TotalAmount = purchaseOrder.Items?.Sum(i => i.Quantity * i.UnitPrice) ?? 0;
+            // Total amount calculated via Items
+            ViewBag.TotalAmount = purchaseOrder.Items?.Sum(i => i.Quantity * i.UnitPrice) ?? 0;
 
-                // Expected delivery date from RequestQuotation
-                ViewBag.ExpectedDeliveryDate = purchaseOrder.Quotation?.RequestQuotation?.ExpectedDeliveryDate;
+            // Expected delivery date from RequestQuotation
+            ViewBag.ExpectedDeliveryDate = purchaseOrder.Quotation?.RequestQuotation?.ExpectedDeliveryDate;
 
-                return View(purchaseOrder);
-            }
+            return View(purchaseOrder);
+        }
 
         public async Task<IActionResult> AllPurchaseOrders()
         {
-                var allOrders = await context.PurchaseOrders
-           .Include(po => po.Supplier)
-               .ThenInclude(s => s.User) // Supplier info
-           .Include(po => po.Items)
-               .ThenInclude(i => i.Fridge) // Fridge details
-           .Include(po => po.Quotation)
-               .ThenInclude(q => q.RequestQuotation) // Include request quotation
-           .OrderByDescending(po => po.CreatedDate)
-           .ToListAsync();
+            var allOrders = await context.PurchaseOrders
+       .Include(po => po.Supplier)
+           .ThenInclude(s => s.User) // Supplier info
+       .Include(po => po.Items)
+           .ThenInclude(i => i.Fridge) // Fridge details
+       .Include(po => po.Quotation)
+           .ThenInclude(q => q.RequestQuotation) // Include request quotation
+       .OrderByDescending(po => po.CreatedDate)
+       .ToListAsync();
 
             ViewBag.PendingCount = allOrders.Count(po => po.Status == OrderStatus.Pending);
             ViewBag.ApprovedCount = allOrders.Count(po => po.Status == OrderStatus.Approved);
@@ -1454,21 +1454,56 @@ namespace Code_Vanta_Systems.Controllers
             return View(pendingOrders);
 
         }
-        public async Task<IActionResult> DetailDeliveryNote(int id)
+        public async Task<IActionResult> DeliveryNoteDetails(int id)
         {
             if (id == 0)
                 return BadRequest();
 
             var deliveryNote = await context.DeliveryNotes
                 .Include(dn => dn.PurchaseOrder)
-                    .ThenInclude(po => po.Supplier)
+                    .ThenInclude(po => po.Items)
+                        .ThenInclude(i => i.Fridge)
+                .Include(dn => dn.Supplier) // Supplier who created the delivery note
                 .Include(dn => dn.ReceivedBy)
                 .FirstOrDefaultAsync(dn => dn.Id == id);
 
             if (deliveryNote == null)
                 return NotFound();
 
-            return View(deliveryNote);
+            // Get Supplier email from ApplicationUser
+            string supplierEmail = null;
+            if (!string.IsNullOrEmpty(deliveryNote.Supplier?.ApplicationUserId))
+            {
+                var supplierUser = await userManager.FindByIdAsync(deliveryNote.Supplier.ApplicationUserId);
+                supplierEmail = supplierUser?.Email;
+            }
+
+            // Map to ViewModel
+            var viewModel = new DeliveryNoteViewModel
+            {
+                Id = deliveryNote.Id,
+                PurchaseOrderId = deliveryNote.PurchaseOrderId,
+                PONumber = deliveryNote.PurchaseOrder.PONumber,
+                SupplierName = deliveryNote.Supplier?.Name,
+                SupplierEmail = supplierEmail,
+                SupplierPhone = deliveryNote.Supplier?.Phone,
+                SupplierAddress = deliveryNote.Supplier?.Address,
+                DeliveryAddress = deliveryNote.PurchaseOrder.DeliveryAddress,
+                DeliveryTerms = deliveryNote.PurchaseOrder.DeliveryTerms,
+                PaymentTerms = deliveryNote.PurchaseOrder.PaymentTerms,
+                GeneratedDate = deliveryNote.GeneratedDate ?? deliveryNote.DeliveryDate,
+                ExpectedDeliveryDate = deliveryNote.PurchaseOrder.ExpectedDeliveryDate,
+                Status = deliveryNote.PurchaseOrder.Status.ToString(),
+                ReceivedById = deliveryNote.ReceivedById,
+                Items = deliveryNote.PurchaseOrder.Items.Select(i => new DeliveryItemViewModel
+                {
+                    FridgeModel = i.Fridge?.Model,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.UnitPrice
+                }).ToList()
+            };
+
+            return View(viewModel);
         }
         #endregion
     }

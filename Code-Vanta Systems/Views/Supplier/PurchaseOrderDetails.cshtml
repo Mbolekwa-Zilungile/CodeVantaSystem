@@ -4,7 +4,7 @@
 
 @{
     ViewData["Title"] = "Purchase Order Details";
-    Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
+    Layout = "~/Views/Shared/_SupplierLayout.cshtml";
 }
 
 <h2 class="mb-4">Purchase Order Details</h2>
@@ -97,15 +97,26 @@
 
     @if (Model.Status == OrderStatus.Pending)
     {
+        <!-- Approve Button when Status is Pending -->
         <form asp-action="AcceptPurchaseOrder" asp-controller="Supplier" method="post" class="d-inline">
             <input type="hidden" name="id" value="@Model.PurchaseOrderId" />
             @Html.AntiForgeryToken()
             <button type="submit" class="btn btn-success me-2">
-                <i class="bi bi-check-circle me-1"></i> Accept
+                <i class="bi bi-check-circle me-1"></i> Approve
             </button>
         </form>
     }
     else if (Model.Status == OrderStatus.Approved)
+    {
+        <!-- Always show Create Delivery Note button when Status is Approved -->
+        <a asp-action="DeliveryNote"
+           asp-controller="Supplier"
+           asp-route-id="@Model.PurchaseOrderId"
+           class="btn btn-success me-2">
+            <i class="bi bi-file-earmark-plus me-1"></i> Create Delivery Note
+        </a>
+    }
+    else if (Model.Status == OrderStatus.Shipped)
     {
         var deliveryNote = Model.DeliveryNotes?.OrderByDescending(dn => dn.Id).FirstOrDefault();
 
@@ -114,22 +125,6 @@
             <a asp-action="DetailDeliveryNote"
                asp-controller="Supplier"
                asp-route-id="@deliveryNote.Id"
-               class="btn btn-success me-2">
-                <i class="bi bi-check-circle me-1"></i> View Delivery Note
-            </a>
-        }
-        else
-        {
-            <span class="text-muted">No Delivery Note Available</span>
-        }
-    }
-    else if (Model.Status == OrderStatus.Shipped)
-    {
-        var deliveryNote = Model.DeliveryNotes?.OrderByDescending(dn => dn.Id).FirstOrDefault();
-
-        if (deliveryNote != null)
-        {
-            <a asp-action="DetailDeliveryNote" asp-controller="Supplier" asp-route-id="@deliveryNote.Id">
                class="btn btn-primary me-2">
                 <i class="bi bi-truck me-1"></i> View Delivery Note
             </a>
