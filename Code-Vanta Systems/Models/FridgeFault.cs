@@ -37,5 +37,9 @@ namespace Code_Vanta_Systems.Models
         public FaultStatus Status { get; set; }
 
         public DateTime? ResolutionDate { get; set; }
+
+        public string ResolutionNotes { get; set; }
+
+
     }
 }

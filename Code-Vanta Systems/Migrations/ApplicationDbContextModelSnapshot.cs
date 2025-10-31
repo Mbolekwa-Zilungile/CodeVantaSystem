@@ -561,6 +561,10 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<DateTime?>("ResolutionDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ResolutionNotes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Severity")
                         .HasColumnType("int");
 

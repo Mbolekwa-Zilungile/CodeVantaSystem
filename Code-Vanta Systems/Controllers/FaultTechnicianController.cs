@@ -381,7 +381,6 @@ namespace Code_Vanta_Systems.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // CRITICAL: Include Fridge to allow condition update
             var fault = await _context.FridgeFaults
                 .Include(f => f.Fridge)
                 .FirstOrDefaultAsync(f => f.Id == faultId && f.AssignedTechnicianId == currentUser.Id);
@@ -395,31 +394,30 @@ namespace Code_Vanta_Systems.Controllers
             // 1. Update the Fault Status
             fault.Status = FaultStatus.Resolved;
             fault.ResolutionDate = DateTime.Now;
+            fault.ResolutionNotes = resolutionNotes;
 
             // 2. Update the Fridge Condition based on technician input
             if (requiresMaintenance)
             {
-                // Correct: Fridge needs maintenance. It's still at the customer.
                 fault.Fridge.Condition = FridgeCondition.RequireMaintenance;
-                fault.Fridge.TechnicianUserId = null; // Clear technician
-                                                      // *** DO NOT CLEAR fault.Fridge.CustomerId ***
+                fault.Fridge.TechnicianUserId = null;
                 TempData["SuccessMessage"] = $"Fault {faultId} resolved. Fridge flagged for Maintenance Oversight.";
             }
             else if (fault.Fridge.Status == FridgeStatus.ReturnedToStock)
             {
-                // Correct: Fridge is being returned. Clear everything.
-                fault.Fridge.Condition = FridgeCondition.ReturnedToStock; // Or Scrapped
-                fault.Fridge.CustomerId = null; // This is correct here
+                fault.Fridge.Condition = FridgeCondition.ReturnedToStock;
+                fault.Fridge.CustomerId = null;
                 fault.Fridge.TechnicianUserId = null;
+                TempData["SuccessMessage"] = $"Fault {faultId} resolved. Fridge returned to stock.";
             }
             else
             {
-                // Correct: Fault resolved, fridge remains operational at customer site.
                 fault.Fridge.Condition = FridgeCondition.Operational;
-                // *** DO NOT CLEAR fault.Fridge.CustomerId ***
+                fault.Fridge.TechnicianUserId = null;
+                TempData["SuccessMessage"] = $"Fault {faultId} resolved. Fridge remains operational.";
             }
 
-            // 3. Create Audit Trail Entry (using resolutionNotes)
+            // 3. Create Audit Trail Entry
             var audit = new AuditTrail
             {
                 EntityName = "FridgeFault",
@@ -433,7 +431,7 @@ namespace Code_Vanta_Systems.Controllers
             try
             {
                 _context.Update(fault);
-                _context.Update(fault.Fridge); // Ensure the Fridge object changes are saved
+                _context.Update(fault.Fridge);
                 _context.AuditTrails.Add(audit);
                 await _context.SaveChangesAsync();
             }

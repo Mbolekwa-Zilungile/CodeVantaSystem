@@ -64,21 +64,20 @@ namespace Code_Vanta_Systems.Controllers
             var currentUserId = _userManager.GetUserId(User);
 
             var allocatedFridges = await _context.Fridges
-                // REMOVED: .Include(f => f.Customer) 
                 .Include(f => f.Location)
                 .Include(f => f.MaintenanceSchedules)
-                // CRITICAL FIX: Include ONLY the active Allocation record to get the current customer
+                // Include active Allocation record to get the current customer
                 .Include(f => f.Allocations.Where(a => a.DeallocationDate == null))
                     .ThenInclude(a => a.Customer)
                 .Where(f =>
-                    f.TechnicianUserId == currentUserId &&  // The technician-specific filter
-                    f.Status == FridgeStatus.Allocated &&
+                    f.TechnicianUserId == currentUserId &&  // Assigned to current technician
+                    f.Condition == FridgeCondition.RequireMaintenance && // REQUIRES maintenance
                     !f.IsDeleted)
                 .ToListAsync();
 
             var viewModel = allocatedFridges.Select(f =>
             {
-                // NEW: Get the customer from the active allocation record
+                // Get the customer from the active allocation record
                 var activeAllocation = f.Allocations.FirstOrDefault();
                 var customer = activeAllocation?.Customer;
 
@@ -88,6 +87,7 @@ namespace Code_Vanta_Systems.Controllers
                     SerialNumber = f.SerialNumber,
                     Model = f.Model,
                     FridgeStatus = f.Status.ToString(),
+                    Condition = f.Condition.ToString(), // Added this to see the condition
 
                     // Use the Customer from the Allocation table (the source of truth)
                     CustomerBusinessName = customer?.BusinessName ?? "N/A",
@@ -101,7 +101,7 @@ namespace Code_Vanta_Systems.Controllers
                 };
             }).OrderBy(vm => vm.CustomerBusinessName).ToList();
 
-            return View(viewModel); // Use the AllocatedFridges View
+            return View(viewModel);
         }
 
         // -------------------------------------------------------------

@@ -1116,46 +1116,44 @@ namespace Code_Vanta_Systems.Controllers
         //=========================================================
         // MAINTENANCE OVERSIGHT (GET)
         //=========================================================
-
         [HttpGet]
         public async Task<IActionResult> MaintenanceOversight()
         {
-            // 1. Get all Maintenance Technicians for the dropdown (This remains the same)
+            // Get maintenance technicians for dropdown
             var maintenanceRole = await roleManager.FindByNameAsync("Maintenance Technician");
             var maintenanceTechnicians = await userManager.GetUsersInRoleAsync(maintenanceRole.Name);
 
-            // This list populates the Technician dropdown in the view
             ViewBag.MaintenanceTechnicians = maintenanceTechnicians
                 .Select(u => new SelectListItem
                 {
                     Value = u.Id,
-                    Text = u.FullName // Assuming ApplicationUser has a FullName property
+                    Text = u.FullName
                 })
                 .ToList();
 
-            // 2. Query for ALL fridges that require maintenance AND are unassigned.
+            // CRITICAL: Get fridges that require maintenance AND are unassigned to technicians
             var fridgesNeedingAssignment = await context.Fridges
                 .Include(f => f.Customer)
                 .Include(f => f.Technician)
+                .Include(f => f.Allocations.Where(a => a.DeallocationDate == null))
+                    .ThenInclude(a => a.Customer)
                 .Where(f =>
-                    // 🚩 1. PRIMARY FILTER: Must be flagged for maintenance
                     f.Condition == FridgeCondition.RequireMaintenance &&
-
-                    // 🚩 2. ALLOCATION FILTER: Must be allocated to a customer (i.e., in service)
-                    //f.CustomerId.HasValue &&
-
-                    // 🔥 3. CRITICAL FIX: Must be unassigned (TechnicianUserId is explicitly set to null by Fault Technician)
-                    f.TechnicianUserId == null)
-
+                    f.TechnicianUserId == null &&  // Unassigned to any technician
+                    !f.IsDeleted)
                 .Select(f => new MaintenanceAssignmentViewModel
                 {
                     FridgeId = f.Id,
                     SerialNumber = f.SerialNumber,
                     Model = f.Model,
-
-                    CustomerBusinessName = f.Customer != null ? f.Customer.BusinessName : "N/A",
-                    CustomerAddress = f.Customer != null ? f.Customer.PhysicalAddress : "N/A",
-
+                    CustomerBusinessName = f.Allocations.FirstOrDefault() != null &&
+                                          f.Allocations.FirstOrDefault().Customer != null
+                        ? f.Allocations.FirstOrDefault().Customer.BusinessName
+                        : (f.Customer != null ? f.Customer.BusinessName : "N/A"),
+                    CustomerAddress = f.Allocations.FirstOrDefault() != null &&
+                                     f.Allocations.FirstOrDefault().Customer != null
+                        ? f.Allocations.FirstOrDefault().Customer.PhysicalAddress
+                        : (f.Customer != null ? f.Customer.PhysicalAddress : "N/A"),
                     Condition = f.Condition.ToString(),
                     AllocatedTechnicianId = f.TechnicianUserId,
                     AllocatedTechnicianName = f.Technician != null ? f.Technician.FullName : "Unassigned"
