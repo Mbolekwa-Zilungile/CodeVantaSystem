@@ -147,6 +147,11 @@
            asp-controller="PurchasingManager" asp-action="SupplerQuotations">
             <i class="bi bi-send me-2"></i>Supplier Quotations
         </a>
+
+        <a class="sidebar-link @(currentController == "PurchasingManager" && currentAction == "MyQuotations" ? "active" : "")"
+           asp-controller="PurchasingManager" asp-action="AllPurchaseOrders">
+            <i class="bi bi-send me-2"></i>Purchase Orders
+        </a>
         <div class="px-3 py-2 mt-auto">
             <small class="text-muted">FMS v1.0 - Purchase Manager</small>
         </div>

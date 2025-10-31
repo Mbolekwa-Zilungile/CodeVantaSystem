@@ -125,6 +125,11 @@
             <i class="bi bi-box2-heart"></i> Qoutations
         </a>
 
+        <a class="sidebar-link @(ViewContext.RouteData.Values["action"]?.ToString() == "MyQuotations" ? "active" : "")"
+           asp-controller="Supplier" asp-action="AllPurchaseOrders">
+            <i class="bi bi-box2-heart"></i> Purchase Orders
+        </a>
+
 
         <div class="px-3 py-2 mt-auto">
             <small class="text-muted">FMS v1.0 — Supplier</small>

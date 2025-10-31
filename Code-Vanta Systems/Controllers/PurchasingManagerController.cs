@@ -3,6 +3,8 @@ using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Services;
 using Code_Vanta_Systems.ViewModels;
+using Code_Vanta_Systems.ViewModels.DeliveryNote;
+using Code_Vanta_Systems.ViewModels.PurchaseOrder;
 using Code_Vanta_Systems.ViewModels.SupplierQoutation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -869,6 +871,7 @@ namespace Code_Vanta_Systems.Controllers
             ViewBag.PendingCount = allQuotations.Count(q => q.Status == "Pending");
             ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
             ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
+            ViewBag.sentCount = allQuotations.Count(q => q.Status == "Sent");
 
             // Only pending quotations for this page
             var quotations = await context.Quotations
@@ -890,6 +893,7 @@ namespace Code_Vanta_Systems.Controllers
             ViewBag.PendingCount = allQuotations.Count(q => q.Status == "Pending");
             ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
             ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
+            ViewBag.sentCount = allQuotations.Count(q => q.Status == "Sent");
 
             var quotations = await context.Quotations
                 .Where(q => q.Status == "Approved")
@@ -910,9 +914,30 @@ namespace Code_Vanta_Systems.Controllers
             ViewBag.PendingCount = allQuotations.Count(q => q.Status == "Pending");
             ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
             ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
+            ViewBag.sentCount = allQuotations.Count(q => q.Status == "Sent");
 
             var quotations = await context.Quotations
                 .Where(q => q.Status == "Rejected")
+              .Include(q => q.RequestQuotation)
+                .Include(q => q.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(q => q.Items)
+                    .ThenInclude(i => i.PurchaseRequestItem)
+                .OrderByDescending(q => q.DateReceived)
+                .ToListAsync();
+
+            return View(quotations);
+        }
+        public async Task<IActionResult> SentQuotations()
+        {
+            var allQuotations = await context.Quotations.ToListAsync();
+            ViewBag.PendingCount = allQuotations.Count(q => q.Status == "Pending");
+            ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
+            ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
+            ViewBag.sentCount = allQuotations.Count(q => q.Status == "Sent");
+
+            var quotations = await context.Quotations
+                .Where(q => q.Status == "Sent")
               .Include(q => q.RequestQuotation)
                 .Include(q => q.Supplier)
                     .ThenInclude(s => s.User)
@@ -1144,6 +1169,306 @@ namespace Code_Vanta_Systems.Controllers
 
             TempData["Success"] = $"Quotation #{quotation.Id} rejected.";
             return RedirectToAction("QuotationsByRequest", new { purchaseRequestId = quotation.PurchaseRequestId });
+        }
+        #endregion
+
+        #region Purchase order
+
+        [HttpGet]
+        public async Task<IActionResult> CreatePurchaseOrder(int quotationId)
+        {
+            // 1. Retrieve the Quotation with all necessary related data (Supplier, Items, etc.)
+            var quotation = await context.Quotations
+                .Include(q => q.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(q => q.RequestQuotation)
+                    .ThenInclude(rq => rq.PurchaseRequest)
+                .Include(q => q.Items)
+                    .ThenInclude(i => i.PurchaseRequestItem)
+                .FirstOrDefaultAsync(q => q.Id == quotationId);
+
+            if (quotation == null)
+                return NotFound();
+
+            var company = await context.Company.FirstOrDefaultAsync();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await context.Users.FindAsync(userId);
+            var roles = await userManager.GetRolesAsync(user);
+
+            // 2. Map data to the PurchaseOrderCreateViewModel
+            var vm = new PurchaseOrderCreateViewModel
+            {
+                QuotationId = quotation.Id,
+                QuotationNumber = quotation.QuotationNumber, // Note: This might be null if not set yet
+                SupplierId = quotation.SupplierId,
+                SupplierName = quotation.Supplier.Name,
+                SupplierEmail = quotation.Supplier.User?.Email,
+                SupplierPhone = quotation.Supplier.Phone,
+                SupplierAddress = quotation.Supplier.Address,
+
+                CompanyName = company?.Name,
+                CompanyEmail = company?.Email,
+                CompanyPhone = company?.Phone,
+                CompanyAddress = company?.Address,
+
+                // ExpectedDate is pulled from RequestQuotation/PurchaseRequest
+                ExpectedDeliveryDate = quotation.RequestQuotation?.ExpectedDeliveryDate,
+                DeliveryAddress = "CoolTech Warehouse, 124 Logistic Ave, Johannesburg",
+                DeliveryTerms = "Free on Board (FOB) Johannesburg",
+                PaymentTerms = "30 Days after Delivery",
+
+                // **CRITICAL:** Mapping the quotation items to PO items for the view model
+                Items = quotation.Items.Select(i => new PurchaseOrderItemViewModel
+                {
+                    // Note: FridgeId is required for the PO Item entity
+                    FridgeId = i.PurchaseRequestItem.FridgeId,
+                    ItemName = i.FridgeModel, // Display name
+                    Quantity = i.QuotedQuantity, // Use quoted quantity
+                    UnitPrice = i.QuotedUnitPrice // Use quoted unit price
+                }).ToList(),
+
+                ManagerName = user?.FullName,
+                ManagerEmail = user?.Email,
+                ManagerRole = string.Join(", ", roles)
+            };
+
+            return View(vm); // show confirmation form
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreatePurchaseOrder(PurchaseOrderCreateViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Generate PO number
+            string lastPO = await context.PurchaseOrders
+                .OrderByDescending(po => po.PurchaseOrderId)
+                .Select(po => po.PONumber)
+                .FirstOrDefaultAsync();
+
+            int nextNum = 1;
+            if (!string.IsNullOrEmpty(lastPO) && lastPO.StartsWith("PO-"))
+            {
+                var parts = lastPO.Split('-');
+                if (parts.Length == 3 && int.TryParse(parts[2], out int lastNum))
+                    nextNum = lastNum + 1;
+            }
+
+            string newPONumber = $"PO-{DateTime.Now.Year}-{nextNum:000}";
+
+            var purchaseOrder = new PurchaseOrder
+            {
+                PONumber = newPONumber,
+                QuotationId = model.QuotationId,
+                SupplierId = model.SupplierId,
+                ExpectedDeliveryDate = model.ExpectedDeliveryDate,
+                DeliveryAddress = model.DeliveryAddress,
+                DeliveryTerms = model.DeliveryTerms,
+                PaymentTerms = model.PaymentTerms,
+                CreatedDate = DateTime.Now,
+                OrderDate = DateTime.Now,
+                OrderedByUserId = userId,
+                Status = OrderStatus.Pending,
+                Items = new List<PurchaseOrderItem>()
+            };
+
+            foreach (var item in model.Items)
+            {
+                purchaseOrder.Items.Add(new PurchaseOrderItem
+                {
+                    FridgeId = item.FridgeId,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice
+                });
+            }
+
+            context.PurchaseOrders.Add(purchaseOrder);
+
+            // Update quotation status
+            var quotation = await context.Quotations.FindAsync(model.QuotationId);
+            if (quotation != null)
+            {
+                quotation.Status = "Sent";
+                context.Quotations.Update(quotation);
+            }
+
+            await context.SaveChangesAsync(); // Save PO and quotation status
+
+            // ---- Notification ----
+            var supplierUserId = await context.Suppliers
+                .Where(s => s.Id == model.SupplierId)
+                .Select(s => s.User.Id)
+                .FirstOrDefaultAsync();
+
+            if (!string.IsNullOrEmpty(supplierUserId))
+            {
+                var notification = new Notification
+                {
+                    RecipientUserId = supplierUserId,
+                    Title = "New Purchase Order Created",
+                    Message = $"A new Purchase Order ({newPONumber}) has been created based on your quotation ({quotation?.QuotationNumber}).",
+                    TargetController = "Supplier",
+                    TargetAction = "PurchaseOrders",
+                    CreatedAt = DateTime.Now
+                };
+                context.Notifications.Add(notification);
+                await context.SaveChangesAsync();
+            }
+
+            // ---- Email ----
+            var supplierEmail = await context.Suppliers
+                .Where(s => s.Id == model.SupplierId)
+                .Select(s => s.User.Email)
+                .FirstOrDefaultAsync();
+
+           
+            return RedirectToAction("PurchaseOrderDetails", new { id = purchaseOrder.PurchaseOrderId });
+        }
+
+        public async Task<IActionResult> PurchaseOrderDetails(int id)
+        {
+            var purchaseOrder = await context.PurchaseOrders
+     .Include(po => po.Supplier)
+         .ThenInclude(s => s.User)
+     .Include(po => po.Items)
+         .ThenInclude(i => i.Fridge)
+     .Include(po => po.Quotation)
+         .ThenInclude(q => q.RequestQuotation)
+     .Include(po => po.DeliveryNotes) // Include delivery notes
+     .FirstOrDefaultAsync(po => po.PurchaseOrderId == id);
+
+            if (purchaseOrder == null)
+                    return NotFound();
+
+                // Total amount calculated via Items
+                ViewBag.TotalAmount = purchaseOrder.Items?.Sum(i => i.Quantity * i.UnitPrice) ?? 0;
+
+                // Expected delivery date from RequestQuotation
+                ViewBag.ExpectedDeliveryDate = purchaseOrder.Quotation?.RequestQuotation?.ExpectedDeliveryDate;
+
+                return View(purchaseOrder);
+            }
+
+        public async Task<IActionResult> AllPurchaseOrders()
+        {
+                var allOrders = await context.PurchaseOrders
+           .Include(po => po.Supplier)
+               .ThenInclude(s => s.User) // Supplier info
+           .Include(po => po.Items)
+               .ThenInclude(i => i.Fridge) // Fridge details
+           .Include(po => po.Quotation)
+               .ThenInclude(q => q.RequestQuotation) // Include request quotation
+           .OrderByDescending(po => po.CreatedDate)
+           .ToListAsync();
+
+            ViewBag.PendingCount = allOrders.Count(po => po.Status == OrderStatus.Pending);
+            ViewBag.ApprovedCount = allOrders.Count(po => po.Status == OrderStatus.Approved);
+            ViewBag.DeliveredCount = allOrders.Count(po => po.Status == OrderStatus.Delivered);
+            ViewBag.ShippedCount = allOrders.Count(po => po.Status == OrderStatus.Shipped);
+
+            var pendingOrders = allOrders
+                .Where(po => po.Status == OrderStatus.Pending)
+                .OrderByDescending(po => po.CreatedDate)
+                .ToList();
+
+            return View(pendingOrders);
+
+        }
+        public async Task<IActionResult> ApprovedPurchaseOrders()
+        {
+            var allOrders = await context.PurchaseOrders
+       .Include(po => po.Supplier)
+           .ThenInclude(s => s.User) // Supplier info
+       .Include(po => po.Items)
+           .ThenInclude(i => i.Fridge) // Fridge details
+       .Include(po => po.Quotation)
+           .ThenInclude(q => q.RequestQuotation) // Include request quotation
+       .OrderByDescending(po => po.CreatedDate)
+       .ToListAsync();
+
+            ViewBag.PendingCount = allOrders.Count(po => po.Status == OrderStatus.Pending);
+            ViewBag.ApprovedCount = allOrders.Count(po => po.Status == OrderStatus.Approved);
+            ViewBag.DeliveredCount = allOrders.Count(po => po.Status == OrderStatus.Delivered);
+            ViewBag.ShippedCount = allOrders.Count(po => po.Status == OrderStatus.Shipped);
+
+            var pendingOrders = allOrders
+                .Where(po => po.Status == OrderStatus.Approved)
+                .OrderByDescending(po => po.CreatedDate)
+                .ToList();
+
+            return View(pendingOrders);
+
+        }
+        public async Task<IActionResult> ShippedPurchaseOrders()
+        {
+            var allOrders = await context.PurchaseOrders
+       .Include(po => po.Supplier)
+           .ThenInclude(s => s.User) // Supplier info
+       .Include(po => po.Items)
+           .ThenInclude(i => i.Fridge) // Fridge details
+       .Include(po => po.Quotation)
+           .ThenInclude(q => q.RequestQuotation) // Include request quotation
+       .OrderByDescending(po => po.CreatedDate)
+       .ToListAsync();
+
+            ViewBag.PendingCount = allOrders.Count(po => po.Status == OrderStatus.Pending);
+            ViewBag.ApprovedCount = allOrders.Count(po => po.Status == OrderStatus.Approved);
+            ViewBag.DeliveredCount = allOrders.Count(po => po.Status == OrderStatus.Delivered);
+            ViewBag.ShippedCount = allOrders.Count(po => po.Status == OrderStatus.Shipped);
+
+            var pendingOrders = allOrders
+                .Where(po => po.Status == OrderStatus.Shipped)
+                .OrderByDescending(po => po.CreatedDate)
+                .ToList();
+
+            return View(pendingOrders);
+
+        }
+
+        public async Task<IActionResult> DeliveredPurchaseOrders()
+        {
+            var allOrders = await context.PurchaseOrders
+       .Include(po => po.Supplier)
+           .ThenInclude(s => s.User) // Supplier info
+       .Include(po => po.Items)
+           .ThenInclude(i => i.Fridge) // Fridge details
+       .Include(po => po.Quotation)
+           .ThenInclude(q => q.RequestQuotation) // Include request quotation
+       .OrderByDescending(po => po.CreatedDate)
+       .ToListAsync();
+
+            ViewBag.PendingCount = allOrders.Count(po => po.Status == OrderStatus.Pending);
+            ViewBag.ApprovedCount = allOrders.Count(po => po.Status == OrderStatus.Approved);
+            ViewBag.DeliveredCount = allOrders.Count(po => po.Status == OrderStatus.Delivered);
+            ViewBag.ShippedCount = allOrders.Count(po => po.Status == OrderStatus.Shipped);
+
+            var pendingOrders = allOrders
+                .Where(po => po.Status == OrderStatus.Delivered)
+                .OrderByDescending(po => po.CreatedDate)
+                .ToList();
+
+            return View(pendingOrders);
+
+        }
+        public async Task<IActionResult> DetailDeliveryNote(int id)
+        {
+            if (id == 0)
+                return BadRequest();
+
+            var deliveryNote = await context.DeliveryNotes
+                .Include(dn => dn.PurchaseOrder)
+                    .ThenInclude(po => po.Supplier)
+                .Include(dn => dn.ReceivedBy)
+                .FirstOrDefaultAsync(dn => dn.Id == id);
+
+            if (deliveryNote == null)
+                return NotFound();
+
+            return View(deliveryNote);
         }
         #endregion
     }

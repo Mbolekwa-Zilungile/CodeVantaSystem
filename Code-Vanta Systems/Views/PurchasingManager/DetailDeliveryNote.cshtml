@@ -1,0 +1,22 @@
+﻿@model Code_Vanta_Systems.Models.DeliveryNote
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Delivery Note Details";
+}
+
+<h2>Delivery Note Details</h2>
+
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+        Delivery Note Info
+    </div>
+    <div class="card-body">
+        <p><strong>Delivery Note ID:</strong> @Model.Id</p>
+        <p><strong>Purchase Order:</strong> @Model.PurchaseOrder?.PONumber</p>
+        <p><strong>Delivery Date:</strong> @Model.DeliveryDate.ToString("dd MMM yyyy")</p>
+        <p><strong>Received By:</strong> @Model.ReceivedBy?.FullName</p>
+        <p><strong>Notes:</strong> @Model.Notes</p>
+        <p><strong>Approved:</strong> @(Model.IsApproved ? "Yes" : "No")</p>
+    </div>
+</div>

@@ -11,6 +11,10 @@ namespace Code_Vanta_Systems.Models
         public int Id { get; set; }
 
         [Required]
+        [StringLength(50)]
+        public string QuotationNumber { get; set; }
+
+        [Required]
         [DataType(DataType.Date)]
         public DateTime DateReceived { get; set; } = DateTime.Now;
 

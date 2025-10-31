@@ -5,6 +5,8 @@ namespace Code_Vanta_Systems.Models
 {
     public class PurchaseOrderItem
     {
+
+
         [Key]
         public int ItemId { get; set; }
 
@@ -13,15 +15,18 @@ namespace Code_Vanta_Systems.Models
         public PurchaseOrder PurchaseOrder { get; set; }
 
         [Required]
-        public int InventoryItemId { get; set; }
-        public InventoryItem InventoryItem { get; set; }
+        public int FridgeId { get; set; }
+        public Fridge Fridge { get; set; }
 
         [Required]
-        [Range(1, int.MaxValue)]
         public int Quantity { get; set; }
 
         [Required]
-        [Column(TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
+
+        [NotMapped]
+        public decimal Total => Quantity * UnitPrice;
+
+
     }
 }

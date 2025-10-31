@@ -84,5 +84,7 @@ namespace Code_Vanta_Systems.Models
             SensorReadings = new HashSet<SensorReading>(); // Initialize new collection
             ServiceRecords = new HashSet<ServiceRecord>();
         }
+
+        public virtual ICollection<PurchaseOrderItem> PurchaseOrderItems { get; set; } = new HashSet<PurchaseOrderItem>();
     }
 }

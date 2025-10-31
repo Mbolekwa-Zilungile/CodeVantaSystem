@@ -28,11 +28,15 @@ namespace Code_Vanta_Systems.Models
         [Required]
         public string ReceivedById { get; set; }
 
+        public bool IsApproved { get; set; }
+
         [ForeignKey("ReceivedById")]
         public virtual ApplicationUser ReceivedBy { get; set; }
 
         //Optional notes
         [StringLength(500)]
         public string Notes { get; set; }
+
+        public DateTime? GeneratedDate { get; set; }
     }
 }

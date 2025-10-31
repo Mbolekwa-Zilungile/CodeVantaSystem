@@ -18,10 +18,10 @@ namespace Code_Vanta_Systems.Data.Configurations
                    .OnDelete(DeleteBehavior.Cascade);
 
             // 🛠️ MODIFIED: Restrict deletion of InventoryItem
-            builder.HasOne(poi => poi.InventoryItem)
-                   .WithMany(ii => ii.PurchaseOrderItems)
-                   .HasForeignKey(poi => poi.InventoryItemId)
-                   .OnDelete(DeleteBehavior.Restrict);
+            builder.HasOne(poi => poi.Fridge)
+        .WithMany(f => f.PurchaseOrderItems)
+        .HasForeignKey(poi => poi.FridgeId)
+        .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

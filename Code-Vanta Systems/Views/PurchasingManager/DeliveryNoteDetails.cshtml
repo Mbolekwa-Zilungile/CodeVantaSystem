@@ -1,0 +1,60 @@
+﻿@model Code_Vanta_Systems.Models.DeliveryNote
+
+<h2>Delivery Note Details</h2>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5>Delivery Note Info</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>Delivery Note ID:</strong> @Model.Id</p>
+        <p><strong>Delivery Date:</strong> @Model.DeliveryDate.ToString("dd MMM yyyy")</p>
+        <p><strong>Received By:</strong> @Model.ReceivedBy?.FullName</p>
+        <p><strong>Approved:</strong> @(Model.IsApproved ? "Yes" : "No")</p>
+        <p><strong>Notes:</strong> @Model.Notes ?? "None"</p>
+        <p><strong>Purchase Order Number:</strong> @Model.PurchaseOrder?.PONumber</p>
+    </div>
+</div>
+
+<!-- Ordered Items -->
+@if (Model.PurchaseOrder?.Items != null && Model.PurchaseOrder.Items.Any())
+{
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5>Ordered Items</h5>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Fridge Model</th>
+                        <th>Quantity</th>
+                        <th>Unit Price (ZAR)</th>
+                        <th>Total (ZAR)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.PurchaseOrder.Items.Count; i++)
+                    {
+                        var item = Model.PurchaseOrder.Items.ElementAt(i);
+                        <tr>
+                            <td>@(i + 1)</td>
+                            <td>@item.Fridge?.Model</td>
+                            <td>@item.Quantity</td>
+                            <td>@item.UnitPrice.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("en-ZA"))</td>
+                            <td>@(item.Quantity * item.UnitPrice).ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("en-ZA"))</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="4" class="text-end">Grand Total:</th>
+                        <th>@Model.PurchaseOrder.Items.Sum(i => i.Quantity * i.UnitPrice).ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("en-ZA"))</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+}
+
