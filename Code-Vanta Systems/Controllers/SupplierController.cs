@@ -789,57 +789,49 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction("ApprovedPurchaseOrders", "Supplier");
         }
 
-      
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ApproveDeliveryNote(int id)
+        [HttpGet]
+        public IActionResult DetailDeliveryNote(int id)
         {
-            var deliveryNote = await context.DeliveryNotes
+            var deliveryNote = context.DeliveryNotes
+                .Include(dn => dn.PurchaseOrder)
+                    .ThenInclude(po => po.Supplier)
                 .Include(dn => dn.PurchaseOrder)
                     .ThenInclude(po => po.Items)
                         .ThenInclude(i => i.Fridge)
-                .Include(dn => dn.Supplier)
-                .FirstOrDefaultAsync(dn => dn.Id == id);
+                .FirstOrDefault(dn => dn.Id == id);
 
             if (deliveryNote == null)
-                return NotFound();
-
-            // Approve delivery note and update order
-            deliveryNote.IsApproved = true;
-            context.DeliveryNotes.Update(deliveryNote);
-
-            // Update fridge stock
-            foreach (var item in deliveryNote.PurchaseOrder.Items)
             {
-                if (item.Fridge != null)
-                {
-                    item.Fridge.StockQuantity += item.Quantity;
-                    context.Fridges.Update(item.Fridge);
-                }
+                return NotFound();
             }
 
-            await context.SaveChangesAsync();
+            var po = deliveryNote.PurchaseOrder;
 
-           
-
-            // Create in-app notification
-            var notification = new Notification
+            // Map to your ViewModel
+            var viewModel = new DeliveryNoteViewModel
             {
-                RecipientUserId = deliveryNote.Supplier.Id.ToString(),
-                Title = "Delivery Approved",
-                Message = $"Your delivery for PO {deliveryNote.PurchaseOrder.PONumber} has been approved.",
-                TargetController = "Supplier",
-                TargetAction = "MyDeliveryNotes",
-                CreatedAt = DateTime.Now,
-                IsRead = false
+                Id = deliveryNote.Id,
+                PurchaseOrderId = po.PurchaseOrderId,
+                PONumber = po.PONumber,
+                SupplierName = po.Supplier?.Name,
+                SupplierEmail = po.Supplier?.User?.Email,
+                SupplierPhone = po.Supplier?.Phone,
+                SupplierAddress = po.Supplier?.Address,
+                DeliveryAddress = po.DeliveryAddress,
+                DeliveryTerms = po.DeliveryTerms,
+                PaymentTerms = po.PaymentTerms,
+                GeneratedDate = deliveryNote.GeneratedDate ?? deliveryNote.DeliveryDate,
+                ExpectedDeliveryDate = po.ExpectedDeliveryDate,
+                Status = po.Status.ToString(),
+                Items = po.Items.Select(i => new DeliveryItemViewModel
+                {
+                    FridgeModel = i.Fridge?.Model,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.UnitPrice
+                }).ToList()
             };
 
-            context.Notifications.Add(notification);
-            await context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = $"Delivery Note #{deliveryNote.Id} approved and email sent.";
-
-            return RedirectToAction("AllDeliveryNotes", "PurchasingManager");
+            return View(viewModel);
         }
         #endregion
     }
