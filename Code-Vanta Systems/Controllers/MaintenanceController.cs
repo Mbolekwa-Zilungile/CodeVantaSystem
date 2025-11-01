@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Code_Vanta_Systems.Controllers
-{    
+{
     public class MaintenanceController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -26,8 +26,9 @@ namespace Code_Vanta_Systems.Controllers
         public async Task<IActionResult> Index(int? pageIndex, string? search)
         {
             var query = _context.FridgeMaintenances
-                .Include(m => m.Fridge)
-                .Include(c => c.Customer)
+                .Include(m => m.FridgeUnit)
+                .ThenInclude(fu => fu.FridgeModel)
+                .Include(m => m.Customer)
                 .Include(m => m.Technician)
                 .OrderByDescending(m => m.CreatedDate)
                 .AsQueryable();
@@ -36,7 +37,8 @@ namespace Code_Vanta_Systems.Controllers
             {
                 search = search.ToLower();
                 query = query.Where(m =>
-                    m.Fridge.Model.ToLower().Contains(search) ||
+                    m.FridgeUnit.FridgeModel.Name.ToLower().Contains(search) ||
+                    m.FridgeUnit.SerialNumber.ToLower().Contains(search) ||
                     m.Technician.FullName.ToLower().Contains(search) ||
                     m.MaintenanceDescription.ToLower().Contains(search)
                 );
@@ -54,8 +56,9 @@ namespace Code_Vanta_Systems.Controllers
                 .Select(m => new MaintenanceViewModel
                 {
                     Id = m.Id,
-                    FridgeId = m.FridgeId,
-                    FridgeModel = m.Fridge.Model,
+                    FridgeUnitId = m.FridgeUnitId,
+                    FridgeModel = m.FridgeUnit.FridgeModel.Name,
+                    SerialNumber = m.FridgeUnit.SerialNumber,
                     CustomerId = m.CustomerId,
                     BusinessName = m.Customer.BusinessName,
                     TechnicianId = m.TechnicianId,
@@ -71,8 +74,9 @@ namespace Code_Vanta_Systems.Controllers
             ViewData["totalPages"] = totalPages;
             ViewData["search"] = search ?? "";
 
-            ViewBag.Fridges = await _context.Fridges
-                .Where(f => !f.IsDeleted)
+            ViewBag.FridgeUnits = await _context.FridgeUnits
+                .Include(fu => fu.FridgeModel)
+                .Where(fu => !fu.IsDeleted)
                 .ToListAsync();
 
             return View(maintenances);
@@ -83,9 +87,10 @@ namespace Code_Vanta_Systems.Controllers
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            ViewBag.Fridges = await _context.Fridges
-                .Where(f => !f.IsDeleted)
-                .Select(f => new { f.Id, f.Model, f.SerialNumber })
+            ViewBag.FridgeUnits = await _context.FridgeUnits
+                .Include(fu => fu.FridgeModel)
+                .Where(fu => !fu.IsDeleted)
+                .Select(fu => new { fu.Id, Model = fu.FridgeModel.Name, fu.SerialNumber })
                 .ToListAsync();
 
             return View();
@@ -100,9 +105,10 @@ namespace Code_Vanta_Systems.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["ErrorMessage"] = "Please correct the errors in the form.";
-                ViewBag.Fridges = await _context.Fridges
-                    .Where(f => !f.IsDeleted)
-                    .Select(f => new { f.Id, f.Model, f.SerialNumber })
+                ViewBag.FridgeUnits = await _context.FridgeUnits
+                    .Include(fu => fu.FridgeModel)
+                    .Where(fu => !fu.IsDeleted)
+                    .Select(fu => new { fu.Id, Model = fu.FridgeModel.Name, fu.SerialNumber })
                     .ToListAsync();
                 return View(model);
             }
@@ -114,22 +120,23 @@ namespace Code_Vanta_Systems.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // ✅ Load the fridge allocation including Customer and Fridge
+            // ✅ Load the fridge unit allocation including Customer and FridgeUnit
             var allocation = await _context.FridgeAllocations
                 .Include(a => a.Customer)
-                .Include(a => a.Fridge)
-                .FirstOrDefaultAsync(a => a.FridgeId == model.FridgeId && a.DeallocationDate == null);
+                .Include(a => a.FridgeUnit)
+                .ThenInclude(fu => fu.FridgeModel)
+                .FirstOrDefaultAsync(a => a.FridgeUnitId == model.FridgeUnitId && a.DeallocationDate == null);
 
             if (allocation == null || allocation.Customer == null)
             {
-                TempData["ErrorMessage"] = "No active customer found for this fridge.";
+                TempData["ErrorMessage"] = "No active customer found for this fridge unit.";
                 return RedirectToAction(nameof(Index));
             }
 
             // ✅ Create the maintenance record
             var maintenance = new FridgeMaintenance
             {
-                FridgeId = model.FridgeId,
+                FridgeUnitId = model.FridgeUnitId,
                 CustomerId = allocation.Customer.Id,
                 TechnicianId = user.Id,
                 CreatedDate = DateTime.UtcNow,
@@ -140,6 +147,15 @@ namespace Code_Vanta_Systems.Controllers
 
             _context.FridgeMaintenances.Add(maintenance);
 
+            // ✅ Update fridge unit condition if needed
+            var fridgeUnit = await _context.FridgeUnits.FindAsync(model.FridgeUnitId);
+            if (fridgeUnit != null && fridgeUnit.Condition != FridgeCondition.RequireMaintenance)
+            {
+                fridgeUnit.Condition = FridgeCondition.RequireMaintenance;
+                fridgeUnit.Status = FridgeStatus.InRepair;
+                _context.FridgeUnits.Update(fridgeUnit);
+            }
+
             // ✅ Audit trail
             _context.AuditTrails.Add(new AuditTrail
             {
@@ -148,7 +164,7 @@ namespace Code_Vanta_Systems.Controllers
                 ChangedByUserId = user.Id,
                 ChangeType = "Create",
                 ChangeDate = DateTime.Now,
-                ChangeDetails = $"Technician '{user.FullName}' scheduled maintenance for fridge ID {model.FridgeId}."
+                ChangeDetails = $"Technician '{user.FullName}' scheduled maintenance for fridge unit {fridgeUnit?.SerialNumber ?? "Unknown"} (ID: {model.FridgeUnitId})."
             });
 
             // ✅ Notify the customer if they have a linked User account
@@ -158,11 +174,11 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     RecipientUserId = allocation.Customer.UserId,
                     Title = "Upcoming Fridge Maintenance",
-                    Message = $"Maintenance has been scheduled for your fridge (Model: {allocation.Fridge?.Model ?? "Unknown"}, Serial: {allocation.Fridge?.SerialNumber ?? "Unknown"}) on {model.MaintenanceDate:dd MMM yyyy}.",
+                    Message = $"Maintenance has been scheduled for your fridge (Model: {allocation.FridgeUnit.FridgeModel.Name}, Serial: {allocation.FridgeUnit.SerialNumber}) on {model.MaintenanceDate:dd MMM yyyy}.",
                     CreatedAt = DateTime.Now,
                     IsRead = false,
                     TargetController = "Maintenance",
-                    TargetAction = "Index"
+                    TargetAction = "CustomerSchedules"
                 });
             }
 
@@ -171,7 +187,6 @@ namespace Code_Vanta_Systems.Controllers
             TempData["SuccessMessage"] = "Maintenance scheduled successfully and the customer has been notified.";
             return RedirectToAction(nameof(Index));
         }
-
 
         // POST: Edit Maintenance (used by modal)
         [Authorize(Roles = "Fault Technician")]
@@ -187,7 +202,8 @@ namespace Code_Vanta_Systems.Controllers
 
             var user = await _userManager.GetUserAsync(User);
             var maintenance = await _context.FridgeMaintenances
-                .Include(m => m.Fridge)
+                .Include(m => m.FridgeUnit)
+                .ThenInclude(fu => fu.FridgeModel)
                 .FirstOrDefaultAsync(m => m.Id == model.Id);
 
             if (maintenance == null)
@@ -205,6 +221,19 @@ namespace Code_Vanta_Systems.Controllers
             maintenance.Status = model.Status;
             maintenance.ActualCompletionDate = model.ActualCompletionDate;
 
+            // Update fridge unit condition if maintenance is completed
+            if (model.Status == MaintenanceStatus.Completed)
+            {
+                var fridgeUnit = await _context.FridgeUnits.FindAsync(maintenance.FridgeUnitId);
+                if (fridgeUnit != null)
+                {
+                    fridgeUnit.Condition = FridgeCondition.Operational;
+                    fridgeUnit.Status = FridgeStatus.InWarehouse;
+                    fridgeUnit.TechnicianUserId = null; // Clear technician assignment
+                    _context.FridgeUnits.Update(fridgeUnit);
+                }
+            }
+
             await _context.SaveChangesAsync();
 
             // Audit Trail
@@ -218,11 +247,12 @@ namespace Code_Vanta_Systems.Controllers
                 ChangeDetails = $"Maintenance ID {maintenance.Id} updated by '{user.FullName}'. Status changed from {oldStatus} to {maintenance.Status}."
             });
 
-            // Notify all customers with the same fridge
+            // Notify all customers with the same fridge unit
             var allocations = await _context.FridgeAllocations
                 .Include(a => a.Customer)
-                .Include(a => a.Fridge)
-                .Where(a => a.FridgeId == maintenance.FridgeId && a.DeallocationDate == null)
+                .Include(a => a.FridgeUnit)
+                .ThenInclude(fu => fu.FridgeModel)
+                .Where(a => a.FridgeUnitId == maintenance.FridgeUnitId && a.DeallocationDate == null)
                 .ToListAsync();
 
             foreach (var allocation in allocations)
@@ -232,11 +262,11 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     string statusMessage = maintenance.Status switch
                     {
-                        MaintenanceStatus.Completed => $"Maintenance for your fridge (Model: {allocation.Fridge.Model}) has been completed on {maintenance.ActualCompletionDate?.ToString("dd MMM yyyy")}.",
-                        MaintenanceStatus.Scheduled => $"Maintenance for your fridge (Model: {allocation.Fridge.Model}) is currently in progress.",
-                        MaintenanceStatus.Cancelled => $"Maintenance for your fridge (Model: {allocation.Fridge.Model}) has been cancelled.",
-                        MaintenanceStatus.Overdue => $"Maintenance for your fridge (Model: {allocation.Fridge.Model}) has been rescheduled to {maintenance.MaintenanceDate:dd MMM yyyy}.",
-                        _ => $"The status of your fridge maintenance (Model: {allocation.Fridge.Model}) has been updated to {maintenance.Status}."
+                        MaintenanceStatus.Completed => $"Maintenance for your fridge (Model: {allocation.FridgeUnit.FridgeModel.Name}, Serial: {allocation.FridgeUnit.SerialNumber}) has been completed on {maintenance.ActualCompletionDate?.ToString("dd MMM yyyy")}.",
+                        MaintenanceStatus.Scheduled => $"Maintenance for your fridge (Model: {allocation.FridgeUnit.FridgeModel.Name}, Serial: {allocation.FridgeUnit.SerialNumber}) is currently in progress.",
+                        MaintenanceStatus.Cancelled => $"Maintenance for your fridge (Model: {allocation.FridgeUnit.FridgeModel.Name}, Serial: {allocation.FridgeUnit.SerialNumber}) has been cancelled.",
+                        MaintenanceStatus.Overdue => $"Maintenance for your fridge (Model: {allocation.FridgeUnit.FridgeModel.Name}, Serial: {allocation.FridgeUnit.SerialNumber}) has been rescheduled to {maintenance.MaintenanceDate:dd MMM yyyy}.",
+                        _ => $"The status of your fridge maintenance (Model: {allocation.FridgeUnit.FridgeModel.Name}, Serial: {allocation.FridgeUnit.SerialNumber}) has been updated to {maintenance.Status}."
                     };
 
                     _context.Notifications.Add(new Notification
@@ -247,7 +277,7 @@ namespace Code_Vanta_Systems.Controllers
                         CreatedAt = DateTime.Now,
                         IsRead = false,
                         TargetController = "Maintenance",
-                        TargetAction = "Index"
+                        TargetAction = "CustomerSchedules"
                     });
                 }
             }
@@ -302,16 +332,17 @@ namespace Code_Vanta_Systems.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            // Get all fridge IDs allocated to this customer
-            var customerFridgeIds = await _context.FridgeAllocations
+            // Get all fridge unit IDs allocated to this customer
+            var customerFridgeUnitIds = await _context.FridgeAllocations
                 .Where(a => a.Customer.UserId == user.Id && a.DeallocationDate == null)
-                .Select(a => a.FridgeId)
+                .Select(a => a.FridgeUnitId)
                 .ToListAsync();
 
             var query = _context.FridgeMaintenances
-                .Include(m => m.Fridge)
+                .Include(m => m.FridgeUnit)
+                .ThenInclude(fu => fu.FridgeModel)
                 .Include(m => m.Technician)
-                .Where(m => customerFridgeIds.Contains(m.FridgeId))
+                .Where(m => customerFridgeUnitIds.Contains(m.FridgeUnitId))
                 .OrderByDescending(m => m.CreatedDate)
                 .AsQueryable();
 
@@ -319,7 +350,8 @@ namespace Code_Vanta_Systems.Controllers
             {
                 search = search.ToLower();
                 query = query.Where(m =>
-                    m.Fridge.Model.ToLower().Contains(search) ||
+                    m.FridgeUnit.FridgeModel.Name.ToLower().Contains(search) ||
+                    m.FridgeUnit.SerialNumber.ToLower().Contains(search) ||
                     m.Technician.FullName.ToLower().Contains(search) ||
                     m.MaintenanceDescription.ToLower().Contains(search)
                 );
@@ -337,8 +369,9 @@ namespace Code_Vanta_Systems.Controllers
                 .Select(m => new MaintenanceViewModel
                 {
                     Id = m.Id,
-                    FridgeId = m.FridgeId,
-                    FridgeModel = m.Fridge.Model,
+                    FridgeUnitId = m.FridgeUnitId,
+                    FridgeModel = m.FridgeUnit.FridgeModel.Name,
+                    SerialNumber = m.FridgeUnit.SerialNumber,
                     TechnicianId = m.TechnicianId,
                     TechnicianName = m.Technician.FullName,
                     MaintenanceDate = m.MaintenanceDate,
@@ -353,6 +386,46 @@ namespace Code_Vanta_Systems.Controllers
             ViewData["search"] = search ?? "";
 
             return View(schedules);
+        }
+
+        // GET: Maintenance Details
+        [Authorize(Roles = "Fault Technician, Customer")]
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            var maintenance = await _context.FridgeMaintenances
+                .Include(m => m.FridgeUnit)
+                .ThenInclude(fu => fu.FridgeModel)
+                .Include(m => m.Customer)
+                .Include(m => m.Technician)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (maintenance == null)
+            {
+                TempData["ErrorMessage"] = "Maintenance record not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Check if current user has access (technician who created it or customer who owns the fridge)
+            var user = await _userManager.GetUserAsync(User);
+            var isCustomer = await _userManager.IsInRoleAsync(user, "Customer");
+
+            if (isCustomer)
+            {
+                // Verify the customer owns this fridge unit
+                var customerOwnsFridge = await _context.FridgeAllocations
+                    .AnyAsync(a => a.FridgeUnitId == maintenance.FridgeUnitId &&
+                                  a.Customer.UserId == user.Id &&
+                                  a.DeallocationDate == null);
+
+                if (!customerOwnsFridge)
+                {
+                    TempData["ErrorMessage"] = "Access denied.";
+                    return RedirectToAction(nameof(CustomerSchedules));
+                }
+            }
+
+            return View(maintenance);
         }
     }
 }

@@ -9,11 +9,10 @@ namespace Code_Vanta_Systems.Models
         [Key]
         public int Id { get; set; }
 
+        // CHANGE: FridgeId → FridgeUnitId
         [Required]
-        public int FridgeId { get; set; }
-
-        // This property now relies entirely on MaintenanceScheduleConfiguration.cs
-        public Fridge Fridge { get; set; }
+        public int FridgeUnitId { get; set; }
+        public FridgeUnit FridgeUnit { get; set; }
 
         [Required]
         public DateTime ScheduledDate { get; set; }
@@ -24,8 +23,6 @@ namespace Code_Vanta_Systems.Models
 
         [Required]
         public string TechnicianId { get; set; }
-
-        // This property now relies on conventions or other configurations
         public ApplicationUser Technician { get; set; }
 
         [Required]

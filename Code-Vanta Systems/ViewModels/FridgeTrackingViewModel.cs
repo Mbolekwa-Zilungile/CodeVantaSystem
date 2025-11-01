@@ -12,5 +12,10 @@
         public string? AllocatedBy { get; set; }
         public DateTime AllocationDate { get; set; }
         public DateTime? Date { get; set; }
+
+        // Add these if needed
+        public int? FridgeUnitId { get; set; }
+        public string? Category { get; set; }
+        public string? CustomerEmail { get; set; }
     }
 }

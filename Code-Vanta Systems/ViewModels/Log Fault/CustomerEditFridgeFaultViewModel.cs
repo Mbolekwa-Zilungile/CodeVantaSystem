@@ -6,9 +6,9 @@ namespace Code_Vanta_Systems.ViewModels.Log_Fault
     {
         public int Id { get; set; }
 
-        [Required]
-        [Display(Name = "Fridge")]
-        public int FridgeId { get; set; }
+        [Required(ErrorMessage = "Fridge Unit is required")]
+        [Display(Name = "Fridge Unit")]
+        public int FridgeUnitId { get; set; } // ✅ Changed from FridgeId to FridgeUnitId
 
         [Required]
         [StringLength(500)]

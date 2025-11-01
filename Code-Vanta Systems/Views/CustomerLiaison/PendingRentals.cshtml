@@ -1,51 +1,321 @@
 ﻿@model IEnumerable<Code_Vanta_Systems.Models.RentalRequest>
 
 @{
-    ViewData["Title"] = "Pending Rentals";
+    ViewData["Title"] = "Rental Requests";
     Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
 }
 
-<h2 class="mb-4 text-primary"><i class="bi bi-hourglass-split me-2"></i> Pending Rentals</h2>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 
-<table class="table table-striped table-hover">
-    <thead class="table-dark">
-        <tr>
-            <th>Fridge</th>
-            <th>Quantity</th>
-            <th>Requested By</th>
-            <th>Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody id="rentalList">
-        @foreach (var r in Model)
-        {
-            <tr id="rental-@r.Id">
-                <td>@r.Fridge.Model</td>
-                <td>@r.Quantity</td>
-                <td>@r.RequestedByUser.UserName</td>
-                <td>@r.CreatedAt.ToLocalTime().ToString("g")</td>
-                <td>
-                    <button class="btn btn-success btn-sm" onclick="approve(@r.Id)">Approve</button>
-                    <button class="btn btn-danger btn-sm" onclick="reject(@r.Id)">Reject</button>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-primary">
+            <i class="bi bi-envelope-paper me-2"></i> Rental Requests
+        </h1>
+        <a asp-controller="CustomerLiaison" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i> All Rental Requests</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fridge Model</th>
+                                <th>Customer</th>
+                                <th>Quantity</th>
+                                <th>Duration</th>
+                                <th>Monthly Price</th>
+                                <th>Total Value</th>
+                                <th>Status</th>
+                                <th>Payment</th>
+                                <th>Request Date</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rentalList">
+                            @foreach (var r in Model)
+                            {
+                                <tr id="rental-@r.Id" class="@GetStatusRowClass(r.Status)">
+                                    <td>
+                                        <div class="fw-bold">@r.FridgeModel?.Name</div>
+                                        <small class="text-muted">@r.FridgeModel?.Category</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">@r.Customer?.BusinessName</div>
+                                        <small class="text-muted">@r.Customer?.ContactName</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary fs-6">@r.Quantity</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">@r.RequestedDuration months</span>
+                                    </td>
+                                    <td class="fw-bold text-success">
+                                        R @r.FridgeModel?.RentalPricePerMonth.ToString("N2")
+                                    </td>
+                                    <td class="fw-bold text-primary">
+                                        R @((r.Quantity * r.RequestedDuration * r.FridgeModel?.RentalPricePerMonth ?? 0).ToString("N2"))
+                                    </td>
+                                    <td>
+                                        @switch (r.Status?.ToLower())
+                                        {
+                                            case "pending":
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                break;
+                                            case "approved":
+                                                <span class="badge bg-success">Approved</span>
+                                                break;
+                                            case "rejected":
+                                                <span class="badge bg-danger">Rejected</span>
+                                                break;
+                                            case "cancelled":
+                                                <span class="badge bg-secondary">Cancelled</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary">@r.Status</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (r.IsPaid)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>Paid
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-clock me-1"></i>Unpaid
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-muted small">
+                                        @r.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                                    </td>
+                                    <td class="text-center">
+                                        @if (r.Status?.ToLower() == "pending")
+                                        {
+                                            <div class="btn-group-vertical btn-group-sm" role="group">
+                                                <button class="btn btn-success mb-1" onclick="approveRental(@r.Id)"
+                                                        title="Approve this rental request">
+                                                    <i class="bi bi-check-lg me-1"></i> Approve
+                                                </button>
+                                                <button class="btn btn-danger" onclick="rejectRental(@r.Id)"
+                                                        title="Reject this rental request">
+                                                    <i class="bi bi-x-lg me-1"></i> Reject
+                                                </button>
+                                            </div>
+                                        }
+                                        else if (r.Status?.ToLower() == "approved" && r.IsPaid && r.AllocationId == null)
+                                        {
+                                            <a asp-controller="CustomerLiaison"
+                                               asp-action="CreateAllocationFromRental"
+                                               asp-route-rentalId="@r.Id"
+                                               class="btn btn-primary btn-sm"
+                                               title="Create allocation for this approved rental">
+                                                <i class="bi bi-box-seam me-1"></i> Allocate
+                                            </a>
+                                        }
+                                        else if (r.AllocationId != null)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check2-circle me-1"></i>Allocated
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Processed</span>
+                                        }
+
+                                        @if (!string.IsNullOrEmpty(r.SpecialRequirements))
+                                        {
+                                            <button class="btn btn-outline-info btn-sm mt-1"
+                                                    title="Special Requirements"
+                                                    onclick="showRequirements('@r.SpecialRequirements.Replace("'", "\\'")')">
+                                                <i class="bi bi-info-circle"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                    <h4 class="text-muted">No Rental Requests</h4>
+                    <p class="text-muted">There are currently no rental requests to process.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Requirements Modal -->
+<div class="modal fade" id="requirementsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-info-circle me-2"></i>Special Requirements</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="requirementsText"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
-        function approve(id) {
-            if (!confirm('Approve this rental?')) return;
-            $.post('@Url.Action("ApproveRental")', { id: id })
-             .done(res => { if(res.success){ $('#rental-' + id).remove(); alert(res.message); } else alert(res.message); });
+        function approveRental(id) {
+            if (!confirm('Are you sure you want to approve this rental request?\n\nThis will check stock availability and update the request status.')) return;
+
+            $.ajax({
+                url: '@Url.Action("ApproveRental", "CustomerLiaison")',
+                type: 'POST',
+                data: { id: id },
+                success: function (res) {
+                    if (res.success) {
+                        // Update the row with new status
+                        updateRentalRow(id, 'approved', 'Approved');
+                        showAlert('Rental request approved successfully!', 'success');
+                    } else {
+                        showAlert('Error: ' + res.message, 'error');
+                    }
+                },
+                error: function (xhr) {
+                    showAlert('Error approving rental request: ' + xhr.statusText, 'error');
+                }
+            });
         }
 
-        function reject(id) {
-            if (!confirm('Reject this rental?')) return;
-            $.post('@Url.Action("RejectRental")', { id: id })
-             .done(res => { if(res.success){ $('#rental-' + id).remove(); alert(res.message); } else alert(res.message); });
+        function rejectRental(id) {
+            if (!confirm('Are you sure you want to reject this rental request?\n\nThe customer will be notified of this rejection.')) return;
+
+            $.ajax({
+                url: '@Url.Action("RejectRental", "CustomerLiaison")',
+                type: 'POST',
+                data: { id: id },
+                success: function (res) {
+                    if (res.success) {
+                        // Update the row with new status
+                        updateRentalRow(id, 'rejected', 'Rejected');
+                        showAlert('Rental request rejected successfully!', 'success');
+                    } else {
+                        showAlert('Error: ' + res.message, 'error');
+                    }
+                },
+                error: function (xhr) {
+                    showAlert('Error rejecting rental request: ' + xhr.statusText, 'error');
+                }
+            });
         }
+
+        function updateRentalRow(id, status, statusText) {
+            const row = $('#rental-' + id);
+            const statusBadge = status === 'approved'
+                ? '<span class="badge bg-success">Approved</span>'
+                : '<span class="badge bg-danger">Rejected</span>';
+
+            row.find('td:eq(6)').html(statusBadge);
+
+            // Update actions column
+            if (status === 'approved') {
+                row.find('td:eq(9)').html(`
+                    <span class="text-muted small">Awaiting Payment</span>
+                `);
+            } else {
+                row.find('td:eq(9)').html(`
+                    <span class="text-muted small">${statusText}</span>
+                `);
+            }
+
+            // Update row class
+            row.removeClass('table-warning table-success table-danger')
+               .addClass(status === 'approved' ? 'table-success' : 'table-danger');
+        }
+
+        function showRequirements(requirements) {
+            $('#requirementsText').text(requirements || 'No special requirements specified.');
+            new bootstrap.Modal(document.getElementById('requirementsModal')).show();
+        }
+
+        function showAlert(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+
+            const alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="bi ${icon} me-2"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+
+            // Remove any existing alerts
+            $('.alert').remove();
+
+            // Prepend the new alert
+            $('.container-fluid').prepend(alertHtml);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                $('.alert').alert('close');
+            }, 5000);
+        }
+
+        // Add CSRF token for AJAX requests
+        $(document).ajaxSend(function (event, xhr, options) {
+            if (options.type.toLowerCase() === 'post') {
+                const token = $('input[name="__RequestVerificationToken"]').val();
+                if (token) {
+                    xhr.setRequestHeader('RequestVerificationToken', token);
+                }
+            }
+        });
     </script>
+}
+
+@functions {
+    public string GetStatusRowClass(string status)
+    {
+        return status?.ToLower() switch
+        {
+            "approved" => "table-success",
+            "rejected" => "table-danger",
+            "cancelled" => "table-secondary",
+            "pending" => "table-warning",
+            _ => ""
+        };
+    }
 }

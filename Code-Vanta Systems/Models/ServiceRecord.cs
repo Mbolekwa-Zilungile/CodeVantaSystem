@@ -9,16 +9,16 @@ namespace Code_Vanta_Systems.Models
         [Key]
         public int Id { get; set; }
 
+        // CHANGE: FridgeId → FridgeUnitId
         [Required]
-        public int FridgeId { get; set; }
+        public int FridgeUnitId { get; set; }
 
-        [ForeignKey("FridgeId")]
-        public Fridge Fridge { get; set; }
+        [ForeignKey("FridgeUnitId")]
+        public FridgeUnit FridgeUnit { get; set; }
 
         [Required]
         public DateTime DateOfService { get; set; }
 
-        // User who performed the service
         [Required]
         public string TechnicianUserId { get; set; }
 
@@ -29,12 +29,10 @@ namespace Code_Vanta_Systems.Models
         [StringLength(500)]
         public string ServiceDetails { get; set; }
 
-        // Optional: Reference to a fault that was resolved
         public int? FaultId { get; set; }
         public FridgeFault Fault { get; set; }
 
-        // NEW PROPERTY: Add this to track parts used
         [StringLength(500)]
-        public string? PartsUsed { get; set; } // Make nullable if not always required
+        public string? PartsUsed { get; set; }
     }
 }

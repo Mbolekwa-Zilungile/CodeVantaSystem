@@ -1,7 +1,7 @@
 ﻿@model Code_Vanta_Systems.ViewModels.RegisterSupplierViewModel
 
 @{
-    Layout = "~/Views/Shared/_PurchaseLayout.cshtml";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; @* Fixed: Changed from _PurchaseLayout to _AdminLayout *@
     ViewData["Title"] = "Register New Supplier";
 }
 
@@ -14,7 +14,7 @@
         <div class="card-body">
             <form asp-controller="Admin" asp-action="CreateSupplier" method="post">
                 @Html.AntiForgeryToken()
-                <div asp-validation-summary="All" class="alert text-danger"></div>
+                <div asp-validation-summary="All" class="alert alert-danger"></div> @* Fixed: Added proper alert class *@
 
                 <div class="row">
                     <div class="col-md-6">
@@ -46,7 +46,7 @@
 
                         <div class="mb-3">
                             <label asp-for="Address" class="form-label"></label>
-                            <textarea asp-for="Address" class="form-control" rows="4" cols="50"></textarea>
+                            <textarea asp-for="Address" class="form-control" rows="4"></textarea> @* Fixed: Removed cols attribute *@
                             <span asp-validation-for="Address" class="text-danger"></span>
                         </div>
                     </div>

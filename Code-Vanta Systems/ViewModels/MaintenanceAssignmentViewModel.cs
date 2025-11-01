@@ -32,12 +32,22 @@ namespace Code_Vanta_Systems.ViewModels
 
         // Renamed for clarity to match the underlying data structure in Fridge.cs
         [Display(Name = "Current Technician")]
-
         public string? TechnicianName { get; set; }
 
         // New Assignment Target (used for the form POST)
         // Note: The actual form post uses simple types (int fridgeId, string technicianId),
         // but this property can be useful if you were to use this VM for the POST as well.
         public string? TechnicianId { get; set; }
+
+        // Add these 3 missing properties:
+        [Display(Name = "Fridge Model")]
+        public string FridgeModelName { get; set; }
+
+        [Display(Name = "Location")]
+        public string Location { get; set; }
+
+        [Display(Name = "Purchase Date")]
+        [DataType(DataType.Date)]
+        public DateTime? PurchaseDate { get; set; }
     }
 }

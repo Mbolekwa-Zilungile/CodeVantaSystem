@@ -76,6 +76,20 @@
             </div>
         </div>
 
+        <!-- Total Customers -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card bg-success text-white shadow-lg">
+                <div class="card-body d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="metric-label"><i class="bi bi-people me-2"></i> Total Customers</div>
+                        <div class="metric-value">@Model.TotalCustomers</div>
+                        <small class="text-white-50">All customer accounts in system.</small>
+                    </div>
+                    <i class="bi bi-building display-4 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+
         <!-- Employees (Active Only) -->
         <div class="col-xl-3 col-md-6">
             <div class="card metric-card bg-info text-white shadow-lg">
@@ -89,6 +103,11 @@
                 </div>
             </div>
         </div>
+
+    </div>
+
+    <!-- Second Row of Metrics -->
+    <div class="row g-4 mb-5">
 
         <!-- Total System Users -->
         <div class="col-xl-3 col-md-6">
@@ -104,6 +123,40 @@
             </div>
         </div>
 
+        <!-- Quick Access Cards -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card bg-dark text-white shadow-lg" style="cursor: pointer;"
+                 onclick="window.location.href='@Url.Action("Employees", "Admin")'">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-lines-fill display-4 mb-3"></i>
+                    <div class="metric-label">Manage Employees</div>
+                    <small class="text-white-50">View and manage staff accounts</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card bg-dark text-white shadow-lg" style="cursor: pointer;"
+                 onclick="window.location.href='@Url.Action("Customers", "Admin")'">
+                <div class="card-body text-center">
+                    <i class="bi bi-shop display-4 mb-3"></i>
+                    <div class="metric-label">Manage Customers</div>
+                    <small class="text-white-50">View and manage customer accounts</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card metric-card bg-dark text-white shadow-lg" style="cursor: pointer;"
+                 onclick="window.location.href='@Url.Action("ManageRoles", "Admin")'">
+                <div class="card-body text-center">
+                    <i class="bi bi-universal-access display-4 mb-3"></i>
+                    <div class="metric-label">User Roles</div>
+                    <small class="text-white-50">Manage user roles and permissions</small>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- System Status & Reports and Quick Access Sections -->
@@ -111,20 +164,21 @@
         <!-- System Status & Reports Card -->
         <div class="col-lg-6">
             <div class="card shadow-lg border-0 h-100">
-                <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-bar-chart-fill me-2"></i> System Status & Inventory Summary</div>
+                <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-bar-chart-fill me-2"></i> System Status & Reports</div>
                 <div class="card-body">
+                    <p class="text-muted mb-4">Access detailed system reports and analytics to monitor performance and identify trends.</p>
                     <ul class="list-group list-group-flush mb-3">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span class="fw-medium text-dark"><i class="bi bi-bug-fill text-danger me-2"></i> Open Fault Tickets:</span>
-                            <span class="badge bg-danger rounded-pill fs-6 px-3 py-2">@Model.OpenFaultsCount</span>
+                            <span class="fw-medium text-dark"><i class="bi bi-people-fill text-primary me-2"></i> Customer Analytics:</span>
+                            <span class="badge bg-primary rounded-pill fs-6 px-3 py-2">Available</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span class="fw-medium text-dark"><i class="bi bi-tools text-warning me-2"></i> Pending Maintenance Jobs:</span>
-                            <span class="badge bg-warning text-dark rounded-pill fs-6 px-3 py-2">@Model.PendingMaintenanceCount</span>
+                            <span class="fw-medium text-dark"><i class="bi bi-person-badge text-info me-2"></i> Employee Reports:</span>
+                            <span class="badge bg-info rounded-pill fs-6 px-3 py-2">Available</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span class="fw-medium text-dark"><i class="bi bi-box-seam-fill text-primary me-2"></i> Total Fridges in Inventory:</span>
-                            <span class="badge bg-primary rounded-pill fs-6 px-3 py-2">@Model.TotalFridgesInInventory</span>
+                            <span class="fw-medium text-dark"><i class="bi bi-graph-up text-success me-2"></i> System Performance:</span>
+                            <span class="badge bg-success rounded-pill fs-6 px-3 py-2">Available</span>
                         </li>
                     </ul>
                     <div class="d-grid mt-3">
@@ -136,16 +190,23 @@
             </div>
         </div>
 
-        <!-- Role-Based Access Points Card -->
+        <!-- Quick Access Role Portals -->
         <div class="col-lg-6">
             <div class="card shadow-lg border-0 h-100">
-                <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-person-rolodex me-2"></i> Quick Access Role Portals</div>
+                <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-person-rolodex me-2"></i> Quick Access Portals</div>
                 <div class="card-body d-flex flex-wrap gap-3 align-content-start">
-                    <a asp-controller="CustomerLiaison" asp-action="Index" class="btn btn-lg btn-outline-primary shadow-sm"><i class="bi bi-headset me-2"></i> Customer Liaison</a>
-                    <a asp-controller="InventoryLiaison" asp-action="Index" class="btn btn-lg btn-outline-info shadow-sm"><i class="bi bi-archive-fill me-2"></i> Inventory Liaison</a>
-                    <a asp-controller="FaultTechnician" asp-action="Index" class="btn btn-lg btn-outline-danger shadow-sm"><i class="bi bi-exclamation-triangle-fill me-2"></i> Fault Technician</a>
-                    <a asp-controller="MaintenanceTechnician" asp-action="Index" class="btn btn-lg btn-outline-success shadow-sm"><i class="bi bi-wrench-adjustable-fill me-2"></i> Maintenance Technician</a>
-                    <a asp-controller="PurchasingManager" asp-action="Index" class="btn btn-lg btn-outline-warning shadow-sm"><i class="bi bi-cart-fill me-2"></i> Purchasing Manager</a>
+                    <a asp-controller="AdminFaults" asp-action="Index" class="btn btn-lg btn-outline-danger shadow-sm">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Fault Management
+                    </a>
+                    <a asp-controller="Admin" asp-action="MaintenanceOversight" class="btn btn-lg btn-outline-success shadow-sm">
+                        <i class="bi bi-wrench-adjustable-fill me-2"></i> Maintenance Oversight
+                    </a>
+                    <a asp-controller="Admin" asp-action="Suppliers" class="btn btn-lg btn-outline-warning shadow-sm">
+                        <i class="bi bi-truck me-2"></i> Supplier Management
+                    </a>
+                    <a asp-controller="Admin" asp-action="CreateRole" class="btn btn-lg btn-outline-info shadow-sm">
+                        <i class="bi bi-plus-circle me-2"></i> Create New Role
+                    </a>
                 </div>
             </div>
         </div>

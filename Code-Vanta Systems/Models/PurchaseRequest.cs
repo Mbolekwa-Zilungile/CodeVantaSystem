@@ -22,8 +22,7 @@ namespace Code_Vanta_Systems.Models
         [Required]
         public RequestStatus Status { get; set; }
 
-        [Required]
-        public PriorityLevel Priority { get; set; } = PriorityLevel.Medium;
+        public PriorityLevel Priority { get; set; } // Not RequestPriority?
 
         [DataType(DataType.Date)]
         [Display(Name = "Expected Delivery Date")]

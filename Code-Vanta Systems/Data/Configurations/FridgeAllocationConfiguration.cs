@@ -8,9 +8,10 @@ namespace Code_Vanta_Systems.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<FridgeAllocation> builder)
         {
-            builder.HasOne(fa => fa.Fridge)
+            // CHANGE: Fridge → FridgeUnit
+            builder.HasOne(fa => fa.FridgeUnit)
                    .WithMany(f => f.Allocations)
-                   .HasForeignKey(fa => fa.FridgeId)
+                   .HasForeignKey(fa => fa.FridgeUnitId)  // Updated property name
                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(fa => fa.Customer)
@@ -18,7 +19,6 @@ namespace Code_Vanta_Systems.Data.Configurations
                    .HasForeignKey(fa => fa.CustomerId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            // 🛠️ ADDED: Link to the User who created this allocation record
             builder.HasOne(fa => fa.CreatedBy)
                    .WithMany(u => u.CreatedAllocations)
                    .HasForeignKey(fa => fa.CreatedByUserId)

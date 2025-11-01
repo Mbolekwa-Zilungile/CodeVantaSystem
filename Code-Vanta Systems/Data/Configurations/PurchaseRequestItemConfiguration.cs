@@ -8,16 +8,15 @@ namespace Code_Vanta_Systems.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<PurchaseRequestItem> builder)
         {
-            // Relationship: PurchaseRequestItem → PurchaseRequest
             builder.HasOne(pri => pri.PurchaseRequest)
                    .WithMany(pr => pr.RequestedItems)
                    .HasForeignKey(pri => pri.PurchaseRequestId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            // Relationship: PurchaseRequestItem → Fridge (instead of ItemCatalog)
-            builder.HasOne(pri => pri.Fridge)
+            // CHANGE: Fridge → FridgeModel (we request models, not specific units)
+            builder.HasOne(pri => pri.FridgeModel)
                    .WithMany()
-                   .HasForeignKey(pri => pri.FridgeId)
+                   .HasForeignKey(pri => pri.FridgeModelId)  // Updated property name
                    .OnDelete(DeleteBehavior.Restrict);
         }
     }

@@ -2,7 +2,7 @@
 {
     public class RFQItemViewModel
     {
-        public int FridgeId { get; set; }
+        public int FridgeModelId { get; set; }
         public string FridgeModel { get; set; }
         public int Quantity { get; set; }
     }

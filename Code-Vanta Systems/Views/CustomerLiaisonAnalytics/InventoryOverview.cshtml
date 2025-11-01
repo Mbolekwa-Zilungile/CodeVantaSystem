@@ -1,78 +1,259 @@
-﻿@model Code_Vanta_Systems.ViewModels.AnalyticsDashboardViewModel
+﻿@using Code_Vanta_Systems.ViewModels.Analytics
+@model AnalyticsDashboardViewModel
 @{
     Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
     ViewData["Title"] = "Inventory Overview";
 }
 
-<h2 class="mb-4 text-success">Inventory Overview</h2>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 
-<div class="row mb-4">
-    <div class="col-md-6">
-        <canvas id="fridgeStatusChart"></canvas>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-success">
+            <i class="bi bi-bar-chart-line me-2"></i> Inventory Analytics
+        </h1>
+        <a asp-controller="CustomerLiaison" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
     </div>
-    <div class="col-md-6">
-        <canvas id="fridgeRegionChart"></canvas>
+
+    <!-- Summary Statistics -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-refrigerator display-4 mb-2"></i>
+                    <h3 class="fw-bold">@Model.TotalFridgeUnits</h3>
+                    <p class="mb-0">Total Fridge Units</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle display-4 mb-2"></i>
+                    <h3 class="fw-bold">@Model.AvailableFridgeUnits</h3>
+                    <p class="mb-0">Available Units</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-dark shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-tools display-4 mb-2"></i>
+                    <h3 class="fw-bold">@Model.UnitsInRepair</h3>
+                    <p class="mb-0">Units in Repair</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-people display-4 mb-2"></i>
+                    <h3 class="fw-bold">@Model.CustomerStatus.Sum(c => c.Count)</h3>
+                    <p class="mb-0">Total Customers</p>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Date Filter -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="startDate" class="form-control" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-filter me-1"></i> Apply Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart me-2"></i> Fridge Status Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="fridgeStatusChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i> Fridges by Location</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="fridgeRegionChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Allocation Trends -->
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i> Allocation Trends</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="allocationTrendChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Categories -->
+    @if (Model.FridgeCategories.Any())
+    {
+        <div class="row g-4 mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i> Stock Levels by Category</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Total Stock</th>
+                                        <th>High Stock</th>
+                                        <th>Medium Stock</th>
+                                        <th>Low Stock</th>
+                                        <th>Critical Stock</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var category in Model.FridgeCategories)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@category.Category</td>
+                                            <td><span class="badge bg-primary">@category.TotalStock</span></td>
+                                            <td><span class="badge bg-success">@category.HighStock</span></td>
+                                            <td><span class="badge bg-warning">@category.MediumStock</span></td>
+                                            <td><span class="badge bg-orange">@category.LowStock</span></td>
+                                            <td><span class="badge bg-danger">@category.CriticalStock</span></td>
+                                            <td>
+                                                @if (category.CriticalStock > 0)
+                                                {
+                                                    <form asp-controller="CustomerLiaisonAnalytics" asp-action="RequestPurchase" method="post" class="d-inline">
+                                                        <input type="hidden" name="category" value="@category.Category" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                            <i class="bi bi-cart-plus me-1"></i> Request Purchase
+                                                        </button>
+                                                    </form>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 </div>
-
-<div class="row mb-4">
-    <div class="col-md-12">
-        <canvas id="allocationTrendChart"></canvas>
-    </div>
-</div>
-
 
 @section Scripts {
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script>
-
-            new Chart(document.getElementById('fridgeStatusChart').getContext('2d'), {
-                type: 'pie',
-                data: {
-                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeStatus.Select(f => f.Status))),
-                    datasets: [{
-                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeStatus.Select(f => f.Count))),
-                        backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d']
-                    }]
-                },
-                options: { responsive: true, plugins: { title: { display: true, text: 'Fridge Status Distribution' } } }
-            });
-
-
-            new Chart(document.getElementById('fridgeRegionChart').getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeRegion.Select(r => r.Status))),
-                    datasets: [{
-                        label: 'Fridges per Location',
-                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeRegion.Select(r => r.Count))),
-                        backgroundColor: '#007bff'
-                    }]
-                },
-                options: { responsive: true, plugins: { title: { display: true, text: 'Fridges by Location' } } }
-            });
-
-
-            new Chart(document.getElementById('allocationTrendChart').getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Allocations.Select(a => $"{a.Date:yyyy-MM-dd} {a.Hour}:00"))),
-                    datasets: [{
-                        label: 'Allocations per Hour',
-                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Allocations.Select(a => a.Count))),
-                        borderColor: '#28a745',
-                        fill: false,
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { title: { display: true, text: 'Hourly Allocation Trends (Last 24 Hours)' } },
-                    scales: {
-                        x: { title: { display: true, text: 'Date & Hour' } },
-                        y: { title: { display: true, text: 'Allocations' }, beginAtZero: true }
-                    }
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Fridge Status Chart
+        new Chart(document.getElementById('fridgeStatusChart').getContext('2d'), {
+            type: 'pie',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeStatus.Select(f => f.Status))),
+                datasets: [{
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeStatus.Select(f => f.Count))),
+                    backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    title: { display: true, text: 'Fridge Status Distribution' }
                 }
-            });
-        </script>
+            }
+        });
+
+        // Fridge Region Chart
+        new Chart(document.getElementById('fridgeRegionChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeRegion.Select(r => r.Status))),
+                datasets: [{
+                    label: 'Fridges per Location',
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FridgeRegion.Select(r => r.Count))),
+                    backgroundColor: '#007bff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'Fridges by Location' }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Allocation Trend Chart
+        new Chart(document.getElementById('allocationTrendChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Allocations.Select(a => $"{a.Date:MM-dd} {a.Hour}:00"))),
+                datasets: [{
+                    label: 'Allocations per Hour',
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Allocations.Select(a => a.Count))),
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Hourly Allocation Trends' }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Date & Hour' } },
+                    y: { title: { display: true, text: 'Allocations' }, beginAtZero: true }
+                }
+            }
+        });
+    </script>
+
+    <style>
+        .bg-orange {
+            background-color: #fd7e14 !important;
+        }
+    </style>
 }

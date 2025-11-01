@@ -1,39 +1,131 @@
 ﻿@model IEnumerable<Code_Vanta_Systems.Models.FridgeAllocation>
 
 @{
-    ViewData["Title"] = "Fridge Allocations";
     Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
+    ViewData["Title"] = "Fridge Allocations";
 }
 
-<h2 class="mb-4 text-success"><i class="bi bi-box2-heart me-2"></i> Fridge Allocations</h2>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 
-<a asp-action="CreateAllocationManually" class="btn btn-success mb-3"><i class="bi bi-plus-circle"></i> New Allocation</a>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-primary">
+            <i class="bi bi-box-seam me-2"></i> Fridge Allocations
+        </h1>
+        <a asp-controller="CustomerLiaison" asp-action="CreateAllocationManually" class="btn btn-success">
+            <i class="bi bi-plus-circle me-1"></i> New Allocation
+        </a>
+    </div>
 
-<table class="table table-striped table-hover">
-    <thead class="table-dark">
-        <tr>
-            <th>Fridge</th>
-            <th>Customer</th>
-            <th>Quantity</th>
-            <th>Allocated By</th>
-            <th>Allocation Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var a in Model)
-        {
-            <tr>
-                <td>@a.Fridge.Model</td>
-                <td>@a.Customer.BusinessName</td>
-                <td>@a.Quantity</td>
-                <td>@a.CreatedBy?.UserName</td>
-                <td>@a.AllocationDate.ToLocalTime().ToString("g")</td>
-                <td>
-                    <a asp-action="EditAllocation" asp-route-id="@a.Id" class="btn btn-warning btn-sm"><i class="bi bi-pencil-square"></i> Edit</a>
-                </td>
-            </tr>
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i> All Allocations</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fridge Unit</th>
+                                <th>Customer</th>
+                                <th>Allocation Date</th>
+                                <th>Deallocation Date</th>
+                                <th>Status</th>
+                                <th>Allocated By</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var allocation in Model)
+                            {
+                                <tr class="@(allocation.DeallocationDate.HasValue ? "table-secondary" : "table-success")">
+                                    <td>
+                                        <div class="fw-bold">@allocation.FridgeUnit?.SerialNumber</div>
+                                        <small class="text-muted">@allocation.FridgeUnit?.FridgeModel?.Name</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">@allocation.Customer?.BusinessName</div>
+                                        <small class="text-muted">@allocation.Customer?.ContactName</small>
+                                    </td>
+                                    <td class="text-muted">
+                                        @allocation.AllocationDate.ToString("MMM dd, yyyy")
+                                    </td>
+                                    <td>
+                                        @if (allocation.DeallocationDate.HasValue)
+                                        {
+                                            <span class="badge bg-secondary">
+                                                @allocation.DeallocationDate.Value.ToString("MMM dd, yyyy")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (allocation.DeallocationDate.HasValue)
+                                        {
+                                            <span class="badge bg-secondary">Deallocated</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@allocation.CreatedBy?.UserName</small>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (!allocation.DeallocationDate.HasValue)
+                                        {
+                                            <button class="btn btn-outline-danger btn-sm"
+                                                    onclick="deallocate(@allocation.Id, '@allocation.FridgeUnit?.SerialNumber')"
+                                                    title="Deallocate this fridge unit">
+                                                <i class="bi bi-x-circle me-1"></i> Deallocate
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Completed</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                    <h4 class="text-muted">No Allocations Found</h4>
+                    <p class="text-muted">There are currently no fridge allocations in the system.</p>
+                    <a asp-controller="CustomerLiaison" asp-action="CreateAllocationManually" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i> Create First Allocation
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function deallocate(allocationId, serialNumber) {
+            if (confirm(`Are you sure you want to deallocate fridge unit ${serialNumber}?\n\nThis will mark the allocation as completed.`)) {
+                // Here you would typically make an AJAX call to deallocate
+                // For now, we'll redirect to a deallocate action
+                window.location.href = `@Url.Action("Deallocate", "CustomerLiaison")?allocationId=${allocationId}`;
+            }
         }
-    </tbody>
-</table>
-
+    </script>
+}

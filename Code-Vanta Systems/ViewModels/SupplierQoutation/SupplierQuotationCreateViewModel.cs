@@ -12,6 +12,7 @@
         public string IssuedByName { get; set; }
         public string? Notes { get; set; }
 
+        // Company information
         public string CompanyName { get; set; }
         public string CompanyEmail { get; set; }
         public string CompanyPhone { get; set; }

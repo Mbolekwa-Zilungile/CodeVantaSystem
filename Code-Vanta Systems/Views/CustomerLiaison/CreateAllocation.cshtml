@@ -5,23 +5,149 @@
     Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
 }
 
-<h2 class="mb-4 text-success"><i class="bi bi-plus-circle me-2"></i> Create New Allocation</h2>
-
-<form asp-action="CreateAllocation" method="post">
-    <div class="mb-3">
-        <label asp-for="CustomerId" class="form-label">Customer</label>
-        <select asp-for="CustomerId" class="form-select" asp-items="ViewBag.Customers"></select>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
+}
 
-    <div class="mb-3">
-        <label asp-for="FridgeId" class="form-label">Fridge</label>
-        <select asp-for="FridgeId" class="form-select" asp-items="ViewBag.Fridges"></select>
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
+}
 
-    <div class="mb-3">
-        <label asp-for="Quantity" class="form-label">Quantity</label>
-        <input asp-for="Quantity" type="number" min="1" class="form-control" />
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-plus-circle me-2"></i> Create New Allocation
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="CreateAllocation" method="post" id="allocationForm">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="CustomerId" class="form-label fw-bold">
+                                        <i class="bi bi-building me-1"></i> Customer
+                                    </label>
+                                    <select asp-for="CustomerId" class="form-select" required>
+                                        <option value="">-- Select Customer --</option>
+                                        @if (ViewBag.Customers != null)
+                                        {
+                                            foreach (var customer in ViewBag.Customers)
+                                            {
+                                                <option value="@customer.Value">@customer.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="CustomerId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="FridgeUnitId" class="form-label fw-bold">
+                                        <i class="bi bi-refrigerator me-1"></i> Fridge Unit
+                                    </label>
+                                    <select asp-for="FridgeUnitId" class="form-select" required id="fridgeUnitSelect">
+                                        <option value="">-- Select Fridge Unit --</option>
+                                        @if (ViewBag.Fridges != null)
+                                        {
+                                            foreach (var fridge in ViewBag.Fridges)
+                                            {
+                                                <option value="@fridge.Value">@fridge.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="FridgeUnitId" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        Select an available fridge unit to allocate
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Allocation Information -->
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Allocation Information:</strong> Each allocation assigns one fridge unit to one customer.
+                            The allocation date will be set to today's date automatically.
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Allocations" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Back to Allocations
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-1"></i> Create Allocation
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Help -->
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-question-circle me-2"></i> Allocation Process</h6>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>Select a customer from the active customers list</li>
+                        <li>Choose an available fridge unit from inventory</li>
+                        <li>The system will create a 1:1 allocation between customer and fridge unit</li>
+                        <li>The fridge unit status will be updated to "Allocated"</li>
+                        <li>The customer will receive a notification about the allocation</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 
-    <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Allocate</button>
-</form>
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form submission confirmation
+            document.getElementById('allocationForm').addEventListener('submit', function(e) {
+                const customerSelect = document.getElementById('CustomerId');
+                const fridgeSelect = document.getElementById('fridgeUnitSelect');
+
+                const customerName = customerSelect.options[customerSelect.selectedIndex].text;
+                const fridgeDetails = fridgeSelect.options[fridgeSelect.selectedIndex].text;
+
+                if (!confirm(`Are you sure you want to create this allocation?\n\nCustomer: ${customerName}\nFridge Unit: ${fridgeDetails}\n\nThis will assign the selected fridge unit to the customer.`)) {
+                    e.preventDefault();
+                }
+            });
+
+            // Real-time validation
+            const customerSelect = document.getElementById('CustomerId');
+            const fridgeSelect = document.getElementById('fridgeUnitSelect');
+            const submitBtn = document.querySelector('button[type="submit"]');
+
+            function validateForm() {
+                const isCustomerSelected = customerSelect.value !== '';
+                const isFridgeSelected = fridgeSelect.value !== '';
+                submitBtn.disabled = !(isCustomerSelected && isFridgeSelected);
+            }
+
+            customerSelect.addEventListener('change', validateForm);
+            fridgeSelect.addEventListener('change', validateForm);
+
+            // Initial validation
+            validateForm();
+        });
+    </script>
+
+    <partial name="_ValidationScriptsPartial" />
+}

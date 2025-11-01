@@ -2,7 +2,8 @@
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Services;
-using Code_Vanta_Systems.ViewModels;
+using Code_Vanta_Systems.ViewModels.Allocation;
+using Code_Vanta_Systems.ViewModels.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,13 +18,13 @@ namespace Code_Vanta_Systems.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
-        private readonly UserManager<ApplicationUser> userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         public CustomerLiaisonController(ApplicationDbContext context, EmailService emailService, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _emailService = emailService;
-            this.userManager = userManager;
+            _userManager = userManager;
         }
 
         #region Dashboard
@@ -35,24 +36,20 @@ namespace Code_Vanta_Systems.Controllers
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
 
+            // Dashboard statistics using new structure
+            ViewBag.PendingCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Pending);
+            ViewBag.ActiveCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Active);
+            ViewBag.RejectedCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Rejected);
+            ViewBag.PendingRentalRequests = await _context.RentalRequests.CountAsync(r => r.Status == "Pending");
+            ViewBag.ActiveAllocations = await _context.FridgeAllocations.CountAsync(a => a.DeallocationDate == null);
+            ViewBag.AvailableFridgeUnits = await _context.FridgeUnits.CountAsync(fu => fu.Status == FridgeStatus.InWarehouse);
+            ViewBag.TotalFridgeModels = await _context.FridgeModels.CountAsync();
+
             return View();
         }
-
-        //public async Task<IActionResult> Dashboard()
-        //{
-        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        //    ViewBag.Notifications = await _context.Notifications
-        //        .Where(n => n.RecipientUserId == userId && !n.IsRead)
-        //        .OrderByDescending(n => n.CreatedAt)
-        //        .ToListAsync();
-
-        //    return View();
-        //}
         #endregion
 
-
         #region Customers
-
         public async Task<IActionResult> PendingCustomers()
         {
             var pendingCustomers = await _context.Customers
@@ -62,7 +59,7 @@ namespace Code_Vanta_Systems.Controllers
 
             ViewBag.PendingCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Pending);
             ViewBag.ActiveCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Active);
-            ViewBag.RejectCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Rejected);
+            ViewBag.RejectedCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Rejected);
 
             return View(pendingCustomers);
         }
@@ -71,17 +68,20 @@ namespace Code_Vanta_Systems.Controllers
         {
             var activeCustomers = await _context.Customers
                 .Include(c => c.Location)
+                .Include(c => c.Allocations)
+                .ThenInclude(a => a.FridgeUnit)
+                .ThenInclude(fu => fu.FridgeModel)
                 .Where(c => c.Status == CustomerStatus.Active)
                 .ToListAsync();
 
             ViewBag.PendingCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Pending);
             ViewBag.ActiveCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Active);
-            ViewBag.RejectCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Rejected);
+            ViewBag.RejectedCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Rejected);
 
             return View(activeCustomers);
         }
 
-        public async Task<IActionResult> RejectCustomers()
+        public async Task<IActionResult> RejectedCustomers()
         {
             var rejectedCustomers = await _context.Customers
                 .Include(c => c.Location)
@@ -90,7 +90,7 @@ namespace Code_Vanta_Systems.Controllers
 
             ViewBag.PendingCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Pending);
             ViewBag.ActiveCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Active);
-            ViewBag.RejectCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Rejected);
+            ViewBag.RejectedCustomerCount = await _context.Customers.CountAsync(c => c.Status == CustomerStatus.Rejected);
 
             return View(rejectedCustomers);
         }
@@ -101,6 +101,9 @@ namespace Code_Vanta_Systems.Controllers
 
             var customer = await _context.Customers
                 .Include(c => c.Location)
+                .Include(c => c.Allocations)
+                .ThenInclude(a => a.FridgeUnit)
+                .ThenInclude(fu => fu.FridgeModel)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (customer == null) return NotFound();
@@ -167,18 +170,15 @@ namespace Code_Vanta_Systems.Controllers
             }
 
             TempData["Success"] = $"Customer '{customer.BusinessName}' has been rejected and emailed.";
-            return RedirectToAction("RejectCustomers");
+            return RedirectToAction("RejectedCustomers");
         }
-
         #endregion
 
-
         #region Rental Requests
-
         public async Task<IActionResult> Requests()
         {
             var requests = await _context.RentalRequests
-                .Include(r => r.Fridge)
+                .Include(r => r.FridgeModel)
                 .Include(r => r.RequestedByUser)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
@@ -192,20 +192,21 @@ namespace Code_Vanta_Systems.Controllers
             try
             {
                 var rental = await _context.RentalRequests
-                    .Include(r => r.Fridge)
+                    .Include(r => r.FridgeModel)
                     .Include(r => r.RequestedByUser)
                     .FirstOrDefaultAsync(r => r.Id == id);
 
                 if (rental == null)
                     return Json(new { success = false, message = "Rental not found." });
 
-                if (rental.Fridge == null)
-                    return Json(new { success = false, message = "Fridge not found." });
+                // Check available fridge units for this model
+                var availableUnits = await _context.FridgeUnits
+                    .CountAsync(fu => fu.FridgeModelId == rental.FridgeModelId &&
+                                     fu.Status == FridgeStatus.InWarehouse);
 
-                if (rental.Fridge.StockQuantity < rental.Quantity)
-                    return Json(new { success = false, message = "Not enough stock available." });
+                if (availableUnits < rental.Quantity)
+                    return Json(new { success = false, message = $"Only {availableUnits} units available. Requested: {rental.Quantity}" });
 
-                rental.Fridge.StockQuantity -= rental.Quantity; // Handleed On Allocationn
                 rental.Status = "Approved";
                 rental.UpdatedAt = DateTime.UtcNow;
 
@@ -213,7 +214,7 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     Title = "Rental Approved",
                     RecipientUserId = rental.RequestedByUserId,
-                    Message = $"Your rental request for {rental.Fridge.Model} ({rental.Quantity}) has been approved.",
+                    Message = $"Your rental request for {rental.FridgeModel.Name} ({rental.Quantity}) has been approved.",
                     CreatedAt = DateTime.UtcNow,
                     IsRead = false,
                     TargetController = "Customer",
@@ -222,12 +223,11 @@ namespace Code_Vanta_Systems.Controllers
                 _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Rental approved and stock updated!" });
+                return Json(new { success = true, message = "Rental approved!" });
             }
             catch (Exception ex)
             {
-                var inner = ex.InnerException?.Message ?? ex.Message;
-                return Json(new { success = false, message = $"Failed to approve rental: {inner}" });
+                return Json(new { success = false, message = $"Failed to approve rental: {ex.Message}" });
             }
         }
 
@@ -237,7 +237,7 @@ namespace Code_Vanta_Systems.Controllers
             try
             {
                 var rental = await _context.RentalRequests
-                    .Include(r => r.Fridge)
+                    .Include(r => r.FridgeModel)
                     .Include(r => r.RequestedByUser)
                     .FirstOrDefaultAsync(r => r.Id == id);
 
@@ -247,46 +247,34 @@ namespace Code_Vanta_Systems.Controllers
                 rental.Status = "Rejected";
                 rental.UpdatedAt = DateTime.UtcNow;
 
-                var customer = await userManager.GetUsersInRoleAsync("Customer");
-                var liaisonUser = customer.FirstOrDefault();
-
-                if (liaisonUser != null)
+                var notification = new Notification
                 {
-                    var notification = new Notification
-                    {
-                        RecipientUserId = liaisonUser.Id,
-                        Title = "Fridge Request Rejected",
-                        Message = $"Your rental request for {rental.Fridge.Model} ({rental.Quantity}) has been rejected.",
-                        CreatedAt = DateTime.UtcNow,
-                        IsRead = false,
-                        TargetController = "Customer",
-                        TargetAction = "MyRentalRequests"
-                    };
-                    _context.Notifications.Add(notification);
-                    await _context.SaveChangesAsync();
-                }
+                    RecipientUserId = rental.RequestedByUserId,
+                    Title = "Rental Request Rejected",
+                    Message = $"Your rental request for {rental.FridgeModel.Name} ({rental.Quantity}) has been rejected.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
+                    TargetController = "Customer",
+                    TargetAction = "MyRentalRequests"
+                };
+                _context.Notifications.Add(notification);
+                await _context.SaveChangesAsync();
 
                 return Json(new { success = true, message = "Rental rejected!" });
             }
             catch (Exception ex)
             {
-                var inner = ex.InnerException?.Message ?? ex.Message;
-                return Json(new { success = false, message = $"Failed to reject rental: {inner}" });
+                return Json(new { success = false, message = $"Failed to reject rental: {ex.Message}" });
             }
         }
-
         #endregion
 
-
         #region Allocations
-
-        // GET: Create allocation from rental
         [HttpGet]
-        [ActionName("CreateAllocationFromRental")]
         public async Task<IActionResult> CreateAllocationFromRental(int rentalId)
         {
             var rental = await _context.RentalRequests
-                .Include(r => r.Fridge)
+                .Include(r => r.FridgeModel)
                 .Include(r => r.RequestedByUser)
                 .ThenInclude(u => u.CustomerProfile)
                 .FirstOrDefaultAsync(r => r.Id == rentalId);
@@ -297,98 +285,185 @@ namespace Code_Vanta_Systems.Controllers
 
             var model = new AllocationViewModel
             {
-                FridgeId = rental.FridgeId,
+                FridgeModelId = rental.FridgeModelId,
                 CustomerId = rental.RequestedByUser.CustomerProfile?.Id ?? 0,
                 Quantity = rental.Quantity
             };
 
-            ViewBag.Customers = await _context.Customers
-                .Where(c => c.Status == CustomerStatus.Active)
-                .Select(c => new SelectListItem { Text = c.BusinessName, Value = c.Id.ToString() })
-                .ToListAsync();
-
-            ViewBag.Fridges = await _context.Fridges
-                .Select(f => new SelectListItem { Text = f.Model, Value = f.Id.ToString() })
-                .ToListAsync();
-
+            await LoadAllocationDropdownsAsync();
             ViewBag.RentalId = rental.Id;
 
             return View("CreateAllocation", model);
         }
 
-        // POST: Save allocation from rental
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ActionName("CreateAllocationFromRental")]
-        public async Task<IActionResult> CreateAllocationFromRentalPost(int rentalId, AllocationViewModel model)
+        public async Task<IActionResult> CreateAllocationFromRental(int rentalId, AllocationViewModel model)
         {
-            if (!ModelState.IsValid) return View("CreateAllocation", model);
+            if (!ModelState.IsValid)
+            {
+                await LoadAllocationDropdownsAsync();
+                return View("CreateAllocation", model);
+            }
 
             var rental = await _context.RentalRequests
-                .Include(r => r.Fridge)
+                .Include(r => r.FridgeModel)
                 .FirstOrDefaultAsync(r => r.Id == rentalId);
 
             if (rental == null)
             {
                 ModelState.AddModelError("", "Rental request not found.");
+                await LoadAllocationDropdownsAsync();
                 return View("CreateAllocation", model);
             }
 
-            var fridge = await _context.Fridges.FindAsync(model.FridgeId);
-            if (fridge == null)
+            // Find available fridge units to allocate
+            var availableUnits = await _context.FridgeUnits
+                .Where(fu => fu.FridgeModelId == model.FridgeModelId &&
+                            fu.Status == FridgeStatus.InWarehouse)
+                .Take(model.Quantity)
+                .ToListAsync();
+
+            if (availableUnits.Count < model.Quantity)
             {
-                ModelState.AddModelError("", "Fridge not found.");
+                ModelState.AddModelError("", $"Only {availableUnits.Count} units available. Requested: {model.Quantity}");
+                await LoadAllocationDropdownsAsync();
                 return View("CreateAllocation", model);
             }
 
-            if (fridge.StockQuantity < model.Quantity)
+            var customer = await _context.Customers
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.Id == model.CustomerId);
+
+            if (customer == null)
             {
-                ModelState.AddModelError("", "Not enough stock.");
+                ModelState.AddModelError("", "Customer not found.");
+                await LoadAllocationDropdownsAsync();
                 return View("CreateAllocation", model);
             }
 
-            fridge.StockQuantity -= model.Quantity;
-
-            var allocation = new FridgeAllocation
+            // Create allocations for each unit
+            foreach (var fridgeUnit in availableUnits)
             {
-                FridgeId = model.FridgeId,
-                CustomerId = model.CustomerId,
-                Quantity = model.Quantity,
-                AllocationDate = DateTime.UtcNow,
-                CreatedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            };
+                var allocation = new FridgeAllocation
+                {
+                    FridgeUnitId = fridgeUnit.Id,
+                    CustomerId = model.CustomerId,
+                    AllocationDate = DateTime.UtcNow,
+                    CreatedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                };
 
-            _context.FridgeAllocations.Add(allocation);
+                // Update fridge unit status
+                fridgeUnit.Status = FridgeStatus.Allocated;
+                fridgeUnit.CurrentCustomerId = model.CustomerId;
 
-            rental.Allocation = allocation;
-            rental.AllocationId = allocation.Id;
+                _context.FridgeAllocations.Add(allocation);
+            }
+
+            // Update rental request
             rental.UpdatedAt = DateTime.UtcNow;
 
+            // Send notification
             _context.Notifications.Add(new Notification
             {
                 Title = "Fridge Allocated",
-                RecipientUserId = rental.RequestedByUserId,
-                Message = $"Your rental request for {rental.Fridge.Model} ({rental.Quantity}) has been allocated.",
+                RecipientUserId = customer.UserId,
+                Message = $"{model.Quantity} fridge(s) ({rental.FridgeModel.Name}) have been allocated to your account.",
                 CreatedAt = DateTime.UtcNow,
                 IsRead = false,
                 TargetController = "Customer",
-                TargetAction = "MyRentals"
+                TargetAction = "MyAllocations"
             });
 
             await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Fridge allocated successfully!";
+            TempData["SuccessMessage"] = $"{model.Quantity} fridge(s) allocated successfully!";
             return RedirectToAction("Requests");
         }
 
-        #endregion
+        [HttpGet]
+        public async Task<IActionResult> CreateAllocationManually()
+        {
+            await LoadAllocationDropdownsAsync();
+            return View();
+        }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAllocationManually(AllocationViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                await LoadAllocationDropdownsAsync();
+                return View(model);
+            }
 
-        #region Fridge Tracking
+            // Find available fridge units
+            var availableUnits = await _context.FridgeUnits
+                .Where(fu => fu.FridgeModelId == model.FridgeModelId &&
+                            fu.Status == FridgeStatus.InWarehouse)
+                .Take(model.Quantity)
+                .ToListAsync();
+
+            if (availableUnits.Count < model.Quantity)
+            {
+                ModelState.AddModelError("", $"Only {availableUnits.Count} units available. Requested: {model.Quantity}");
+                await LoadAllocationDropdownsAsync();
+                return View(model);
+            }
+
+            var customer = await _context.Customers
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.Id == model.CustomerId);
+
+            if (customer == null)
+            {
+                ModelState.AddModelError("", "Customer not found.");
+                await LoadAllocationDropdownsAsync();
+                return View(model);
+            }
+
+            var fridgeModel = await _context.FridgeModels.FindAsync(model.FridgeModelId);
+
+            // Create allocations for each unit
+            foreach (var fridgeUnit in availableUnits)
+            {
+                var allocation = new FridgeAllocation
+                {
+                    FridgeUnitId = fridgeUnit.Id,
+                    CustomerId = model.CustomerId,
+                    AllocationDate = DateTime.UtcNow,
+                    CreatedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                };
+
+                // Update fridge unit status
+                fridgeUnit.Status = FridgeStatus.Allocated;
+                fridgeUnit.CurrentCustomerId = model.CustomerId;
+
+                _context.FridgeAllocations.Add(allocation);
+            }
+
+            // Send notification
+            _context.Notifications.Add(new Notification
+            {
+                Title = "Fridge Allocated",
+                RecipientUserId = customer.UserId,
+                Message = $"{model.Quantity} fridge(s) ({fridgeModel.Name}) have been allocated to your account.",
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false,
+                TargetController = "Customer",
+                TargetAction = "MyAllocations"
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"{model.Quantity} fridge(s) allocated successfully!";
+            return RedirectToAction("Allocations");
+        }
 
         public async Task<IActionResult> Allocations()
         {
             var allocations = await _context.FridgeAllocations
-                .Include(a => a.Fridge)
+                .Include(a => a.FridgeUnit)
+                .ThenInclude(fu => fu.FridgeModel)
                 .Include(a => a.Customer)
                 .Include(a => a.CreatedBy)
                 .OrderByDescending(a => a.AllocationDate)
@@ -397,214 +472,32 @@ namespace Code_Vanta_Systems.Controllers
             return View(allocations);
         }
 
-        //public async Task<IActionResult> FridgeTracking()
-        //{
-        //    var trackedFridges = await _context.FridgeAllocations
-        //        .Include(a => a.Fridge)
-        //        .Include(a => a.Customer)  
-        //        .Include(a => a.CreatedBy)
-        //        .OrderByDescending(a => a.AllocationDate)
-        //        .ToListAsync();
-
-        //    return View(trackedFridges);
-        //}
-
-
-
-
-
-
-
-
-        //[HttpGet]
-        //public async Task<IActionResult> CreateAllocationManually()
-        //{
-
-        //    ViewBag.Customers = await _context.Customers
-        //         .Include(c => c.Location)
-        //       .Where(c => c.Status == CustomerStatus.Active)
-        //        .Select(c => new SelectListItem { Text = c.BusinessName, Value = c.Id.ToString() })
-        //        .ToListAsync();
-
-        //    ViewBag.Fridges = await _context.Fridges
-        //        .Select(f => new SelectListItem { Text = f.Model, Value = f.Id.ToString() })
-        //        .ToListAsync();
-
-        //    return View();
-        //}
-
-        //[HttpPost]
-        //public async Task<IActionResult> CreateAllocationManually(AllocationViewModel model)
-        //{
-        //    if (!ModelState.IsValid) return View(model);
-
-        //    var fridge = await _context.Fridges.FindAsync(model.FridgeId);
-        //    if (fridge == null) { ModelState.AddModelError("", "Fridge not found."); return View(model); }
-        //    if (fridge.StockQuantity < model.Quantity) { ModelState.AddModelError("", "Not enough stock."); return View(model); }
-
-        //    fridge.StockQuantity -= model.Quantity;
-
-        //    var allocation = new FridgeAllocation
-        //    {
-        //        CustomerId = model.CustomerId,
-        //        FridgeId = model.FridgeId,
-        //        Quantity = model.Quantity,
-        //        AllocationDate = DateTime.UtcNow,
-        //        CreatedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-        //    };
-
-        //    await _context.FridgeAllocations.AddAsync(allocation);
-        //    await _context.SaveChangesAsync();
-
-        //    return RedirectToAction("Allocations");
-        //}
-
-
-
-
-        [HttpGet]
-        public async Task<IActionResult> CreateAllocationManually()
-        {
-            ViewBag.Customers = await _context.Customers
-                .Include(c => c.Location)
-                .Where(c => c.Status == CustomerStatus.Active)
-                .Select(c => new SelectListItem
-                {
-                    Text = c.BusinessName,
-                    Value = c.Id.ToString()
-                })
-                .ToListAsync();
-
-            ViewBag.Fridges = await _context.Fridges
-                .Select(f => new SelectListItem
-                {
-                    Text = f.Model + " (" + f.StockQuantity + " available)",
-                    Value = f.Id.ToString()
-                })
-                .ToListAsync();
-
-            return View();  
-        }
-
-       
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateAllocationManually(AllocationViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                await LoadDropdownsAsync();  
-                return View("CreateAllocation", model);
-            }
-
-            var fridge = await _context.Fridges.FindAsync(model.FridgeId);
-            if (fridge == null)
-            {
-                ModelState.AddModelError("", "Fridge not found.");
-                await LoadDropdownsAsync();
-                return View("CreateAllocation", model);
-            }
-
-            if (fridge.StockQuantity < model.Quantity)
-            {
-                ModelState.AddModelError("", "Not enough stock available.");
-                await LoadDropdownsAsync();
-                return View("CreateAllocation", model);
-            }
-
-            var customer = await _context.Customers
-                .Include(c => c.User)  
-                .FirstOrDefaultAsync(c => c.Id == model.CustomerId);
-
-            if (customer == null)
-            {
-                ModelState.AddModelError("", "Customer not found.");
-                await LoadDropdownsAsync();
-                return View("CreateAllocation", model);
-            }
-
- 
-            fridge.StockQuantity -= model.Quantity;
-
- 
-            var allocation = new FridgeAllocation
-            {
-                CustomerId = model.CustomerId,
-                FridgeId = model.FridgeId,
-                Quantity = model.Quantity,
-                AllocationDate = DateTime.UtcNow,
-                CreatedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            };
-
-            _context.FridgeAllocations.Add(allocation);
-
-
-            _context.Notifications.Add(new Notification
-            {
-                Title = "Fridge Allocated",
-                RecipientUserId = customer.UserId,  
-                Message = $"A fridge ({fridge.Model}) has been allocated to your account. Quantity: {model.Quantity}.",
-                CreatedAt = DateTime.UtcNow,
-                IsRead = false,
-                TargetController = "Customer",
-                TargetAction = "MyAllocations" 
-
-            });
-
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Fridge allocated successfully!";
-            return RedirectToAction("Allocations");
-        }
-
-
-
-        private async Task LoadDropdownsAsync()
-        {
-            ViewBag.Customers = await _context.Customers
-                .Where(c => c.Status == CustomerStatus.Active)
-                .Select(c => new SelectListItem { Text = c.BusinessName, Value = c.Id.ToString() })
-                .ToListAsync();
-
-            ViewBag.Fridges = await _context.Fridges
-                .Select(f => new SelectListItem { Text = f.Model, Value = f.Id.ToString() })
-                .ToListAsync();
-        }
-
-
-
-
-
-
-
-
-
-
-
         public async Task<IActionResult> FridgeTracking()
         {
             try
-            { 
+            {
                 var trackedFridges = await _context.FridgeAllocations
-                    .Include(a => a.Fridge)
+                    .Include(a => a.FridgeUnit)
+                    .ThenInclude(fu => fu.FridgeModel)
                     .Include(a => a.Customer)
                     .Include(a => a.CreatedBy)
+                    .Where(a => a.DeallocationDate == null) // Active allocations only
                     .OrderByDescending(a => a.AllocationDate)
                     .Select(a => new FridgeTrackingViewModel
                     {
-                        FridgeModel = a.Fridge.Model,
+                        FridgeModel = a.FridgeUnit.FridgeModel.Name,
+                        SerialNumber = a.FridgeUnit.SerialNumber,
                         CustomerName = a.Customer.BusinessName,
                         CustomerAddress = a.Customer.PhysicalAddress ?? "Address not provided",
-                        Quantity = a.Quantity,
                         AllocatedBy = a.CreatedBy != null ? a.CreatedBy.UserName : "System",
-                        AllocationDate = a.AllocationDate
+                        AllocationDate = a.AllocationDate,
+                        Status = a.FridgeUnit.Status.ToString()
                     })
                     .ToListAsync();
 
                 if (!trackedFridges.Any())
                 {
-                    TempData["InfoMessage"] = "No fridge allocations found.";
+                    TempData["InfoMessage"] = "No active fridge allocations found.";
                 }
 
                 return View(trackedFridges);
@@ -616,10 +509,58 @@ namespace Code_Vanta_Systems.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> DeallocateFridge(int allocationId)
+        {
+            try
+            {
+                var allocation = await _context.FridgeAllocations
+                    .Include(a => a.FridgeUnit)
+                    .Include(a => a.Customer)
+                    .FirstOrDefaultAsync(a => a.Id == allocationId);
 
+                if (allocation == null)
+                    return Json(new { success = false, message = "Allocation not found." });
 
+                if (allocation.DeallocationDate.HasValue)
+                    return Json(new { success = false, message = "Fridge already deallocated." });
 
+                // Update allocation
+                allocation.DeallocationDate = DateTime.UtcNow;
 
+                // Update fridge unit status
+                allocation.FridgeUnit.Status = FridgeStatus.InWarehouse;
+                allocation.FridgeUnit.CurrentCustomerId = null;
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Fridge deallocated successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Failed to deallocate: {ex.Message}" });
+            }
+        }
+
+        private async Task LoadAllocationDropdownsAsync()
+        {
+            ViewBag.Customers = await _context.Customers
+                .Where(c => c.Status == CustomerStatus.Active)
+                .Select(c => new SelectListItem
+                {
+                    Text = $"{c.BusinessName} - {c.ContactName}",
+                    Value = c.Id.ToString()
+                })
+                .ToListAsync();
+
+            ViewBag.FridgeModels = await _context.FridgeModels
+                .Select(fm => new SelectListItem
+                {
+                    Text = $"{fm.Name} - {fm.Category} (Available: {_context.FridgeUnits.Count(fu => fu.FridgeModelId == fm.Id && fu.Status == FridgeStatus.InWarehouse)})",
+                    Value = fm.Id.ToString()
+                })
+                .ToListAsync();
+        }
         #endregion
     }
 }

@@ -5,7 +5,7 @@ namespace Code_Vanta_Systems.ViewModels.SupplierQoutation
     public class SupplierQuotationItemViewModel
     {
         public int PurchaseRequestItemId { get; set; }
-        public int FridgeId { get; set; }
+        public int FridgeModelId { get; set; }
         public string FridgeModel { get; set; }
         public int RequestedQuantity { get; set; }
 

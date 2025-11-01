@@ -11,17 +11,16 @@ namespace Code_Vanta_Systems.Data.Configurations
             builder.Property(poi => poi.UnitPrice)
                    .HasColumnType("decimal(18,2)");
 
-            // 🛠️ MODIFIED: Cascade Delete when the PurchaseOrder is removed
             builder.HasOne(poi => poi.PurchaseOrder)
                    .WithMany(po => po.Items)
                    .HasForeignKey(poi => poi.PurchaseOrderId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            // 🛠️ MODIFIED: Restrict deletion of InventoryItem
-            builder.HasOne(poi => poi.Fridge)
-        .WithMany(f => f.PurchaseOrderItems)
-        .HasForeignKey(poi => poi.FridgeId)
-        .OnDelete(DeleteBehavior.Restrict);
+            // CHANGE: Fridge → FridgeModel (we order models, not specific units)
+            builder.HasOne(poi => poi.FridgeModel)
+                   .WithMany(f => f.PurchaseOrderItems)
+                   .HasForeignKey(poi => poi.FridgeModelId)  // Updated property name
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

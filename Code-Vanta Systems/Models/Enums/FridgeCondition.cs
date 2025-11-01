@@ -2,9 +2,10 @@
 {
     public enum FridgeCondition
     {
-        
-        Good,
+
         New,
+        Good,
+        Poor,
         Operational,
         RequireMaintenance,
         Scrapped,

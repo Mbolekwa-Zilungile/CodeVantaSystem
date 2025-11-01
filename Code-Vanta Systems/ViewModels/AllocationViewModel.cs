@@ -4,15 +4,13 @@ namespace Code_Vanta_Systems.ViewModels
 {
     public class AllocationViewModel
     {
-        [Required]
-        public int FridgeId { get; set; }
+        [Required(ErrorMessage = "Fridge unit is required")]
+        [Display(Name = "Fridge Unit")]
+        public int FridgeUnitId { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Customer is required")]
+        [Display(Name = "Customer")]
         public int CustomerId { get; set; }
-
-        [Required]
-        [Range(1, int.MaxValue)]
-        public int Quantity { get; set; }
 
         public string? TechnicianId { get; set; }
     }

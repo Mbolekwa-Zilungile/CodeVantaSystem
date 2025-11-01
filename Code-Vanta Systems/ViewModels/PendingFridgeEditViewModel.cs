@@ -8,16 +8,19 @@ namespace Code_Vanta_Systems.ViewModels
         public int Id { get; set; }
 
         [Required]
-        [StringLength(100)]
+        [Display(Name = "Serial Number")]
         public string SerialNumber { get; set; }
 
         [Required]
+        [Display(Name = "Category")]
         public FridgeCategory Category { get; set; }
 
         [Required]
+        [Display(Name = "Condition")]
         public FridgeCondition Condition { get; set; }
 
         [Required]
+        [Display(Name = "Monthly Rental Price")]
         [Range(0, double.MaxValue, ErrorMessage = "Rental price must be positive")]
         public decimal RentalPricePerMonth { get; set; }
     }

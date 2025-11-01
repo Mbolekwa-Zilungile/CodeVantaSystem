@@ -8,9 +8,10 @@ namespace Code_Vanta_Systems.Models
         [Key]
         public int Id { get; set; }
 
+        // CHANGE: FridgeId → FridgeUnitId
         [Required]
-        public int FridgeId { get; set; }
-        public virtual Fridge Fridge { get; set; }
+        public int FridgeUnitId { get; set; }
+        public virtual FridgeUnit FridgeUnit { get; set; }
 
         [Required]
         public string ReportedByUserId { get; set; }
@@ -22,16 +23,19 @@ namespace Code_Vanta_Systems.Models
         [Required]
         public DateTime DateReported { get; set; }
 
+        // ADD THIS PROPERTY ALIAS:
+        public DateTime ReportedDate => DateReported;
+
         [Required, StringLength(500)]
         public string FaultDescription { get; set; }
 
         public FaultSeverity Severity { get; set; }
 
         [StringLength(1000)]
-        public string? RepairDescription { get; set; } // Detailed notes on the fix
+        public string? RepairDescription { get; set; }
 
         [StringLength(500)]
-        public string? PartsUsed { get; set; } // List of parts replaced
+        public string? PartsUsed { get; set; }
 
         [Required]
         public FaultStatus Status { get; set; }

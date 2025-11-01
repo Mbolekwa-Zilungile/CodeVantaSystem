@@ -16,6 +16,9 @@ namespace Code_Vanta_Systems.Models
         [Required, StringLength(100)]
         public string ContactName { get; set; }
 
+        // ADD THIS COMPUTED PROPERTY:
+        public string Name => $"{BusinessName} ({ContactName})";
+
         [Required, Phone, StringLength(20)]
         public string Phone { get; set; }
 

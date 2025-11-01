@@ -11,13 +11,12 @@ namespace Code_Vanta_Systems.Data.Configurations
             builder.Property(fm => fm.Status)
                    .HasConversion<string>();
 
-            // 🛠️ ADDED: Link to the Fridge (The asset being serviced)
-            builder.HasOne(fm => fm.Fridge)
+            // CHANGE: Fridge → FridgeUnit
+            builder.HasOne(fm => fm.FridgeUnit)
                    .WithMany(f => f.Maintenances)
-                   .HasForeignKey(fm => fm.FridgeId)
+                   .HasForeignKey(fm => fm.FridgeUnitId)  // Updated property name
                    .OnDelete(DeleteBehavior.Restrict);
 
-            // Existing Technician Relationship
             builder.HasOne(fm => fm.Technician)
                    .WithMany(u => u.AssignedMaintenances)
                    .HasForeignKey(fm => fm.TechnicianId)

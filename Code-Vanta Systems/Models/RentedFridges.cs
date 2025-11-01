@@ -9,10 +9,11 @@ namespace Code_Vanta_Systems.Models
         [Key]
         public int Id { get; set; }
 
+        // CHANGE: FridgeId → FridgeUnitId (this tracks SPECIFIC physical fridges)
         [Required]
-        public int FridgeId { get; set; }
-        [ForeignKey("FridgeId")]
-        public Fridge Fridge { get; set; }
+        public int FridgeUnitId { get; set; }
+        [ForeignKey("FridgeUnitId")]
+        public FridgeUnit FridgeUnit { get; set; }
 
         [Required]
         public string UserId { get; set; }

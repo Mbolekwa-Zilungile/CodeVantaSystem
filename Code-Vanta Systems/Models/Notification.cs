@@ -31,6 +31,7 @@ namespace Code_Vanta_Systems.Models
 
         public string TargetController { get; set; } = "Home"; //prefered controller
         public string TargetAction { get; set; } = "Index"; // action
+        public int? TargetId { get; set; } // ID parameter for the target action (e.g., fault ID, rental ID, etc.)
 
     }
 }

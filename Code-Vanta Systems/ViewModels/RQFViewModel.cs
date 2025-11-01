@@ -1,11 +1,13 @@
 ﻿using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
+using Code_Vanta_Systems.ViewModels.PurchaseRequest;
 using System.ComponentModel.DataAnnotations;
 
 namespace Code_Vanta_Systems.ViewModels
 {
     public class RQFViewModel
     {
+        public int FridgeModelId { get; set; }
         public int PurchaseRequestId { get; set; }
 
         [Display(Name = "Requested Date")]

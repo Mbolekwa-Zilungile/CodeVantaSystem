@@ -3,96 +3,242 @@
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Fault Management";
     var technicians = ViewData["Technicians"] as IEnumerable<dynamic>;
     int counter = ((int)ViewData["currentPage"] - 1) * 10 + 1;
 }
 
-<h2 class="text-center mb-5 display-5">Logged Fridge Faults</h2>
+<div class="container-fluid py-4">
 
-<!-- TempData Alerts -->
-@{
-    if (TempData["SuccessMessage"] != null)
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold">
+            <i class="bi bi-tools me-2"></i> Fault Management
+        </h1>
+    </div>
+
+    <!-- TempData Alerts -->
+    @if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
-    if (TempData["ErrorMessage"] != null)
+    @if (TempData["ErrorMessage"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
-}
 
-<!-- Search Form -->
-<div class="d-flex mb-3">
-    <form class="d-flex flex-grow-1 me-2" method="get" asp-action="Index">
-        <input type="text" name="search" class="form-control me-2" value="@ViewData["search"]" placeholder="Search faults...">
-        <button type="submit" class="btn btn-secondary">Search</button>
-    </form>
+    <!-- Search Form -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 align-items-center">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control border-start-0"
+                               value="@ViewData["search"]" placeholder="Search by serial number, fault description, or reporter...">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="bi bi-search me-1"></i> Search
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Faults Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-list-ul me-2"></i> Logged Fridge Faults
+                <small class="text-white-50 fs-6">(Page @ViewData["currentPage"] of @ViewData["totalPages"])</small>
+            </h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Fridge Serial</th>
+                                <th>Fault Description</th>
+                                <th>Reported By</th>
+                                <th>Date Reported</th>
+                                <th>Status</th>
+                                <th>Assigned Technician</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var fault in Model)
+                            {
+                                <tr>
+                                    <td class="text-muted">@counter</td>
+                                    <td>
+                                        <span class="fw-bold text-primary">@fault.FridgeUnit?.SerialNumber</span>
+                                    </td>
+                                    <td>
+                                        <div class="fault-description" style="max-width: 250px;">
+                                            @fault.FaultDescription
+                                        </div>
+                                    </td>
+                                    <td>@fault.ReportedBy?.FullName</td>
+                                    <td class="text-muted small">@fault.DateReported.ToString("yyyy-MM-dd")</td>
+                                    <td>
+                                        @switch (fault.Status)
+                                        {
+                                            case FaultStatus.Open:
+                                                <span class="badge bg-warning text-dark">@fault.Status</span>
+                                                break;
+                                            case FaultStatus.InProgress:
+                                                <span class="badge bg-info">@fault.Status</span>
+                                                break;
+                                            case FaultStatus.Resolved:
+                                                <span class="badge bg-success">@fault.Status</span>
+                                                break;
+                                            case FaultStatus.Cancelled:
+                                                <span class="badge bg-danger">@fault.Status</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary">@fault.Status</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (fault.AssignedTechnician != null)
+                                        {
+                                            <span class="badge bg-primary">@fault.AssignedTechnician.FullName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-muted">Not assigned</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (fault.Status == FaultStatus.Cancelled)
+                                        {
+                                            <i class="bi bi-x-circle text-danger fs-5" title="Fault Cancelled - Cannot Assign Technician"></i>
+                                        }
+                                        else if (fault.Status == FaultStatus.Resolved)
+                                        {
+                                            <i class="bi bi-check-circle text-success fs-5" title="Fault Resolved"></i>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="AssignTechnician" method="post" class="d-flex align-items-center gap-2">
+                                                <input type="hidden" name="faultId" value="@fault.Id" />
+                                                <select name="technicianId" class="form-select form-select-sm" style="min-width: 150px;" required>
+                                                    <option value="">-- Select Technician --</option>
+                                                    @foreach (var tech in technicians)
+                                                    {
+                                                        <option value="@tech.TechnicianId"
+                                                                selected="@(fault.AssignedTechnicianId == tech.ApplicationUserId)">
+                                                            @tech.FullName
+                                                        </option>
+                                                    }
+                                                </select>
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-send me-1"></i> Assign
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                                counter++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if ((int)ViewData["totalPages"] > 1)
+                {
+                    <nav aria-label="Faults pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            @{
+                                int currentPage = (int)ViewData["currentPage"];
+                                int totalPages = (int)ViewData["totalPages"];
+                                string search = ViewData["search"]?.ToString() ?? "";
+
+                                // Previous page
+                                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                    <a class="page-link" asp-action="Index" asp-route-pageIndex="@(currentPage - 1)" asp-route-search="@search">
+                                        <i class="bi bi-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+
+                                // Page numbers
+                                for (int i = 1; i <= totalPages; i++)
+                                {
+                                    <li class="page-item @(i == currentPage ? "active" : "")">
+                                        <a class="page-link" asp-action="Index" asp-route-pageIndex="@i" asp-route-search="@search">@i</a>
+                                    </li>
+                                }
+
+                                // Next page
+                                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                    <a class="page-link" asp-action="Index" asp-route-pageIndex="@(currentPage + 1)" asp-route-search="@search">
+                                        Next <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No faults found</h4>
+                    <p class="text-muted">
+                        @if (!string.IsNullOrEmpty(ViewData["search"]?.ToString()))
+                        {
+                            <text>No faults match your search criteria.</text>
+                        }
+                        else
+                        {
+                            <text>There are currently no logged fridge faults.</text>
+                        }
+                    </p>
+                    @if (!string.IsNullOrEmpty(ViewData["search"]?.ToString()))
+                    {
+                        <a asp-action="Index" class="btn btn-primary mt-2">
+                            <i class="bi bi-arrow-clockwise me-1"></i> View All Faults
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
 </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Fridge</th>
-            <th>Fault Description</th>
-            <th>Reported By</th>
-            <th>Status</th>
-            <th>Assigned Technician</th>
-            <th>Assign</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var fault in Model)
-        {
-            <tr>
-                <td>@counter</td>
-                <td>@fault.Fridge?.SerialNumber</td>
-                <td>@fault.FaultDescription</td>
-                <td>@fault.ReportedBy?.FullName</td>
-                <td>@fault.Status</td>
-                <td>@(fault.AssignedTechnician?.FullName ?? "Not yet assigned")</td>
+<style>
+    .fault-description {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 
-                <td class="text-center">
-                    @if (fault.Status == FaultStatus.Cancelled)
-                    {
-                        <i class="bi bi-x-circle text-danger" title="Cancelled"></i>
-                    }
-                    else
-                    {
-                        <form asp-action="AssignTechnician" method="post">
-                            <input type="hidden" name="faultId" value="@fault.Id" />
-                            <select name="technicianId" class="form-select">
-                                <option value="">-- Select Technician --</option>
-                                @foreach (var tech in technicians)
-                                {
-                                    <option value="@tech.TechnicianId">@tech.FullName</option>
-                                }
-                            </select>
-                            <button type="submit" class="btn btn-sm btn-primary mt-1">Assign</button>
-                        </form>
-                    }
-                </td>
+    .table th {
+        font-weight: 600;
+        border-bottom: 2px solid #dee2e6;
+    }
 
-            </tr>
-            counter++;
-        }
-    </tbody>
-</table>
-
-<!-- Pagination -->
-<nav>
-    <ul class="pagination justify-content-end">
-        @for (int i = 1; i <= (int)ViewData["totalPages"]; i++)
-        {
-            <li class="page-item @(i == (int)ViewData["currentPage"] ? "active" : "")">
-                <a class="page-link" asp-action="Index" asp-route-pageIndex="@i" asp-route-search="@ViewData["search"]">@i</a>
-            </li>
-        }
-    </ul>
-</nav>
+    .pagination .page-item.active .page-link {
+        background-color: #2C3E50;
+        border-color: #2C3E50;
+    }
+</style>

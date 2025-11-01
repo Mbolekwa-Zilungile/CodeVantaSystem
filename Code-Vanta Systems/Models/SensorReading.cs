@@ -5,13 +5,13 @@ namespace Code_Vanta_Systems.Models
 {
     public class SensorReading
     {
-        [Key] // <--- FIX: This explicitly defines the Primary Key
+        [Key]
         public int Id { get; set; }
 
-        // Foreign Key to the Fridge
+        // CHANGE: FridgeId → FridgeUnitId
         [Required]
-        public int FridgeId { get; set; }
-        public virtual Fridge Fridge { get; set; }
+        public int FridgeUnitId { get; set; }
+        public virtual FridgeUnit FridgeUnit { get; set; }
 
         [Required]
         public DateTime Timestamp { get; set; }

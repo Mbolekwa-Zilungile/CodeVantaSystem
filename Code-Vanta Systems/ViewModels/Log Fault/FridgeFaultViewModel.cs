@@ -8,7 +8,7 @@ namespace Code_Vanta_Systems.ViewModels.Log_Fault
         public int Id { get; set; }
 
         // Fridge Info
-        public int FridgeId { get; set; }
+        public int FridgeUnitId { get; set; }
         public string FridgeModel { get; set; }
         public string FridgeSerialNumber { get; set; }
 

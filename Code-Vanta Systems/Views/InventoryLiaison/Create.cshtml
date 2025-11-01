@@ -1,10 +1,11 @@
-﻿@model Code_Vanta_Systems.ViewModels.CreatePurchaseRequestViewModel
+﻿@model Code_Vanta_Systems.ViewModels.PurchaseRequest.CreatePurchaseRequestViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
     Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
     ViewData["Title"] = "Create Purchase Request";
 }
+
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success">
@@ -12,120 +13,224 @@
     </div>
 }
 
+<div class="container py-4">
+    <h2 class="mb-4 text-primary">
+        <i class="bi bi-cart-plus"></i> Create Purchase Request
+    </h2>
 
-<h2>Create Purchase Request</h2>
+    <form asp-action="Create" method="post" class="border p-4 rounded bg-light shadow-sm">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="alert alert-danger"></div>
 
-<form asp-action="Create" method="post">
-    @Html.AntiForgeryToken()
-    <div asp-validation-summary="All" class="alert text-danger"></div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="ExpectedDate" class="form-label">Expected Date</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                        <input asp-for="ExpectedDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <span asp-validation-for="ExpectedDate" class="text-danger"></span>
+                </div>
+            </div>
 
-    <div class="mb-3">
-        <label asp-for="ExpectedDate" class="form-label">Expected Date</label>
-        <input asp-for="ExpectedDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
-        <span asp-validation-for="ExpectedDate" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Priority" class="form-label">Priority</label>
-        <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<Code_Vanta_Systems.Models.Enums.PriorityLevel>()">
-            <option value="">-- Select Priority --</option>
-        </select>
-        <span asp-validation-for="Priority" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Notes" class="form-label">Notes</label>
-        <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
-        <span asp-validation-for="Notes" class="text-danger"></span>
-    </div>
-
-    <h4>Fridges</h4>
-    <table class="table table-bordered" id="itemsTable">
-        <thead>
-            <tr>
-                <th>Fridge</th>
-                <th>Quantity</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @for (int i = 0; i < Model.Items.Count; i++)
-            {
-                <tr>
-                    <td>
-                        <select asp-for="@Model.Items[i].FridgeId" class="form-select" asp-items="Model.Items[i].AvailableItems">
-                            <option value="">-- Select Fridge --</option>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="Priority" class="form-label">Priority</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-exclamation-triangle"></i></span>
+                        <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<Code_Vanta_Systems.Models.Enums.PriorityLevel>()">
+                            <option value="">-- Select Priority --</option>
                         </select>
-                        <span asp-validation-for="@Model.Items[i].FridgeId" class="text-danger"></span>
-                    </td>
-                    <td>
-                        <input asp-for="@Model.Items[i].Quantity" type="number" min="1" class="form-control" />
-                        <span asp-validation-for="@Model.Items[i].Quantity" class="text-danger"></span>
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    </div>
+                    <span asp-validation-for="Priority" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
 
-    <button type="button" id="addItem" class="btn btn-secondary mb-3">Add Fridge</button>
-    <button type="submit" class="btn btn-primary">Submit Request</button>
-</form>
+        <div class="mb-3">
+            <label asp-for="Notes" class="form-label">Notes</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-card-text"></i></span>
+                <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Additional notes or instructions..."></textarea>
+            </div>
+            <span asp-validation-for="Notes" class="text-danger"></span>
+        </div>
+
+        <div class="mb-4">
+            <h4 class="border-bottom pb-2">
+                <i class="bi bi-refrigerator"></i> Request Items
+            </h4>
+
+            <table class="table table-bordered table-hover" id="itemsTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th width="60%">Fridge Model</th>
+                        <th width="25%">Quantity</th>
+                        <th width="15%">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Items.Count; i++)
+                    {
+                        <tr>
+                            <td>
+                                <select asp-for="@Model.Items[i].FridgeId" class="form-select fridge-select">
+                                    <option value="">-- Select Fridge --</option>
+                                    @if (Model.Items[i].AvailableItems != null)
+                                    {
+                                        @foreach (var item in Model.Items[i].AvailableItems)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="@Model.Items[i].FridgeId" class="text-danger small"></span>
+                            </td>
+                            <td>
+                                <input asp-for="@Model.Items[i].Quantity" type="number" min="1" class="form-control" placeholder="Qty" />
+                                <span asp-validation-for="@Model.Items[i].Quantity" class="text-danger small"></span>
+                            </td>
+                            <td class="text-center">
+                                @if (i > 0)
+                                {
+                                    <button type="button" class="btn btn-danger btn-sm remove-item">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <button type="button" id="addItem" class="btn btn-outline-secondary">
+                <i class="bi bi-plus-circle"></i> Add Another Fridge
+            </button>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-send-check"></i> Submit Purchase Request
+            </button>
+            <a asp-action="PurchaseRequests" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Requests
+            </a>
+        </div>
+    </form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
     <script>
-        $(document).ready(function () {
-            var itemIndex = @(Model?.Items?.Count ?? 1);
+        document.addEventListener('DOMContentLoaded', function () {
+            let itemIndex = @(Model?.Items?.Count ?? 1);
+            const itemsTable = document.getElementById('itemsTable');
+            const addItemBtn = document.getElementById('addItem');
 
-            // Store all available fridges
-            var allItems = [];
-        @if (Model.Items != null && Model.Items.Count > 0 && Model.Items[0].AvailableItems != null)
-        {
-                foreach (var item in Model.Items[0].AvailableItems)
-                {
-                        @:allItems.push({ value: "@item.Value", text: "@item.Text" });
-                }
-        }
+            // Get all available fridge options from the first select element
+            function getAllFridgeOptions() {
+                const firstSelect = document.querySelector('.fridge-select');
+                if (!firstSelect) return [];
 
-                // Add Fridge button
-                $("#addItem").click(function () {
-                    if (allItems.length === 0) {
-                        alert("⚠️ No fridges available to add. Make sure Fridge table has data.");
-                        return;
+                const options = [];
+                for (let option of firstSelect.options) {
+                    if (option.value !== '') {
+                        options.push({
+                            value: option.value,
+                            text: option.text
+                        });
                     }
+                }
+                return options;
+            }
 
-                    var options = '<option value="">-- Select Fridge --</option>';
-                    allItems.forEach(function (i) {
-                        options += `<option value="${i.value}">${i.text}</option>`;
-                    });
+            // Add new item row
+            addItemBtn.addEventListener('click', function () {
+                const fridgeOptions = getAllFridgeOptions();
+                if (fridgeOptions.length === 0) {
+                    alert('⚠️ No fridges available. Please ensure there are fridges in the system.');
+                    return;
+                }
 
-                    var newRow = `
-                            <tr>
-                                <td>
-                                    <select name="Items[${itemIndex}].FridgeId" class="form-select">
-                                        ${options}
-                                    </select>
-                                </td>
-                                <td>
-                                    <input name="Items[${itemIndex}].Quantity" type="number" min="1" class="form-control" />
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
-                                </td>
-                            </tr>`;
-
-                    $("#itemsTable tbody").append(newRow);
-                    itemIndex++;
+                // Build options HTML
+                let optionsHtml = '<option value="">-- Select Fridge --</option>';
+                fridgeOptions.forEach(option => {
+                    optionsHtml += `<option value="${option.value}">${option.text}</option>`;
                 });
 
-            // Remove row
-            $(document).on("click", ".remove-item", function () {
-                $(this).closest("tr").remove();
+                // Create new row
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>
+                        <select name="Items[${itemIndex}].FridgeId" class="form-select fridge-select">
+                            ${optionsHtml}
+                        </select>
+                    </td>
+                    <td>
+                        <input name="Items[${itemIndex}].Quantity" type="number" min="1" class="form-control" placeholder="Qty" />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-sm remove-item">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                `;
+
+                itemsTable.querySelector('tbody').appendChild(newRow);
+                itemIndex++;
+            });
+
+            // Remove item row
+            itemsTable.addEventListener('click', function (e) {
+                if (e.target.closest('.remove-item')) {
+                    const row = e.target.closest('tr');
+                    if (itemsTable.querySelectorAll('tbody tr').length > 1) {
+                        row.remove();
+                    } else {
+                        alert('At least one fridge item is required.');
+                    }
+                }
+            });
+
+            // Form validation before submit
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function (e) {
+                const fridgeSelects = document.querySelectorAll('.fridge-select');
+                let hasValidSelection = false;
+
+                fridgeSelects.forEach(select => {
+                    if (select.value && select.value !== '') {
+                        hasValidSelection = true;
+                    }
+                });
+
+                if (!hasValidSelection) {
+                    e.preventDefault();
+                    alert('Please select at least one fridge.');
+                    return false;
+                }
             });
         });
     </script>
+
+    <style>
+        .table th {
+            background-color: #343a40;
+            color: white;
+        }
+
+        .fridge-select:invalid {
+            border-color: #dc3545;
+        }
+
+        .remove-item {
+            transition: all 0.2s ease;
+        }
+
+            .remove-item:hover {
+                transform: scale(1.1);
+            }
+    </style>
 }

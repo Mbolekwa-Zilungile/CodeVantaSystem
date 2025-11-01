@@ -8,14 +8,20 @@
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["SuccessMessage"]
+        <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"] <!-- Fixed: Added icon -->
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
 
 <div class="container-fluid py-4">
 
-    <h2 class="text-warning mb-4">Deactivated Employees List</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-warning"><i class="bi bi-person-slash me-2"></i> Deactivated Employees List</h2>
+        <a asp-action="Employees" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Active Employees
+        </a>
+    </div>
+
     <p class="text-muted">This list shows all staff accounts that have been soft-deleted (IsActive = False).</p>
 
     <div class="row g-4 mb-5">
@@ -56,18 +62,18 @@
         </div>
     </div>
 
-
     <div class="card shadow-sm">
         <div class="card-body">
-            <table class="table table-bordered table-striped">
+            <table class="table table-hover align-middle">
+                <!-- Fixed: Changed to table-hover and align-middle -->
                 <thead class="table-dark">
                     <tr>
                         <th>Full Name</th>
                         <th>Email (Locked)</th>
-                        <th>Phone number</th>
+                        <th>Phone Number</th>
                         <th>Last Position</th>
                         <th>Deactivated On</th>
-                        <th>Actions</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -75,14 +81,16 @@
                     {
                         <tr>
                             <td>@emp.User?.FullName</td>
-                            <td class="text-danger">@emp.User?.Email</td>
+                            <td class="text-muted">@emp.User?.Email</td> <!-- Changed from text-danger to text-muted -->
                             <td>@emp.PhoneNumber</td>
                             <td>@emp.Position</td>
                             <td>@emp.CreatedAt.ToString("yyyy-MMM-dd")</td>
-                            <td>
+                            <td class="text-center">
                                 <form asp-controller="Admin" asp-action="Reactivate" asp-route-id="@emp.Id" method="post" style="display:inline;"
                                       onsubmit="return confirm('Are you sure you want to REACTIVATE @emp.User?.FullName?');">
-                                    <button type="submit" class="btn btn-outline-success btn-sm">Reactivate</button>
+                                    <button type="submit" class="btn btn-outline-success btn-sm">
+                                        <i class="bi bi-arrow-clockwise me-1"></i> Reactivate
+                                    </button>
                                     @Html.AntiForgeryToken()
                                 </form>
                             </td>

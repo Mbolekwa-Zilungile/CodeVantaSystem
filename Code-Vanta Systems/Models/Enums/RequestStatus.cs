@@ -7,6 +7,6 @@
         Approved = 3,
         Rejected = 4,
         Completed = 5,
-       Deleted = 6,
+        Deleted = 6,
     }
 }

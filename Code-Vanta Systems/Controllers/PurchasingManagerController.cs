@@ -5,6 +5,7 @@ using Code_Vanta_Systems.Services;
 using Code_Vanta_Systems.ViewModels;
 using Code_Vanta_Systems.ViewModels.DeliveryNote;
 using Code_Vanta_Systems.ViewModels.PurchaseOrder;
+using Code_Vanta_Systems.ViewModels.PurchaseRequest;
 using Code_Vanta_Systems.ViewModels.SupplierQoutation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -20,7 +21,6 @@ namespace Code_Vanta_Systems.Controllers
     [Authorize(Roles = "Purchasing Manager")]
     public class PurchasingManagerController : Controller
     {
-
         private readonly UserManager<ApplicationUser> userManager;
         private readonly RoleManager<IdentityRole> roleManager;
         private readonly ApplicationDbContext context;
@@ -86,7 +86,7 @@ namespace Code_Vanta_Systems.Controllers
             ViewBag.InactiveSuppliersCount = InactiveSuppliers.Count;
             return View(InactiveSuppliers);
         }
-        // GET: Admin/CreateSupplier
+
         [HttpGet]
         public IActionResult Create()
         {
@@ -109,7 +109,7 @@ namespace Code_Vanta_Systems.Controllers
                 EmailConfirmed = true,
                 PhoneNumber = model.Phone
             };
-            // Use a strong default password
+
             var result = await userManager.CreateAsync(user, "Supplier@123!");
 
             if (result.Succeeded)
@@ -128,7 +128,6 @@ namespace Code_Vanta_Systems.Controllers
 
                 if (roleResult.Succeeded)
                 {
-                    // 3. Create Supplier record
                     var supplier = new Supplier
                     {
                         ApplicationUserId = user.Id,
@@ -141,12 +140,10 @@ namespace Code_Vanta_Systems.Controllers
                     await context.Suppliers.AddAsync(supplier);
                     await context.SaveChangesAsync();
 
-
                     TempData["SuccessMessage"] = $"Supplier '{model.CompanyName}' created successfully.";
-                    return RedirectToAction("Suppliers"); // Adjust this action to your supplier list page
+                    return RedirectToAction("Suppliers");
                 }
 
-                // Cleanup user if role assignment fails
                 await userManager.DeleteAsync(user);
                 ModelState.AddModelError(string.Empty, "Failed to assign 'Supplier' role. User has been deleted.");
             }
@@ -177,11 +174,9 @@ namespace Code_Vanta_Systems.Controllers
 
             var user = supplier.User;
 
-            // 1. Perform soft delete
             supplier.IsActive = false;
             context.Suppliers.Update(supplier);
 
-            // 2. Lock user account
             await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
             context.Users.Update(user);
 
@@ -201,7 +196,7 @@ namespace Code_Vanta_Systems.Controllers
             if (supplier == null || supplier.User == null)
             {
                 TempData["ErrorMessage"] = "Supplier not found.";
-                return RedirectToAction("Suppliers"); // or wherever your suppliers list is
+                return RedirectToAction("Suppliers");
             }
 
             var viewModel = new EditSupplierViewModel
@@ -246,10 +241,9 @@ namespace Code_Vanta_Systems.Controllers
 
             try
             {
-                // Update user info
                 user.FullName = model.ContactPerson;
                 user.Email = model.Email;
-                user.UserName = model.Email; // Usually username = email
+                user.UserName = model.Email;
                 user.PhoneNumber = model.PhoneNumber;
                 var userUpdateResult = await userManager.UpdateAsync(user);
 
@@ -262,20 +256,15 @@ namespace Code_Vanta_Systems.Controllers
                     return View(model);
                 }
 
-                // Update supplier info
                 supplier.Name = model.CompanyName;
                 supplier.Phone = model.PhoneNumber;
                 supplier.Address = model.Address;
-
-
-                // Lock/unlock account based on active status
-
 
                 context.Suppliers.Update(supplier);
                 await context.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = $"Supplier '{supplier.Name}' updated successfully.";
-                return RedirectToAction("Suppliers"); // or your suppliers list
+                return RedirectToAction("Suppliers");
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -298,19 +287,15 @@ namespace Code_Vanta_Systems.Controllers
             if (supplier == null || supplier.User == null)
             {
                 TempData["ErrorMessage"] = "Supplier not found.";
-                return RedirectToAction(nameof(InactiveSuppliers)); // Adjust as needed
+                return RedirectToAction(nameof(InactiveSuppliers));
             }
 
             var user = supplier.User;
 
-            // 1. Reverse the soft delete
             supplier.IsActive = true;
-
-            // 2. Remove the lockout (Re-enables login)
             await userManager.SetLockoutEndDateAsync(user, null);
 
-            // 3. Re-assign the supplier's role (e.g., "Supplier")
-            const string roleName = "Supplier"; // Or supplier.Role if stored in DB
+            const string roleName = "Supplier";
             if (await roleManager.RoleExistsAsync(roleName))
             {
                 var currentRoles = await userManager.GetRolesAsync(user);
@@ -328,13 +313,12 @@ namespace Code_Vanta_Systems.Controllers
             await context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = $"Supplier '{user.Email}' has been successfully reactivated.";
-            return RedirectToAction(nameof(Suppliers)); // Adjust to your active suppliers list
+            return RedirectToAction(nameof(Suppliers));
         }
         #endregion
 
         #region Purchase Request
-        //PURCHASE REQUEST
-        // Optional: list all purchase requests for current user or all (for manager)
+        // PURCHASE REQUEST
         public async Task<IActionResult> PurchaseRequests()
         {
             var SubmitedRequests = await context.PurchaseRequests
@@ -344,16 +328,11 @@ namespace Code_Vanta_Systems.Controllers
                .OrderByDescending(pr => pr.RequestDate)
                .ToListAsync();
 
-            ViewBag.PendingCount = ViewBag.RejectedRequests = await context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Pending);
+            ViewBag.PendingCount = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Pending);
             ViewBag.SubmitedCount = SubmitedRequests.Count;
-            ViewBag.RejectedRequests = await context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Rejected);
-
-            ViewBag.ApprovedRequestsCount = await context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Approved);
-            ViewBag.CompletedRequestsCount = await context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Completed);
+            ViewBag.RejectedRequests = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Rejected);
+            ViewBag.ApprovedRequestsCount = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Approved);
+            ViewBag.CompletedRequestsCount = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Completed);
             return View(SubmitedRequests);
         }
 
@@ -366,20 +345,14 @@ namespace Code_Vanta_Systems.Controllers
                 .OrderByDescending(pr => pr.RequestDate)
                 .ToListAsync();
 
-            ViewBag.PendingCount = ViewBag.RejectedRequests = await context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Pending);
-            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Submitted);
-
-            ViewBag.RejectedRequests = await context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Rejected);
-
-            ViewBag.ApprovedRequestsCount = await context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Approved);
-            ViewBag.CompletedRequestsCount = await context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Completed);
+            ViewBag.PendingCount = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Pending);
+            ViewBag.SubmitedCount = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Submitted);
+            ViewBag.RejectedRequests = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Rejected);
+            ViewBag.ApprovedRequestsCount = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Approved);
+            ViewBag.CompletedRequestsCount = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Completed);
             return View(purchaseRequests);
         }
+
         public async Task<IActionResult> ApprovedPurchaseRequests()
         {
             var purchaseRequests = await context.PurchaseRequests
@@ -389,23 +362,14 @@ namespace Code_Vanta_Systems.Controllers
                 .OrderByDescending(pr => pr.RequestDate)
                 .ToListAsync();
 
-            ViewBag.PendingCount = ViewBag.RejectedRequests = await context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Pending);
-            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Submitted);
-
-            ViewBag.RejectedRequests = await context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Rejected);
-
-            ViewBag.ApprovedRequestsCount = await context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Approved);
-            ViewBag.CompletedRequestsCount = await context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Completed);
+            ViewBag.PendingCount = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Pending);
+            ViewBag.SubmitedCount = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Submitted);
+            ViewBag.RejectedRequests = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Rejected);
+            ViewBag.ApprovedRequestsCount = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Approved);
+            ViewBag.CompletedRequestsCount = await context.PurchaseRequests.CountAsync(s => s.Status == RequestStatus.Completed);
             return View(purchaseRequests);
         }
 
-
-        // GET: PurchaseRequest/CreatePurchaseRequest
         public IActionResult CreatePurchaseRequest()
         {
             return View();
@@ -416,7 +380,6 @@ namespace Code_Vanta_Systems.Controllers
             var request = await context.PurchaseRequests
                          .Include(r => r.RequestedBy)
                          .Include(r => r.RequestedItems)
-                         /*.ThenInclude(i => i.ItemCatalog) */// <--- This is correct for eager loading
                          .FirstOrDefaultAsync(r => r.Id == id);
 
             if (request == null) return NotFound();
@@ -424,11 +387,9 @@ namespace Code_Vanta_Systems.Controllers
             return View(request);
         }
 
-        //  GET: Edit Purchase Request
         [HttpGet]
         public async Task<IActionResult> EditRequest(int id)
         {
-            // 1. Fetch the existing Purchase Request and its line items
             var request = await context.PurchaseRequests
                 .Include(r => r.RequestedItems)
                 .FirstOrDefaultAsync(r => r.Id == id);
@@ -436,17 +397,16 @@ namespace Code_Vanta_Systems.Controllers
             if (request == null)
                 return NotFound();
 
-            // 2. Get all active fridges for dropdown lists
-            var fridges = await context.Fridges
-                 .Where(f => !f.IsDeleted)
+            // Use FridgeModels instead of FridgeUnits
+            var fridgeModels = await context.FridgeModels
+                 .Include(f => f.Supplier)
                  .Select(f => new SelectListItem
                  {
                      Value = f.Id.ToString(),
-                     Text = $"{f.Model} ({f.StockQuantity} in stock)"
+                     Text = $"{f.Name} - {f.Supplier.Name}" // Use FridgeModel.Name and Supplier
                  })
                  .ToListAsync();
 
-            // 3. Map the entity to the view model
             var model = new EditPurchaseRequestViewModel
             {
                 Id = request.Id,
@@ -457,59 +417,51 @@ namespace Code_Vanta_Systems.Controllers
                 Items = request.RequestedItems.Select(i => new PurchaseRequestItemViewModel
                 {
                     PurchaseRequestItemId = i.Id,
-                    FridgeId = i.FridgeId,
+                    FridgeModelId = i.FridgeModelId, // Changed from FridgeId to FridgeModelId
                     Quantity = i.Quantity,
-                    AvailableItems = fridges
+                    AvailableItems = fridgeModels
                 }).ToList()
             };
 
-            model.Items.Add(new PurchaseRequestItemViewModel { AvailableItems = fridges });
+            model.Items.Add(new PurchaseRequestItemViewModel { AvailableItems = fridgeModels });
 
-            ViewBag.Fridges = fridges;
+            ViewBag.Fridges = fridgeModels; // Actually fridge models
             return View(model);
         }
 
-        // POST: Handle the form submission for editing
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditRequest(EditPurchaseRequestViewModel model)
         {
-            // 1. Validate form data
             if (!ModelState.IsValid)
             {
-                // On failure, reload fridges to repopulate dropdowns
-                var fridges = await context.Fridges
-                     .Where(f => !f.IsDeleted)
+                var fridgeModels = await context.FridgeModels
+                     .Include(f => f.Supplier)
                      .Select(f => new SelectListItem
                      {
                          Value = f.Id.ToString(),
-                         Text = $"{f.Model} ({f.StockQuantity} in stock)"
+                         Text = $"{f.Name} - {f.Supplier.Name}"
                      })
                      .ToListAsync();
 
                 foreach (var item in model.Items)
-                    item.AvailableItems = fridges;
+                    item.AvailableItems = fridgeModels;
 
-                ViewBag.Fridges = fridges;
+                ViewBag.Fridges = fridgeModels;
                 return View(model);
             }
 
-            // 2. Fetch the existing request with items
             var request = await context.PurchaseRequests
                 .Include(r => r.RequestedItems)
                 .FirstOrDefaultAsync(r => r.Id == model.Id);
 
             if (request == null) return NotFound();
 
-            // 3. Update main request fields
             request.ExpectedDate = model.ExpectedDate;
             request.Priority = model.Priority;
             request.Status = Code_Vanta_Systems.Models.Enums.RequestStatus.Submitted;
             request.Notes = model.Notes;
 
-            // 4. Manage line items (Delete, Update, Add)
-
-            // Identify which existing items were removed from the form
             var itemIdsFromForm = model.Items
                 .Where(i => i.PurchaseRequestItemId.HasValue)
                 .Select(i => i.PurchaseRequestItemId.Value)
@@ -519,42 +471,38 @@ namespace Code_Vanta_Systems.Controllers
                 .ToList();
             context.PurchaseRequestItems.RemoveRange(itemsToRemove);
 
-            // Process all items submitted in the form
-            foreach (var itemVm in model.Items.Where(i => i.FridgeId > 0 && i.Quantity >= 1))
+            foreach (var itemVm in model.Items.Where(i => i.FridgeModelId > 0 && i.Quantity >= 1)) // Changed to FridgeModelId
             {
-                // Fetch the details of the selected Fridge (needed for ModelRequested/Description)
-                var fridge = await context.Fridges.FindAsync(itemVm.FridgeId);
+                var fridgeModel = await context.FridgeModels
+                    .Include(f => f.Supplier)
+                    .FirstOrDefaultAsync(f => f.Id == itemVm.FridgeModelId); // Changed to FridgeModelId
 
-                if (fridge == null) continue;
+                if (fridgeModel == null) continue;
 
                 if (itemVm.PurchaseRequestItemId.HasValue)
                 {
-                    // A. Update Existing Item
                     var existingItem = request.RequestedItems.First(i => i.Id == itemVm.PurchaseRequestItemId.Value);
 
-                    existingItem.FridgeId = fridge.Id;
-                    existingItem.ModelRequested = fridge.Model;
-                    existingItem.Description = fridge.Description;
+                    existingItem.FridgeModelId = fridgeModel.Id; // Changed to FridgeModelId
+                    existingItem.ModelRequested = fridgeModel.Name;
+                    existingItem.Description = fridgeModel.Description;
                     existingItem.Quantity = itemVm.Quantity;
                 }
                 else
                 {
-                    // B. Add New Item
                     var newItem = new PurchaseRequestItem
                     {
                         PurchaseRequestId = request.Id,
-                        FridgeId = fridge.Id,
-                        ModelRequested = fridge.Model,
-                        Description = fridge.Description,
+                        FridgeModelId = fridgeModel.Id, // Changed to FridgeModelId
+                        ModelRequested = fridgeModel.Name,
+                        Description = fridgeModel.Description,
                         Quantity = itemVm.Quantity
                     };
                     context.PurchaseRequestItems.Add(newItem);
                 }
             }
 
-            // 5. Save all changes (Request updates, item removals, item updates, item additions)
             await context.SaveChangesAsync();
-
             TempData["Success"] = $"Purchase request #{request.Id} updated successfully!";
             return RedirectToAction("Details", new { id = request.Id });
         }
@@ -572,12 +520,10 @@ namespace Code_Vanta_Systems.Controllers
             return View(request);
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectRequest(int id, string reason)
         {
-            // 1️⃣ Load the purchase request
             var request = await context.PurchaseRequests
                 .Include(r => r.RequestedBy)
                 .FirstOrDefaultAsync(r => r.Id == id);
@@ -585,11 +531,9 @@ namespace Code_Vanta_Systems.Controllers
             if (request == null)
                 return NotFound();
 
-            // 2️⃣ Update status to Rejected
             request.Status = Models.Enums.RequestStatus.Rejected;
             request.Notes += string.IsNullOrEmpty(reason) ? "" : $"\nRejection Reason: {reason}";
 
-            // 3️⃣ Save changes
             try
             {
                 await context.SaveChangesAsync();
@@ -599,12 +543,12 @@ namespace Code_Vanta_Systems.Controllers
                 ModelState.AddModelError("", "Unable to update request: " + ex.Message);
                 return RedirectToAction("Details", new { id });
             }
+
             var inventoryliaison = await userManager.GetUsersInRoleAsync("Inventory Liaison");
             var liaisonUser = inventoryliaison.FirstOrDefault();
 
             if (liaisonUser != null)
             {
-                // ✅ 2. Create notification
                 var notification = new Notification
                 {
                     RecipientUserId = liaisonUser.Id,
@@ -623,11 +567,9 @@ namespace Code_Vanta_Systems.Controllers
             TempData["Success"] = $"Purchase request #{request.Id} rejected successfully!";
             return RedirectToAction("PurchaseRequests");
         }
-
         #endregion
 
         #region RFQ
-
         public async Task<IActionResult> RFQ()
         {
             var rfqs = await context.RequestQuotations
@@ -651,19 +593,17 @@ namespace Code_Vanta_Systems.Controllers
             return View(vm);
         }
 
-
-        // GET: Create RFQ page
         public async Task<IActionResult> CreateRFQ(int id)
         {
             var purchaseRequest = await context.PurchaseRequests
                 .Include(r => r.RequestedItems)
-                    .ThenInclude(ri => ri.Fridge)  // Load the Fridge entity for each requested item
+                    .ThenInclude(ri => ri.FridgeModel)  // Changed from FridgeUnit to FridgeModel
+                    .ThenInclude(fm => fm.Supplier)     // Include supplier
                 .Include(r => r.RequestedBy)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (purchaseRequest == null)
                 return NotFound();
-
 
             var suppliers = await context.Suppliers
                 .Include(s => s.User)
@@ -685,22 +625,19 @@ namespace Code_Vanta_Systems.Controllers
 
                 PurchaseRequestItems = purchaseRequest.RequestedItems.Select(item => new PurchaseRequestItemViewModel
                 {
-                    FridgeId = item.FridgeId,
+                    FridgeModelId = item.FridgeModelId, // Changed from FridgeId to FridgeModelId
                     Quantity = item.Quantity,
-                    FridgeModel = item.Fridge?.Model ?? "Unknown"  // <-- Assign fridge model here safely
+                    FridgeModel = item.FridgeModel?.Name ?? "Unknown"  // Get from FridgeModel
                 }).ToList()
             };
 
             return View(viewModel);
         }
 
-
-        // POST: Handle RFQ submission
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateRFQ(RQFViewModel model)
         {
-            // Validate supplier selection
             if (model.SelectedSupplierIds == null || !model.SelectedSupplierIds.Any())
             {
                 ModelState.AddModelError(nameof(model.SelectedSupplierIds), "Please select at least one supplier.");
@@ -708,25 +645,25 @@ namespace Code_Vanta_Systems.Controllers
 
             if (!ModelState.IsValid)
             {
-                // Reload suppliers list
                 model.Suppliers = await context.Suppliers
                     .Include(s => s.User)
                     .Where(s => s.IsActive)
                     .ToListAsync();
 
-                // Reload fridge dropdown items
-                var allFridges = await context.Fridges
-                    .Where(f => !f.IsDeleted)
+                // UPDATED: Use FridgeUnits instead of Fridges
+                var allFridgeUnits = await context.FridgeUnits
+                    .Include(f => f.FridgeModel)
+                    .Where(f => f.Status != FridgeStatus.Scrapped)
                     .Select(f => new SelectListItem
                     {
                         Value = f.Id.ToString(),
-                        Text = $"{f.Model} ({f.StockQuantity} in stock)"
+                        Text = $"{f.FridgeModel.Name} ({f.SerialNumber})"
                     })
                     .ToListAsync();
 
                 foreach (var item in model.PurchaseRequestItems)
                 {
-                    item.AvailableItems = allFridges;
+                    item.AvailableItems = allFridgeUnits;
                 }
 
                 return View(model);
@@ -735,16 +672,14 @@ namespace Code_Vanta_Systems.Controllers
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var purchaseRequest = await context.PurchaseRequests
-       .FirstOrDefaultAsync(r => r.Id == model.PurchaseRequestId);
+                .FirstOrDefaultAsync(r => r.Id == model.PurchaseRequestId);
 
             if (purchaseRequest != null)
             {
-                purchaseRequest.Status = RequestStatus.Approved; // enum or string
+                purchaseRequest.Status = RequestStatus.Approved;
                 context.PurchaseRequests.Update(purchaseRequest);
             }
 
-
-            // Get the latest RFQ number once
             string lastRFQId = await context.RequestQuotations
                 .OrderByDescending(r => r.RequestQuotationId)
                 .Select(r => r.RFQId)
@@ -753,20 +688,18 @@ namespace Code_Vanta_Systems.Controllers
             int nextNumber = 1;
             if (!string.IsNullOrEmpty(lastRFQId))
             {
-                var parts = lastRFQId.Split('-'); // e.g., "RFQ-2025-004"
+                var parts = lastRFQId.Split('-');
                 if (parts.Length == 3 && int.TryParse(parts[2], out int lastNum))
                 {
                     nextNumber = lastNum + 1;
                 }
             }
 
-            // Loop through suppliers and create RFQs + notifications
             foreach (var supplierId in model.SelectedSupplierIds)
             {
                 string newRFQId = $"RFQ-{DateTime.Now.Year}-{nextNumber:000}";
                 nextNumber++;
 
-                // Create RFQ
                 var requestQuotation = new RequestQuotation
                 {
                     RFQId = newRFQId,
@@ -780,7 +713,6 @@ namespace Code_Vanta_Systems.Controllers
 
                 context.RequestQuotations.Add(requestQuotation);
 
-                // Create Notification for Supplier
                 var supplier = await context.Suppliers
                     .Include(s => s.User)
                     .FirstOrDefaultAsync(s => s.Id == supplierId);
@@ -789,11 +721,11 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     var notification = new Notification
                     {
-                        RecipientUserId = supplier.User.Id,  // Use correct property
+                        RecipientUserId = supplier.User.Id,
                         Title = "New RFQ Created",
                         Message = $"A new RFQ ({newRFQId}) has been created for you. Please respond.",
                         TargetController = "Supplier",
-                        TargetAction = "RFQ" // Replace with actual action for viewing RFQ
+                        TargetAction = "RFQ"
                     };
                     context.Notifications.Add(notification);
 
@@ -808,26 +740,23 @@ namespace Code_Vanta_Systems.Controllers
                     }
                     catch (Exception ex)
                     {
-                        // Log the email failure
                         Console.WriteLine($"Failed to send email to {supplier.User.Email}: {ex.Message}");
                     }
                 }
             }
 
             await context.SaveChangesAsync();
-
             return RedirectToAction("RFQ", "PurchasingManager", new { id = model.PurchaseRequestId });
         }
 
         public async Task<IActionResult> RFQDetails(int id)
         {
-            // Fetch the RFQ with related data
             var rfq = await context.RequestQuotations
                 .Include(r => r.Supplier)
                     .ThenInclude(s => s.User)
                 .Include(r => r.PurchaseRequest)
                     .ThenInclude(pr => pr.RequestedItems)
-                        .ThenInclude(ri => ri.Fridge)
+                        .ThenInclude(ri => ri.FridgeModel)  // Changed from FridgeUnit to FridgeModel
                 .Include(r => r.RequestedBy)
                 .FirstOrDefaultAsync(r => r.RequestQuotationId == id);
 
@@ -836,44 +765,36 @@ namespace Code_Vanta_Systems.Controllers
                 return NotFound();
             }
 
-            // Map to a view model
             var viewModel = new RFQDetailViewModel
             {
                 RFQId = rfq.RFQId,
                 RequestDate = rfq.RequestDate,
                 ExpectedDate = rfq.PurchaseRequest?.ExpectedDate,
                 Notes = rfq.Notes,
-                // Supplier Info
                 SupplierName = rfq.Supplier?.Name ?? rfq.Supplier?.ContactName,
                 SupplierEmail = rfq.Supplier?.User?.Email,
                 SupplierPhone = rfq.Supplier?.Phone,
                 SupplierAddress = rfq.Supplier?.Address,
-                // Requested By (who issued the RFQ)
                 IssuedByName = rfq.RequestedBy?.UserName ?? "Unknown",
-                // Requested Items
                 Items = rfq.PurchaseRequest?.RequestedItems.Select(ri => new RFQItemViewModel
                 {
-                    FridgeModel = ri.Fridge?.Model ?? "Unknown",
+                    FridgeModel = ri.FridgeModel?.Name ?? "Unknown",  // Get from FridgeModel
                     Quantity = ri.Quantity
                 }).ToList() ?? new List<RFQItemViewModel>()
             };
             return View(viewModel);
         }
+        #endregion
 
-        #endregion RFQ
-
-        #region Supplier Qoutation 
-
+        #region Supplier Quotation
         public async Task<IActionResult> SupplerQuotations()
         {
-            // Full counts (from all quotations)
             var allQuotations = await context.Quotations.ToListAsync();
             ViewBag.PendingCount = allQuotations.Count(q => q.Status == "Pending");
             ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
             ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
             ViewBag.sentCount = allQuotations.Count(q => q.Status == "Sent");
 
-            // Only pending quotations for this page
             var quotations = await context.Quotations
                 .Where(q => q.Status == "Pending")
                 .Include(q => q.RequestQuotation)
@@ -928,6 +849,7 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(quotations);
         }
+
         public async Task<IActionResult> SentQuotations()
         {
             var allQuotations = await context.Quotations.ToListAsync();
@@ -948,26 +870,19 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(quotations);
         }
-
         #endregion
 
         #region Comparison
-
-
         public async Task<IActionResult> SelectPurchaseRequest()
         {
-            // Fetch purchase requests with RequestNumber only
             var purchaseRequests = await context.PurchaseRequests
-                .Select(pr => new { pr.Id, pr.RequestNumber }) // only RequestNumber
+                .Select(pr => new { pr.Id, pr.RequestNumber })
                 .ToListAsync();
 
-            // Use ViewBag as SelectList for Razor binding
             ViewBag.PurchaseRequests = new SelectList(purchaseRequests, "Id", "RequestNumber");
-
             return View();
         }
 
-        // POST: Fetch quotations for selected RequestNumber
         [HttpPost]
         public async Task<IActionResult> SelectPurchaseRequest(int purchaseRequestId)
         {
@@ -977,14 +892,12 @@ namespace Code_Vanta_Systems.Controllers
                 return RedirectToAction(nameof(SelectPurchaseRequest));
             }
 
-            // Get the purchase request number for the selected ID
             var purchaseRequest = await context.PurchaseRequests
                 .FirstOrDefaultAsync(pr => pr.Id == purchaseRequestId);
 
             if (purchaseRequest == null)
                 return NotFound("Purchase request not found.");
 
-            // Fetch only pending quotations
             var quotations = await context.Quotations
                 .Where(q => q.PurchaseRequestId == purchaseRequestId && q.Status == "Pending")
                 .Include(q => q.RequestQuotation)
@@ -992,9 +905,7 @@ namespace Code_Vanta_Systems.Controllers
                 .Include(q => q.Items)
                 .ToListAsync();
 
-            // Pass the request number to the view
             ViewBag.RequestNumber = purchaseRequest.RequestNumber;
-
             return View("QuotationsByRequest", quotations);
         }
 
@@ -1021,9 +932,7 @@ namespace Code_Vanta_Systems.Controllers
                 ViewBag.Message = "No quotations found for this purchase request.";
             }
 
-            // Set the RequestNumber for header
             ViewBag.RequestNumber = purchaseRequest.RequestNumber;
-
             return View(quotations);
         }
 
@@ -1040,7 +949,6 @@ namespace Code_Vanta_Systems.Controllers
             if (quotation == null)
                 return NotFound("Quotation not found.");
 
-            // Get all quotations for the same purchase request
             var allQuotations = await context.Quotations
                 .Where(q => q.PurchaseRequestId == quotation.PurchaseRequestId)
                 .Include(q => q.Supplier)
@@ -1053,7 +961,6 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     q.Status = "Approved";
 
-                    // ✅ Add notification for approved supplier
                     var notification = new Notification
                     {
                         RecipientUserId = q.Supplier.ApplicationUserId,
@@ -1066,7 +973,6 @@ namespace Code_Vanta_Systems.Controllers
                     };
                     context.Notifications.Add(notification);
 
-                    // ✅ Try sending approval email
                     try
                     {
                         if (!string.IsNullOrEmpty(q.Supplier.User?.Email))
@@ -1081,7 +987,6 @@ namespace Code_Vanta_Systems.Controllers
                     }
                     catch (Exception ex)
                     {
-                        // Log error (optional)
                         Console.WriteLine($"Email sending failed: {ex.Message}");
                     }
                 }
@@ -1089,7 +994,6 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     q.Status = "Rejected";
 
-                    // ✅ Add notification for rejected suppliers
                     var notification = new Notification
                     {
                         RecipientUserId = q.Supplier.ApplicationUserId,
@@ -1102,7 +1006,6 @@ namespace Code_Vanta_Systems.Controllers
                     };
                     context.Notifications.Add(notification);
 
-                    // ✅ Try sending rejection email
                     try
                     {
                         if (!string.IsNullOrEmpty(q.Supplier.User?.Email))
@@ -1117,19 +1020,15 @@ namespace Code_Vanta_Systems.Controllers
                     }
                     catch (Exception ex)
                     {
-                        // Log error (optional)
                         Console.WriteLine($"Email sending failed: {ex.Message}");
                     }
                 }
             }
 
             await context.SaveChangesAsync();
-
             TempData["Success"] = $"Quotation #{quotation.Id} approved and others rejected.";
             return RedirectToAction("ApprovedQuotations");
-
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1166,18 +1065,15 @@ namespace Code_Vanta_Systems.Controllers
             }
 
             await context.SaveChangesAsync();
-
             TempData["Success"] = $"Quotation #{quotation.Id} rejected.";
             return RedirectToAction("QuotationsByRequest", new { purchaseRequestId = quotation.PurchaseRequestId });
         }
         #endregion
 
-        #region Purchase order
-
+        #region Purchase Order
         [HttpGet]
         public async Task<IActionResult> CreatePurchaseOrder(int quotationId)
         {
-            // 1. Retrieve the Quotation with all necessary related data (Supplier, Items, etc.)
             var quotation = await context.Quotations
                 .Include(q => q.Supplier)
                     .ThenInclude(s => s.User)
@@ -1185,6 +1081,7 @@ namespace Code_Vanta_Systems.Controllers
                     .ThenInclude(rq => rq.PurchaseRequest)
                 .Include(q => q.Items)
                     .ThenInclude(i => i.PurchaseRequestItem)
+                    .ThenInclude(pri => pri.FridgeModel)
                 .FirstOrDefaultAsync(q => q.Id == quotationId);
 
             if (quotation == null)
@@ -1195,11 +1092,10 @@ namespace Code_Vanta_Systems.Controllers
             var user = await context.Users.FindAsync(userId);
             var roles = await userManager.GetRolesAsync(user);
 
-            // 2. Map data to the PurchaseOrderCreateViewModel
             var vm = new PurchaseOrderCreateViewModel
             {
                 QuotationId = quotation.Id,
-                QuotationNumber = quotation.QuotationNumber, // Note: This might be null if not set yet
+                QuotationNumber = quotation.QuotationNumber,
                 SupplierId = quotation.SupplierId,
                 SupplierName = quotation.Supplier.Name,
                 SupplierEmail = quotation.Supplier.User?.Email,
@@ -1211,20 +1107,17 @@ namespace Code_Vanta_Systems.Controllers
                 CompanyPhone = company?.Phone,
                 CompanyAddress = company?.Address,
 
-                // ExpectedDate is pulled from RequestQuotation/PurchaseRequest
                 ExpectedDeliveryDate = quotation.RequestQuotation?.ExpectedDeliveryDate,
                 DeliveryAddress = "CoolTech Warehouse, 124 Logistic Ave, Johannesburg",
                 DeliveryTerms = "Free on Board (FOB) Johannesburg",
                 PaymentTerms = "30 Days after Delivery",
 
-                // **CRITICAL:** Mapping the quotation items to PO items for the view model
                 Items = quotation.Items.Select(i => new PurchaseOrderItemViewModel
                 {
-                    // Note: FridgeId is required for the PO Item entity
-                    FridgeId = i.PurchaseRequestItem.FridgeId,
-                    ItemName = i.FridgeModel, // Display name
-                    Quantity = i.QuotedQuantity, // Use quoted quantity
-                    UnitPrice = i.QuotedUnitPrice // Use quoted unit price
+                    FridgeModelId = i.PurchaseRequestItem.FridgeModelId, // Use FridgeModelId
+                    ItemName = i.PurchaseRequestItem.FridgeModel?.Name ?? i.FridgeModel,
+                    Quantity = i.QuotedQuantity,
+                    UnitPrice = i.QuotedUnitPrice
                 }).ToList(),
 
                 ManagerName = user?.FullName,
@@ -1232,7 +1125,7 @@ namespace Code_Vanta_Systems.Controllers
                 ManagerRole = string.Join(", ", roles)
             };
 
-            return View(vm); // show confirmation form
+            return View(vm);
         }
 
         [HttpPost]
@@ -1244,7 +1137,6 @@ namespace Code_Vanta_Systems.Controllers
 
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Generate PO number
             string lastPO = await context.PurchaseOrders
                 .OrderByDescending(po => po.PurchaseOrderId)
                 .Select(po => po.PONumber)
@@ -1280,7 +1172,7 @@ namespace Code_Vanta_Systems.Controllers
             {
                 purchaseOrder.Items.Add(new PurchaseOrderItem
                 {
-                    FridgeId = item.FridgeId,
+                    FridgeModelId = item.FridgeModelId, // Use FridgeModelId
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice
                 });
@@ -1288,7 +1180,6 @@ namespace Code_Vanta_Systems.Controllers
 
             context.PurchaseOrders.Add(purchaseOrder);
 
-            // Update quotation status
             var quotation = await context.Quotations.FindAsync(model.QuotationId);
             if (quotation != null)
             {
@@ -1296,9 +1187,8 @@ namespace Code_Vanta_Systems.Controllers
                 context.Quotations.Update(quotation);
             }
 
-            await context.SaveChangesAsync(); // Save PO and quotation status
+            await context.SaveChangesAsync();
 
-            // ---- Notification ----
             var supplierUserId = await context.Suppliers
                 .Where(s => s.Id == model.SupplierId)
                 .Select(s => s.User.Id)
@@ -1319,35 +1209,25 @@ namespace Code_Vanta_Systems.Controllers
                 await context.SaveChangesAsync();
             }
 
-            // ---- Email ----
-            var supplierEmail = await context.Suppliers
-                .Where(s => s.Id == model.SupplierId)
-                .Select(s => s.User.Email)
-                .FirstOrDefaultAsync();
-
-
             return RedirectToAction("AllPurchaseOrders");
         }
 
         public async Task<IActionResult> PurchaseOrderDetails(int id)
         {
             var purchaseOrder = await context.PurchaseOrders
-     .Include(po => po.Supplier)
-         .ThenInclude(s => s.User)
-     .Include(po => po.Items)
-         .ThenInclude(i => i.Fridge)
-     .Include(po => po.Quotation)
-         .ThenInclude(q => q.RequestQuotation)
-     .Include(po => po.DeliveryNotes) // Include delivery notes
-     .FirstOrDefaultAsync(po => po.PurchaseOrderId == id);
+                .Include(po => po.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(po => po.Items)
+                    .ThenInclude(i => i.FridgeModel)  // CHANGED: FridgeUnit → FridgeModel
+                .Include(po => po.Quotation)
+                    .ThenInclude(q => q.RequestQuotation)
+                .Include(po => po.DeliveryNotes)
+                .FirstOrDefaultAsync(po => po.PurchaseOrderId == id);
 
             if (purchaseOrder == null)
                 return NotFound();
 
-            // Total amount calculated via Items
             ViewBag.TotalAmount = purchaseOrder.Items?.Sum(i => i.Quantity * i.UnitPrice) ?? 0;
-
-            // Expected delivery date from RequestQuotation
             ViewBag.ExpectedDeliveryDate = purchaseOrder.Quotation?.RequestQuotation?.ExpectedDeliveryDate;
 
             return View(purchaseOrder);
@@ -1356,14 +1236,14 @@ namespace Code_Vanta_Systems.Controllers
         public async Task<IActionResult> AllPurchaseOrders()
         {
             var allOrders = await context.PurchaseOrders
-       .Include(po => po.Supplier)
-           .ThenInclude(s => s.User) // Supplier info
-       .Include(po => po.Items)
-           .ThenInclude(i => i.Fridge) // Fridge details
-       .Include(po => po.Quotation)
-           .ThenInclude(q => q.RequestQuotation) // Include request quotation
-       .OrderByDescending(po => po.CreatedDate)
-       .ToListAsync();
+                .Include(po => po.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(po => po.Items)
+                    .ThenInclude(i => i.FridgeModel)  // CHANGED: FridgeUnit → FridgeModel
+                .Include(po => po.Quotation)
+                    .ThenInclude(q => q.RequestQuotation)
+                .OrderByDescending(po => po.CreatedDate)
+                .ToListAsync();
 
             ViewBag.PendingCount = allOrders.Count(po => po.Status == OrderStatus.Pending);
             ViewBag.ApprovedCount = allOrders.Count(po => po.Status == OrderStatus.Approved);
@@ -1376,84 +1256,83 @@ namespace Code_Vanta_Systems.Controllers
                 .ToList();
 
             return View(pendingOrders);
-
         }
+
         public async Task<IActionResult> ApprovedPurchaseOrders()
         {
             var allOrders = await context.PurchaseOrders
-       .Include(po => po.Supplier)
-           .ThenInclude(s => s.User) // Supplier info
-       .Include(po => po.Items)
-           .ThenInclude(i => i.Fridge) // Fridge details
-       .Include(po => po.Quotation)
-           .ThenInclude(q => q.RequestQuotation) // Include request quotation
-       .OrderByDescending(po => po.CreatedDate)
-       .ToListAsync();
+                .Include(po => po.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(po => po.Items)
+                    .ThenInclude(i => i.FridgeModel)  // CHANGED: FridgeUnit → FridgeModel
+                .Include(po => po.Quotation)
+                    .ThenInclude(q => q.RequestQuotation)
+                .OrderByDescending(po => po.CreatedDate)
+                .ToListAsync();
 
             ViewBag.PendingCount = allOrders.Count(po => po.Status == OrderStatus.Pending);
             ViewBag.ApprovedCount = allOrders.Count(po => po.Status == OrderStatus.Approved);
             ViewBag.DeliveredCount = allOrders.Count(po => po.Status == OrderStatus.Delivered);
             ViewBag.ShippedCount = allOrders.Count(po => po.Status == OrderStatus.Shipped);
 
-            var pendingOrders = allOrders
+            var approvedOrders = allOrders
                 .Where(po => po.Status == OrderStatus.Approved)
                 .OrderByDescending(po => po.CreatedDate)
                 .ToList();
 
-            return View(pendingOrders);
-
+            return View(approvedOrders);
         }
+
         public async Task<IActionResult> ShippedPurchaseOrders()
         {
             var allOrders = await context.PurchaseOrders
-       .Include(po => po.Supplier)
-           .ThenInclude(s => s.User) // Supplier info
-       .Include(po => po.Items)
-           .ThenInclude(i => i.Fridge) // Fridge details
-       .Include(po => po.Quotation)
-           .ThenInclude(q => q.RequestQuotation) // Include request quotation
-       .OrderByDescending(po => po.CreatedDate)
-       .ToListAsync();
+                .Include(po => po.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(po => po.Items)
+                    .ThenInclude(i => i.FridgeModel)  // CHANGED: FridgeUnit → FridgeModel
+                .Include(po => po.Quotation)
+                    .ThenInclude(q => q.RequestQuotation)
+                .OrderByDescending(po => po.CreatedDate)
+                .ToListAsync();
 
             ViewBag.PendingCount = allOrders.Count(po => po.Status == OrderStatus.Pending);
             ViewBag.ApprovedCount = allOrders.Count(po => po.Status == OrderStatus.Approved);
             ViewBag.DeliveredCount = allOrders.Count(po => po.Status == OrderStatus.Delivered);
             ViewBag.ShippedCount = allOrders.Count(po => po.Status == OrderStatus.Shipped);
 
-            var pendingOrders = allOrders
+            var shippedOrders = allOrders
                 .Where(po => po.Status == OrderStatus.Shipped)
                 .OrderByDescending(po => po.CreatedDate)
                 .ToList();
 
-            return View(pendingOrders);
-
+            return View(shippedOrders);
         }
 
         public async Task<IActionResult> DeliveredPurchaseOrders()
         {
             var allOrders = await context.PurchaseOrders
-       .Include(po => po.Supplier)
-           .ThenInclude(s => s.User) // Supplier info
-       .Include(po => po.Items)
-           .ThenInclude(i => i.Fridge) // Fridge details
-       .Include(po => po.Quotation)
-           .ThenInclude(q => q.RequestQuotation) // Include request quotation
-       .OrderByDescending(po => po.CreatedDate)
-       .ToListAsync();
+                .Include(po => po.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(po => po.Items)
+                    .ThenInclude(i => i.FridgeModel)  // CHANGED: FridgeUnit → FridgeModel
+                .Include(po => po.Quotation)
+                    .ThenInclude(q => q.RequestQuotation)
+                .OrderByDescending(po => po.CreatedDate)
+                .ToListAsync();
 
             ViewBag.PendingCount = allOrders.Count(po => po.Status == OrderStatus.Pending);
             ViewBag.ApprovedCount = allOrders.Count(po => po.Status == OrderStatus.Approved);
             ViewBag.DeliveredCount = allOrders.Count(po => po.Status == OrderStatus.Delivered);
             ViewBag.ShippedCount = allOrders.Count(po => po.Status == OrderStatus.Shipped);
 
-            var pendingOrders = allOrders
+            var deliveredOrders = allOrders
                 .Where(po => po.Status == OrderStatus.Delivered)
                 .OrderByDescending(po => po.CreatedDate)
                 .ToList();
 
-            return View(pendingOrders);
-
+            return View(deliveredOrders);
         }
+
         public async Task<IActionResult> DeliveryNoteDetails(int id)
         {
             if (id == 0)
@@ -1462,15 +1341,14 @@ namespace Code_Vanta_Systems.Controllers
             var deliveryNote = await context.DeliveryNotes
                 .Include(dn => dn.PurchaseOrder)
                     .ThenInclude(po => po.Items)
-                        .ThenInclude(i => i.Fridge)
-                .Include(dn => dn.Supplier) // Supplier who created the delivery note
+                        .ThenInclude(i => i.FridgeModel)  // CHANGED: FridgeUnit → FridgeModel
+                .Include(dn => dn.Supplier)
                 .Include(dn => dn.ReceivedBy)
                 .FirstOrDefaultAsync(dn => dn.Id == id);
 
             if (deliveryNote == null)
                 return NotFound();
 
-            // Get Supplier email from ApplicationUser
             string supplierEmail = null;
             if (!string.IsNullOrEmpty(deliveryNote.Supplier?.ApplicationUserId))
             {
@@ -1478,7 +1356,6 @@ namespace Code_Vanta_Systems.Controllers
                 supplierEmail = supplierUser?.Email;
             }
 
-            // Map to ViewModel
             var viewModel = new DeliveryNoteViewModel
             {
                 Id = deliveryNote.Id,
@@ -1497,7 +1374,7 @@ namespace Code_Vanta_Systems.Controllers
                 ReceivedById = deliveryNote.ReceivedById,
                 Items = deliveryNote.PurchaseOrder.Items.Select(i => new DeliveryItemViewModel
                 {
-                    FridgeModel = i.Fridge?.Model,
+                    FridgeModel = i.FridgeModel?.Name,  // CHANGED: FridgeUnit.FridgeModel.Name → FridgeModel.Name
                     Quantity = i.Quantity,
                     UnitPrice = i.UnitPrice
                 }).ToList()
@@ -1510,11 +1387,10 @@ namespace Code_Vanta_Systems.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveDeliveryNote(int id)
         {
-            // Load the delivery note and related entities
             var deliveryNote = await context.DeliveryNotes
                 .Include(dn => dn.PurchaseOrder)
                     .ThenInclude(po => po.Items)
-                        .ThenInclude(i => i.Fridge)
+                        .ThenInclude(i => i.FridgeModel)  // CHANGED: FridgeUnit → FridgeModel
                 .Include(dn => dn.Supplier)
                 .FirstOrDefaultAsync(dn => dn.Id == id);
 
@@ -1523,47 +1399,46 @@ namespace Code_Vanta_Systems.Controllers
 
             var purchaseOrder = deliveryNote.PurchaseOrder;
 
-            // 1. Update PO status
             purchaseOrder.Status = OrderStatus.Delivered;
             context.PurchaseOrders.Update(purchaseOrder);
 
-            // 2. Approve the delivery note
             deliveryNote.IsApproved = true;
             deliveryNote.GeneratedDate = DateTime.Now;
             context.DeliveryNotes.Update(deliveryNote);
 
-            // 3. Update existing fridge records
+            // NOTE: When a delivery is approved, you might want to create FridgeUnits
+            // based on the FridgeModels in the purchase order
             foreach (var item in purchaseOrder.Items)
             {
-                if (item.Fridge != null)
+                if (item.FridgeModel != null)
                 {
-                    var fridge = item.Fridge;
-
-                    // Add delivered quantity to existing stock
-                    fridge.StockQuantity += item.Quantity;
-
-                    // Update other fields if missing
-                    fridge.PurchaseDate = fridge.PurchaseDate == default ? DateTime.Now : fridge.PurchaseDate;
-                    fridge.ImageUrl ??= "/images/fridge-placeholder.png";
-                    fridge.Description ??= "Awaiting Inventory Liaison completion.";
-                    fridge.Condition = fridge.Condition == 0 ? FridgeCondition.New : fridge.Condition;
-                    fridge.Status = FridgeStatus.Pending; // indicates it still needs liaison review
-                    fridge.LocationId = fridge.LocationId == 0 ? 1 : fridge.LocationId;
-                    fridge.IsDeleted = false;
-
-                    context.Fridges.Update(fridge);
+                    // Here you would create FridgeUnit instances based on the delivered FridgeModels
+                    // For example:
+                    for (int i = 0; i < item.Quantity; i++)
+                    {
+                        var newFridgeUnit = new FridgeUnit
+                        {
+                            SerialNumber = $"TEMP-{Guid.NewGuid().ToString().Substring(0, 8)}", // Generate temp serial
+                            FridgeModelId = item.FridgeModelId,
+                            Status = FridgeStatus.InWarehouse,
+                            Condition = FridgeCondition.New,
+                            PurchaseDate = DateTime.Now,
+                            LocationId = 1, // Default location
+                            TechnicianUserId = null
+                        };
+                        context.FridgeUnits.Add(newFridgeUnit);
+                    }
                 }
             }
 
-            // 4. Notify Inventory Liaison(s)
-            var liaisons = await userManager.GetUsersInRoleAsync("InventoryLiaison");
+            var liaisons = await userManager.GetUsersInRoleAsync("Inventory Liaison");
             foreach (var liaison in liaisons)
             {
                 var notification = new Notification
                 {
                     RecipientUserId = liaison.Id,
-                    Title = "Fridges Awaiting Completion",
-                    Message = $"Fridges from Purchase Order {purchaseOrder.PONumber} have been updated. Please complete their details in the inventory module.",
+                    Title = "New Fridges Received",
+                    Message = $"Fridges from Purchase Order {purchaseOrder.PONumber} have been received. Please complete their details in the inventory module.",
                     TargetController = "Inventory",
                     TargetAction = "PendingFridges",
                     CreatedAt = DateTime.Now,
@@ -1572,7 +1447,6 @@ namespace Code_Vanta_Systems.Controllers
                 context.Notifications.Add(notification);
             }
 
-            // 5. Notify Supplier
             if (deliveryNote.Supplier != null && deliveryNote.Supplier.User != null)
             {
                 var supplierUser = await userManager.FindByIdAsync(deliveryNote.Supplier.ApplicationUserId);
@@ -1592,14 +1466,12 @@ namespace Code_Vanta_Systems.Controllers
                 }
             }
 
-            // 6. Save all changes
             await context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = $"Delivery Note {deliveryNote.Id} approved successfully. Fridges updated and stock quantity increased. Awaiting completion by the Inventory Liaison.";
+            TempData["SuccessMessage"] = $"Delivery Note {deliveryNote.Id} approved successfully. Fridge units created and awaiting inventory processing.";
 
             return RedirectToAction("AllPurchaseOrders", "PurchasingManager");
-        } 
+        }
         #endregion
     }
-
 }
