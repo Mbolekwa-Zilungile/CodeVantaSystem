@@ -656,6 +656,17 @@ namespace Code_Vanta_Systems.Controllers
 
         #region CREATE FRIDGE
 
+        private void PopulateDropdowns(CreateFridgeViewModel vm)
+        {
+            vm.Suppliers = _context.Suppliers
+                .Select(s => new CreateFridgeViewModel.SupplierDropdownViewModel { Id = s.Id, Name = s.Name })
+                .ToList();
+
+            vm.Locations = _context.Locations
+                .Select(l => new CreateFridgeViewModel.LocationDropdownViewModel { Id = l.Id, Name = l.Description })
+                .ToList();
+        }
+
         [HttpGet]
         public IActionResult CreateFridge()
         {
@@ -728,21 +739,74 @@ namespace Code_Vanta_Systems.Controllers
             }
 
             TempData["SuccessMessage"] = "Fridge added successfully!";
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(GenerateUnits), new { fridgeId = fridge.Id });
         }
-
-
-        private void PopulateDropdowns(CreateFridgeViewModel vm)
+        [HttpGet]
+        public async Task<IActionResult> GenerateUnits(int fridgeId)
         {
-            vm.Suppliers = _context.Suppliers
-                .Select(s => new CreateFridgeViewModel.SupplierDropdownViewModel { Id = s.Id, Name = s.Name })
-                .ToList();
+            var fridge = await _context.Fridges.FindAsync(fridgeId);
+            if (fridge == null) return NotFound();
 
-            vm.Locations = _context.Locations
-                .Select(l => new CreateFridgeViewModel.LocationDropdownViewModel { Id = l.Id, Name = l.Description })
-                .ToList();
+            // If units already exist, skip
+            bool alreadyGenerated = await _context.FridgeUnits.AnyAsync(f => f.FridgeId == fridgeId);
+            if (alreadyGenerated)
+            {
+                TempData["InfoMessage"] = "Fridge units for this model have already been generated.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(fridge);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateUnitsConfirmed(int fridgeId)
+        {
+            var fridge = await _context.Fridges.FindAsync(fridgeId);
+            if (fridge == null) return NotFound();
+
+            // Generate fridge units
+            for (int i = 1; i <= fridge.StockQuantity; i++)
+            {
+                var unit = new FridgeUnit
+                {
+                    FridgeId = fridge.Id,
+                    SerialNumber = $"{fridge.SerialNumber}-{i:D3}", // e.g. SAM123-001
+                    Condition = fridge.Condition,
+                    Status = fridge.Status
+                };
+
+                _context.FridgeUnits.Add(unit);
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"{fridge.StockQuantity} fridge units created successfully!";
+            return RedirectToAction(nameof(FridgeUnits), new { id = fridge.Id });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> FridgeUnits(int Id)
+        {
+            var fridge = await _context.Fridges
+                .Include(f => f.FridgeUnits)
+                    .ThenInclude(u => u.Customer)
+                        .ThenInclude(c => c.User)
+                .Include(f => f.FridgeUnits)
+                    .ThenInclude(u => u.Technician)
+                .FirstOrDefaultAsync(f => f.Id == Id);
+
+            if (fridge == null)
+                return NotFound();
+
+            var units = fridge.FridgeUnits.OrderBy(u => u.SerialNumber).ToList();
+
+            ViewBag.FridgeModel = fridge.Model;
+            ViewBag.FridgeSerial = fridge.SerialNumber;
+            ViewBag.FridgeId = fridge.Id;
+
+            return View(units);
+        }
 
         #endregion
 
