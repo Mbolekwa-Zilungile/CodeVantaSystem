@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Code_Vanta_Systems.Models
 {
-    // This model holds the line-item details for a specific Quotation.
     public class QuotationItem
     {
         [Key]
@@ -12,22 +11,22 @@ namespace Code_Vanta_Systems.Models
         [Required]
         public int QuotationId { get; set; }
 
-        public int FridgeId { get; set; }
-        public string FridgeModel { get; set; }
+        // Change: FridgeId -> FridgeModelId
+        public int FridgeModelId { get; set; }
+        // Change: FridgeModel property to be clear
+        public string FridgeModelName { get; set; }
+        // Quantity property is fine here for the request quantity
         public int Quantity { get; set; }
         public virtual Quotation Quotation { get; set; }
 
-        // Link back to the original PurchaseRequestItem being quoted
         [Required]
         public int PurchaseRequestItemId { get; set; }
         public virtual PurchaseRequestItem PurchaseRequestItem { get; set; }
 
-        // The actual price quoted by the supplier (transactional price)
         [Required]
         [Column(TypeName = "decimal(18,2)")]
         public decimal QuotedUnitPrice { get; set; }
 
-        // The Quantity the supplier quoted (should match the request quantity, but might differ)
         [Required]
         [Range(1, int.MaxValue)]
         public int QuotedQuantity { get; set; }

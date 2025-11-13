@@ -6,7 +6,6 @@ namespace Code_Vanta_Systems.Models
     public class PurchaseOrderItem
     {
 
-
         [Key]
         public int ItemId { get; set; }
 
@@ -14,9 +13,10 @@ namespace Code_Vanta_Systems.Models
         public int PurchaseOrderId { get; set; }
         public PurchaseOrder PurchaseOrder { get; set; }
 
+        // OLD: FridgeId -> NEW: FridgeModelId (Linking to the type being ordered)
         [Required]
-        public int FridgeId { get; set; }
-        public Fridge Fridge { get; set; }
+        public int FridgeModelId { get; set; }
+        public FridgeModel FridgeModel { get; set; }
 
         [Required]
         public int Quantity { get; set; }
@@ -26,7 +26,5 @@ namespace Code_Vanta_Systems.Models
 
         [NotMapped]
         public decimal Total => Quantity * UnitPrice;
-
-
     }
 }

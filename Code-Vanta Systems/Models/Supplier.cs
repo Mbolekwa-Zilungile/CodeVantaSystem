@@ -14,11 +14,9 @@ namespace Code_Vanta_Systems.Models
         [ForeignKey("ApplicationUserId")]
         public virtual ApplicationUser User { get; set; }
 
-        // Company name
         [Required, StringLength(100)]
         public string Name { get; set; }
 
-        // Contact info (pulled from ApplicationUser)
         [NotMapped]
         public string ContactEmail => User?.Email;
 
@@ -33,26 +31,23 @@ namespace Code_Vanta_Systems.Models
 
         public bool IsActive { get; set; } = true;
 
-        // Navigation properties
-        public virtual ICollection<Fridge> Fridges { get; set; }
+        // OLD: Fridges -> NEW: FridgeModels
+        public virtual ICollection<FridgeModel> FridgeModels { get; set; }
         public virtual ICollection<Quotation> Quotations { get; set; }
         public virtual ICollection<DeliveryNote> DeliveryNotes { get; set; }
         public virtual ICollection<RequestQuotation> RequestQuotations { get; set; }
-        public virtual ICollection<ItemCatalog> ItemCatalogs { get; set; } // <--- ADDED
-
-        // ADDED: Supplier can have many PurchaseOrders - FIX
+        public virtual ICollection<ItemCatalog> ItemCatalogs { get; set; }
         public virtual ICollection<PurchaseOrder> PurchaseOrders { get; set; }
 
 
         public Supplier()
         {
-            Fridges = new HashSet<Fridge>();
+            FridgeModels = new HashSet<FridgeModel>(); // Updated initialization
             Quotations = new HashSet<Quotation>();
             DeliveryNotes = new HashSet<DeliveryNote>();
             RequestQuotations = new HashSet<RequestQuotation>();
-            PurchaseOrders = new HashSet<PurchaseOrder>(); // Initialize new collection
-            RequestQuotations = new HashSet<RequestQuotation>();
-            ItemCatalogs = new HashSet<ItemCatalog>(); // ADDED INITIALIZATION
+            PurchaseOrders = new HashSet<PurchaseOrder>();
+            ItemCatalogs = new HashSet<ItemCatalog>();
         }
     }
 }

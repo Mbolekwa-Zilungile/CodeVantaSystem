@@ -9,9 +9,10 @@ namespace Code_Vanta_Systems.Models
         [Key]
         public int Id { get; set; }
 
+        // OLD: FridgeId -> NEW: FridgeUnitId
         [Required]
-        public int FridgeId { get; set; }
-        public virtual Fridge Fridge { get; set; }
+        public int FridgeUnitId { get; set; }
+        public virtual FridgeUnit FridgeUnit { get; set; }
 
         [Required]
         public int CustomerId { get; set; }
@@ -21,14 +22,12 @@ namespace Code_Vanta_Systems.Models
         public string TechnicianId { get; set; }
         public virtual ApplicationUser Technician { get; set; }
 
-        // 🛠️ ADDED: Audit timestamp for when the record was created
         [Required]
         public DateTime CreatedDate { get; set; }
 
         [Required]
-        public DateTime MaintenanceDate { get; set; } // The scheduled date
+        public DateTime MaintenanceDate { get; set; }
 
-        // 🛠️ ADDED: Actual completion date (Nullable until work is finished)
         public DateTime? ActualCompletionDate { get; set; }
 
         [Required, StringLength(500)]
@@ -36,6 +35,5 @@ namespace Code_Vanta_Systems.Models
 
         [Required]
         public MaintenanceStatus Status { get; set; }
-
     }
 }

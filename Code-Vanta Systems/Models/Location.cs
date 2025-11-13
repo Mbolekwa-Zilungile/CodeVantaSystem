@@ -27,26 +27,26 @@ namespace Code_Vanta_Systems.Models
         // Navigation property for customers associated with this location
         public virtual ICollection<Customer> Customers { get; set; }
 
-        // Navigation property for fridges located at this location
-        public virtual ICollection<Fridge> Fridges { get; set; }
+        // OLD: Fridges -> NEW: FridgeUnits
+        public virtual ICollection<FridgeUnit> FridgeUnits { get; set; }
 
         // Navigation property for fridge requests made from this location
         public virtual ICollection<FridgeRequest> FridgeRequests { get; set; }
 
-        // Navigation property for employees based at this location - FIX
+        // Navigation property for employees based at this location
         public virtual ICollection<Employee> Employees { get; set; }
 
-        // Navigation property for scheduled technician visits - FIX
+        // Navigation property for scheduled technician visits
         public virtual ICollection<TechnicianSchedule> ScheduledVisits { get; set; }
 
 
         public Location()
         {
             Customers = new HashSet<Customer>();
-            Fridges = new HashSet<Fridge>();
+            FridgeUnits = new HashSet<FridgeUnit>(); // Updated initialization
             FridgeRequests = new HashSet<FridgeRequest>();
-            Employees = new HashSet<Employee>(); // Initialize new collection
-            ScheduledVisits = new HashSet<TechnicianSchedule>(); // Initialize new collection
+            Employees = new HashSet<Employee>();
+            ScheduledVisits = new HashSet<TechnicianSchedule>();
         }
     }
 }
