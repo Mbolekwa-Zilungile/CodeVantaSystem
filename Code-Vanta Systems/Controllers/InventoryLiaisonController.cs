@@ -713,7 +713,7 @@ namespace Code_Vanta_Systems.Controllers
                 Model = vm.Model,
                 SerialNumber = vm.SerialNumber,
                 Category = vm.Category,
-                Status = vm.Status,
+                Status = FridgeStatus.Available,
                 SupplierId = vm.SupplierId,
                 LocationId = vm.LocationId,
                 RentalPricePerMonth = vm.RentalPricePerMonth,
@@ -741,6 +741,7 @@ namespace Code_Vanta_Systems.Controllers
             TempData["SuccessMessage"] = "Fridge added successfully!";
             return RedirectToAction(nameof(GenerateUnits), new { fridgeId = fridge.Id });
         }
+
         [HttpGet]
         public async Task<IActionResult> GenerateUnits(int fridgeId)
         {
@@ -827,7 +828,6 @@ namespace Code_Vanta_Systems.Controllers
                 Model = fridge.Model,
                 SerialNumber = fridge.SerialNumber,
                 Category = fridge.Category,
-                Status = fridge.Status,
                 SupplierId = fridge.SupplierId,
                 LocationId = fridge.LocationId,
                 RentalPricePerMonth = fridge.RentalPricePerMonth,

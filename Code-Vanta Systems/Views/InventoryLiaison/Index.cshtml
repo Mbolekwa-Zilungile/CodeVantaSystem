@@ -119,7 +119,6 @@
                 <tr>
                     <th>Image</th>
                     <th>Model</th>
-                    <th>Serial #</th>
                     <th>Category</th>
                     <th>Status</th>
                     <th>Supplier</th>
@@ -160,7 +159,6 @@
                                      class="img-thumbnail" style="max-height:120px;" alt="Fridge Image" />
                             </td>
                             <td>@fridge.Model</td>
-                            <td>@fridge.SerialNumber</td>
                             <td>@fridge.Category</td>
                             <td>@fridge.Status</td>
                             <td>@suppliers.FirstOrDefault(s => s.Value == fridge.SupplierId.ToString())?.Text</td>
@@ -178,8 +176,8 @@
                                 <a asp-action="Create" asp-route-fridgeId="@fridge.Id" class="btn btn-sm btn-primary mb-1">
                                     <i class="bi bi-envelope"></i> Create PR
                                 </a>
-                                <a asp-action="FridgeUnits" asp-route-id="@fridge.Id" class="btn btn-sm btn-primary mb-1">
-                                    <i class="bi bi-envelope"></i> Fridge Units
+                                <a asp-action="FridgeUnits" asp-route-id="@fridge.Id" class="btn btn-sm btn-secondary mb-1">
+                                    <i class="bi bi-box-seam"></i>Units
                                 </a>
 
                             </td>

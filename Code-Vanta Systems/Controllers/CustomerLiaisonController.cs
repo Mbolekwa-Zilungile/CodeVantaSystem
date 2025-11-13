@@ -185,12 +185,12 @@ namespace Code_Vanta_Systems.Controllers
 
             return View(requests);
         }
-
         [HttpPost]
         public async Task<IActionResult> ApproveRental(int id)
         {
             try
             {
+                // 1️⃣ Load rental request with fridge and user info
                 var rental = await _context.RentalRequests
                     .Include(r => r.Fridge)
                     .Include(r => r.RequestedByUser)
@@ -202,27 +202,60 @@ namespace Code_Vanta_Systems.Controllers
                 if (rental.Fridge == null)
                     return Json(new { success = false, message = "Fridge not found." });
 
+                // 2️⃣ Find the corresponding numeric Customer ID
+                var customer = await _context.Customers
+     .FirstOrDefaultAsync(c => c.UserId == rental.RequestedByUserId);
+
+                if (customer == null)
+                    return Json(new { success = false, message = "Customer record not found." });
+
+                // 3️⃣ Check if enough stock is available
                 if (rental.Fridge.StockQuantity < rental.Quantity)
                     return Json(new { success = false, message = "Not enough stock available." });
 
-                rental.Fridge.StockQuantity -= rental.Quantity; // Handleed On Allocationn
-                rental.Status = "Approved";
+                // 4️⃣ Find available fridge units to allocate
+                var availableUnits = await _context.FridgeUnits
+                    .Where(fu => fu.FridgeId == rental.FridgeId
+                              && !fu.IsRented
+                              && !fu.IsDeleted
+                              && fu.Status == FridgeStatus.Available)
+                    .Take(rental.Quantity)
+                    .ToListAsync();
+
+                if (availableUnits.Count < rental.Quantity)
+                    return Json(new { success = false, message = "Not enough units available to allocate." });
+
+                // 5️⃣ Assign units to the customer
+                foreach (var unit in availableUnits)
+                {
+                    unit.CustomerId = customer.Id;          // integer ID
+                    unit.IsRented = true;                    // mark as rented
+                    unit.Status = FridgeStatus.Allocated;   // set status
+                    unit.UpdatedAt = DateTime.UtcNow;       // timestamp
+                }
+
+                // 6️⃣ Update stock and rental status
+                rental.Fridge.StockQuantity -= rental.Quantity;
+                rental.Status = "Approved"; // you could use an enum if you have one
                 rental.UpdatedAt = DateTime.UtcNow;
 
+                // 7️⃣ Notify the customer
                 var notification = new Notification
                 {
                     Title = "Rental Approved",
                     RecipientUserId = rental.RequestedByUserId,
-                    Message = $"Your rental request for {rental.Fridge.Model} ({rental.Quantity}) has been approved.",
+                    Message = $"Your rental request for {rental.Fridge.Model} ({rental.Quantity}) has been approved and units allocated.",
                     CreatedAt = DateTime.UtcNow,
                     IsRead = false,
                     TargetController = "Customer",
                     TargetAction = "MyRentalRequests"
                 };
                 _context.Notifications.Add(notification);
+
+                // 8️⃣ Save all changes to database
                 await _context.SaveChangesAsync();
 
-                return Json(new { success = true, message = "Rental approved and stock updated!" });
+                return Json(new { success = true, message = "Rental approved and units allocated!" });
             }
             catch (Exception ex)
             {
@@ -230,6 +263,7 @@ namespace Code_Vanta_Systems.Controllers
                 return Json(new { success = false, message = $"Failed to approve rental: {inner}" });
             }
         }
+
 
         [HttpPost]
         public async Task<IActionResult> RejectRental(int id)
@@ -316,7 +350,6 @@ namespace Code_Vanta_Systems.Controllers
             return View("CreateAllocation", model);
         }
 
-        // POST: Save allocation from rental
         [HttpPost]
         [ValidateAntiForgeryToken]
         [ActionName("CreateAllocationFromRental")]

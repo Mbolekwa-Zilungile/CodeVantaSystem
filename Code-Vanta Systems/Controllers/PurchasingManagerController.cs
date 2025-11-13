@@ -1,4 +1,5 @@
 ﻿using Code_Vanta_Systems.Data;
+using Code_Vanta_Systems.Migrations;
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.Services;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using System.Security.Claims;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
@@ -1532,30 +1534,48 @@ namespace Code_Vanta_Systems.Controllers
             deliveryNote.GeneratedDate = DateTime.Now;
             context.DeliveryNotes.Update(deliveryNote);
 
-            // 3. Update existing fridge records
+            // 3. Update fridge models AND auto-generate units
             foreach (var item in purchaseOrder.Items)
             {
-                if (item.Fridge != null)
+                var fridge = item.Fridge;
+                if (fridge == null) continue;
+
+                // Keep original stock before update (needed for serial numbering)
+                int previousStock = fridge.StockQuantity;
+
+                // Add delivered stock
+                fridge.StockQuantity += item.Quantity;
+
+                // Ensure fridge fields are populated
+                fridge.PurchaseDate = fridge.PurchaseDate == default ? DateTime.Now : fridge.PurchaseDate;
+                fridge.ImageUrl ??= "/images/fridge-placeholder.png";
+                fridge.Description ??= "Awaiting Inventory Liaison completion.";
+                fridge.Condition = FridgeCondition.New;
+                fridge.Status = FridgeStatus.Pending;
+                fridge.LocationId = fridge.LocationId == 0 ? 1 : fridge.LocationId;
+                fridge.IsDeleted = false;
+
+                context.Fridges.Update(fridge);
+
+                // AUTO-GENERATE FRIDGE UNITS
+                for (int i = 1; i <= item.Quantity; i++)
                 {
-                    var fridge = item.Fridge;
+                    var unit = new Code_Vanta_Systems.Models.FridgeUnit
+                    {
+                        FridgeId = fridge.Id,
 
-                    // Add delivered quantity to existing stock
-                    fridge.StockQuantity += item.Quantity;
+                        // SERIAL: e.g. ABC123-006
+                        SerialNumber = $"{fridge.SerialNumber}-{(previousStock + i):D3}",
 
-                    // Update other fields if missing
-                    fridge.PurchaseDate = fridge.PurchaseDate == default ? DateTime.Now : fridge.PurchaseDate;
-                    fridge.ImageUrl ??= "/images/fridge-placeholder.png";
-                    fridge.Description ??= "Awaiting Inventory Liaison completion.";
-                    fridge.Condition = fridge.Condition == 0 ? FridgeCondition.New : fridge.Condition;
-                    fridge.Status = FridgeStatus.Pending; // indicates it still needs liaison review
-                    fridge.LocationId = fridge.LocationId == 0 ? 1 : fridge.LocationId;
-                    fridge.IsDeleted = false;
+                        Condition = fridge.Condition,
+                        Status = fridge.Status,
+                    };
 
-                    context.Fridges.Update(fridge);
+                    context.FridgeUnits.Add(unit);
                 }
             }
 
-            // 4. Notify Inventory Liaison(s)
+            // 4. Notify Inventory Liaisons
             var liaisons = await userManager.GetUsersInRoleAsync("InventoryLiaison");
             foreach (var liaison in liaisons)
             {
@@ -1563,7 +1583,7 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     RecipientUserId = liaison.Id,
                     Title = "Fridges Awaiting Completion",
-                    Message = $"Fridges from Purchase Order {purchaseOrder.PONumber} have been updated. Please complete their details in the inventory module.",
+                    Message = $"Fridges from Purchase Order {purchaseOrder.PONumber} have been updated. Please complete their details.",
                     TargetController = "Inventory",
                     TargetAction = "PendingFridges",
                     CreatedAt = DateTime.Now,
@@ -1573,32 +1593,33 @@ namespace Code_Vanta_Systems.Controllers
             }
 
             // 5. Notify Supplier
-            if (deliveryNote.Supplier != null && deliveryNote.Supplier.User != null)
+            if (deliveryNote.Supplier?.User != null)
             {
-                var supplierUser = await userManager.FindByIdAsync(deliveryNote.Supplier.ApplicationUserId);
-                if (supplierUser != null)
+                var supplierNotification = new Notification
                 {
-                    var supplierNotification = new Notification
-                    {
-                        RecipientUserId = supplierUser.Id,
-                        Title = "Delivery Approved",
-                        Message = $"Your delivery for Purchase Order {purchaseOrder.PONumber} has been approved and stock is pending inventory processing.",
-                        TargetController = "Supplier",
-                        TargetAction = "ApprovedPurchaseOrders",
-                        CreatedAt = DateTime.Now,
-                        IsRead = false
-                    };
-                    context.Notifications.Add(supplierNotification);
-                }
+                    RecipientUserId = deliveryNote.Supplier.User.Id,
+                    Title = "Delivery Approved",
+                    Message = $"Your delivery for Purchase Order {purchaseOrder.PONumber} has been approved.",
+                    TargetController = "Supplier",
+                    TargetAction = "ApprovedPurchaseOrders",
+                    CreatedAt = DateTime.Now,
+                    IsRead = false
+                };
+
+                context.Notifications.Add(supplierNotification);
             }
 
             // 6. Save all changes
             await context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = $"Delivery Note {deliveryNote.Id} approved successfully. Fridges updated and stock quantity increased. Awaiting completion by the Inventory Liaison.";
+            TempData["SuccessMessage"] =
+                $"Delivery Note {deliveryNote.Id} approved. Stock updated and fridge units created.";
 
             return RedirectToAction("AllPurchaseOrders", "PurchasingManager");
-        } 
+        }
+
+
+      
         #endregion
     }
 

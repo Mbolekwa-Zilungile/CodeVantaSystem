@@ -37,7 +37,7 @@ else
                     <td>@unit.SerialNumber</td>
                     <td>@unit.Status</td>
                     <td>@unit.Condition</td>
-                    <td>@(unit.Customer?.User != null ? unit.Customer.User.FullName : unit.Customer?.BusinessName ?? "—")</td>
+                    <td>@(unit.Customer?.BusinessName ?? "—")</td>
                     <td>@(unit.Technician != null ? unit.Technician.FullName : "—")</td>
                     <td>
                         <a asp-action="DetailsUnit" asp-route-id="@unit.Id" class="btn btn-sm btn-primary">View</a>
