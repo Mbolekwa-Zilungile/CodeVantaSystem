@@ -392,6 +392,7 @@ namespace Code_Vanta_Systems.Controllers
             };
 
             _context.FridgeAllocations.Add(allocation);
+             
 
             rental.Allocation = allocation;
             rental.AllocationId = allocation.Id;
@@ -572,6 +573,21 @@ namespace Code_Vanta_Systems.Controllers
 
             _context.FridgeAllocations.Add(allocation);
 
+            var units = await _context.FridgeUnits
+        .Where(fu => fu.FridgeId == model.FridgeId
+                  && !fu.IsRented
+                  && !fu.IsDeleted
+                  && fu.Status == FridgeStatus.Available)
+        .Take(model.Quantity)
+        .ToListAsync();
+
+            foreach (var unit in units)
+            {
+                unit.CustomerId = model.CustomerId;
+                unit.IsRented = true;
+                unit.Status = FridgeStatus.Allocated;
+                unit.UpdatedAt = DateTime.UtcNow;
+            }
 
             _context.Notifications.Add(new Notification
             {

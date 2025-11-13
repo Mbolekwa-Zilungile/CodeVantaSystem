@@ -1,184 +1,201 @@
-﻿<!DOCTYPE html>
+﻿@using Code_Vanta_Systems.Data
+@using Code_Vanta_Systems.Models
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext _context
 
+@{
+    var currentUser = SignInManager.IsSignedIn(User) ? await UserManager.GetUserAsync(User) : null;
+
+    var unread = currentUser != null
+        ? _context.Notifications.Count(n => n.RecipientUserId == currentUser.Id && !n.IsRead)
+        : 0;
+
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+
+    // Professional Admin Palette
+    const string PrimaryColor = "#009688";   // Teal accent
+    const string SecondaryColor = "#2C3E50"; // Deep Navy
+    const string BgColor = "#F8F9FA";        // Light background
+}
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] Inventory Liaison Portal</title>
+    <title>@ViewData["Title"] - Inventory Liaison Portal</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        /* Custom Styles for Inventory Liaison Layout */
         body {
-            background-color: #f8f9fa; /* Light gray background */
             font-family: 'Poppins', sans-serif;
+            background-color: @BgColor;
         }
 
+        /* Navbar */
+        nav.navbar {
+            background-color: @SecondaryColor;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+            nav.navbar .navbar-brand i {
+                color: @PrimaryColor !important;
+            }
+
+        /* Sidebar */
         #sidebar {
             height: 100vh;
-            width: 250px;
+            width: 280px;
             position: fixed;
-            top: 56px; /* Below the navbar */
+            top: 66px;
             left: 0;
-            background-color: #2C3E50; /* Deep Navy */
+            background-color: @SecondaryColor;
             color: #fff;
             padding-top: 20px;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.3);
             transition: all 0.3s;
         }
 
-        #main-content {
-            margin-left: 250px;
-            padding: 20px;
-            padding-top: 80px; /* Space for fixed navbar */
-        }
-
-        .sidebar-link {
-            padding: 10px 15px;
-            display: block;
-            color: #adb5bd;
-            text-decoration: none;
-        }
-
-            .sidebar-link:hover, .sidebar-link.active {
-                color: #fff;
-                background-color: #009688; /* Teal Highlight */
+            #sidebar .sidebar-link {
+                padding: 12px 15px;
+                display: flex;
+                align-items: center;
+                font-size: 1.05rem;
+                color: #C0C0C0;
+                text-decoration: none;
+                margin-bottom: 5px;
                 border-radius: 5px;
+                transition: all 0.2s;
             }
 
-        /* Navbar Styling */
-        .navbar {
-            background-color: #2C3E50; /* Deep Navy */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Subtle shadow for elevation */
+                #sidebar .sidebar-link i {
+                    font-size: 1.3rem;
+                    margin-right: 12px;
+                }
+
+                #sidebar .sidebar-link:hover,
+                #sidebar .sidebar-link.active {
+                    color: #fff;
+                    background-color: @PrimaryColor;
+                    transform: translateX(2px);
+                }
+
+        #main-content {
+            margin-left: 280px;
+            padding: 20px;
+            padding-top: 86px;
+            transition: all 0.3s;
         }
 
-        .navbar-brand {
-            color: #fff;
+        .nav-title {
+            color: #A0A0A0;
             font-weight: 700;
-            font-size: 1.25rem;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+            padding-left: 15px;
+            margin-top: 10px;
+            margin-bottom: 5px;
         }
 
-        .navbar-nav .nav-link {
-            color: #fff;
-            font-size: 1.2rem;
-        }
-
-            .navbar-nav .nav-link:hover {
-                background-color: #009688; /* Teal Hover */
-                border-radius: 6px;
-            }
-
-        .badge-notify {
-            font-size: 0.65rem;
+        .notification-badge {
             position: absolute;
-            top: 5px;
-            right: 8px;
+            top: 0.6rem;
+            right: 0.2rem;
+            font-size: 0.65rem;
+            min-width: 1.2rem;
+            height: 1.2rem;
+            line-height: 1.2rem;
+            padding: 0;
         }
 
-        /* Footer */
         footer {
             background-color: #fff;
             border-top: 1px solid #ddd;
             padding: 15px;
             text-align: center;
+            margin-left: 280px;
         }
 
         .footer-text {
             color: #6c757d;
         }
-
     </style>
 </head>
 <body>
-
-    <!-- Top Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top" style="background-color: @SecondaryColor; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" asp-controller="Admin" asp-action="Index">
-                <i class="bi bi-gear-fill me-2" style="color:#009688;"></i>Inventory Liaison Portal
+            <a class="navbar-brand fw-bold text-white fs-5" asp-controller="Admin" asp-action="Index">
+                <i class="bi bi-person-workspace me-2" style="color:@PrimaryColor !important;"></i>Inventory Liaison
             </a>
-            <div class="d-flex">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
-                    <!-- Notification Bell -->
+            <div class="collapse navbar-collapse justify-content-end">
+
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+
                     <li class="nav-item d-flex align-items-center me-3">
-                        <a class="nav-link position-relative d-flex align-items-center"
-                           asp-controller="Notification" asp-action="Index" title="Notifications"
-                           style="font-size: 1rem;">
-                            <i class="bi bi-bell me-1" style="font-size: 1.2rem;"></i>
-
+                        <a class="nav-link position-relative d-flex align-items-center text-white"
+                           asp-controller="Notification" asp-action="Index" title="Notifications">
+                            @* Use Primary Teal for the icon accent *@
+                            <i class="bi bi-bell-fill me-1" style="font-size:1.4rem; color: @PrimaryColor;"></i>
                             <span id="notificationBadge"
                                   class="position-absolute translate-middle badge rounded-pill bg-danger"
-                                  style="top: 0.6rem; right: 0.2rem; font-size:0.65rem; min-width:1.2rem; height:1.2rem; line-height:1.2rem; padding:0;">
+                                  style="top:0.6rem; right:0.2rem; font-size:0.65rem; min-width:1.2rem; height:1.2rem; line-height:1.2rem; padding:0; display:none;">
                             </span>
                         </a>
                     </li>
 
-                    <!-- User Dropdown -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle me-1"></i> @User.Identity.Name
+                    <li class="nav-item dropdown d-flex align-items-center">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#"
+                           id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-2"></i> @User.Identity.Name
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li>
-                                <a class="dropdown-item" asp-controller="EmployeeProfile" asp-action="Index">
-                                    Profile
-                                </a>
-                            </li>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="#">Profile Settings</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="post" asp-controller="Account" asp-action="Logout">
-                                    <button type="submit" class="dropdown-item">Logout</button>
+                                    <button type="submit" class="dropdown-item text-danger">Logout <i class="bi bi-box-arrow-right ms-2"></i></button>
                                 </form>
                             </li>
                         </ul>
                     </li>
+
                 </ul>
             </div>
         </div>
     </nav>
 
     <!-- Sidebar -->
-    @{
-        // Get current controller and action for active link highlighting
-        string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
-        string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
-    }
-
     <div id="sidebar">
-        <h6 class="text-uppercase text-light px-3 mt-2 mb-3">@User.Identity.Name</h6>
 
         <a class="sidebar-link @(currentController == "InventoryLiaison" && currentAction == "Index" ? "active" : "")"
            asp-controller="InventoryLiaison" asp-action="Index">
-            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+            <i class="bi bi-speedometer2"></i> Dashboard
         </a>
-
-        @* <a class="sidebar-link @(currentController == "InventoryLiaison" && (currentAction == "Suppliers" || currentAction == "Create" || currentAction == "Edit" || currentAction == "Delete") ? "active" : "")"
-           asp-controller="InventoryLiaison" asp-action="Suppliers">
-            <i class="bi bi-person-lines-fill me-2"></i>Suppliers
-        </a> *@
 
         <a class="sidebar-link @(currentController == "InventoryLiaison" && currentAction == "PurchaseRequests" ? "active" : "")"
            asp-controller="InventoryLiaison" asp-action="PurchaseRequests">
-            <i class="bi bi-receipt me-2"></i>Purchase Request
-        </a>
-         
-         <a class="sidebar-link @(currentController == "InventoryLiaison" && currentAction == "PurchaseRequests" ? "active" : "")"
-           asp-controller="InventoryLiaison" asp-action="PendingFridges">
-            <i class="bi bi-receipt me-2"></i>Delivered Fridges
-        </a> 
-      @*   <a class="sidebar-link @(currentController == "Admin" && (currentAction == "ManageRoles" || currentAction == "EditUserRoles") ? "active" : "")"
-           asp-controller="Admin" asp-action="ManageRoles">
-            <i class="bi bi-send me-2"></i>RFQS
-        </a>
- *@
-        <a class="sidebar-link @(currentController == "Reports" ? "active" : "")"
-           asp-controller="InventoryAnalytics" asp-action="InventoryOverview">
-            <i class="bi bi-graph-up me-2"></i>Reports
+            <i class="bi bi-receipt"></i> Purchase Request
         </a>
 
-        <div class="px-3 py-2 mt-auto">
-            <small class="text-muted">FMS v1.0</small>
+        <a class="sidebar-link @(currentController == "InventoryLiaison" && currentAction == "PendingFridges" ? "active" : "")"
+           asp-controller="InventoryLiaison" asp-action="PendingFridges">
+            <i class="bi bi-receipt"></i> Delivered Fridges
+        </a>
+
+        <a class="sidebar-link @(currentController == "InventoryAnalytics" ? "active" : "")"
+           asp-controller="InventoryAnalytics" asp-action="InventoryOverview">
+            <i class="bi bi-graph-up"></i> Reports
+        </a>
+
+        <div class="px-3 py-2 mt-auto text-center">
+            <small class="text-white opacity-50">FMS v1.0</small>
         </div>
     </div>
 
@@ -189,10 +206,8 @@
         </main>
     </div>
 
-    <footer class="footer">
-        <div class="container">
-            <p class="footer-text">&copy; @DateTime.Now.Year Inventory Liaison Portal. All rights reserved.</p>
-        </div>
+    <footer>
+        <p class="footer-text">&copy; @DateTime.Now.Year Inventory Liaison Portal. All rights reserved.</p>
     </footer>
 
     <script>
@@ -200,7 +215,6 @@
             try {
                 const res = await fetch('/Notification/UnreadCount');
                 const count = await res.json();
-
                 const badge = document.getElementById('notificationBadge');
                 if (count > 0) {
                     badge.innerText = count;
@@ -212,7 +226,6 @@
                 console.error("Failed to load notification count", e);
             }
         }
-
         loadNotificationCount();
         setInterval(loadNotificationCount, 30000);
     </script>
