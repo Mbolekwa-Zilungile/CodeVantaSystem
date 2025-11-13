@@ -644,523 +644,45 @@ namespace Code_Vanta_Systems.Controllers
                     IsActive = true,
                 };
 
-                context.Customers.Add(customer);
+                await context.Customers.AddAsync(customer);
                 await context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = $"Customer '{model.BusinessName}' registered successfully with login: {model.Email}.";
+                TempData["SuccessMessage"] = $"Customer '{model.BusinessName}' created and associated user registered.";
                 return RedirectToAction(nameof(Customers));
             }
 
-            // Handle user creation failure
+            // If user creation failed, add errors to ModelState
             foreach (var error in userCreationResult.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);
             }
 
-            // Re-populate locations and return view on error
+            // Re-load locations and return to view on any error
             model.AvailableLocations = await context.Locations
                 .Select(l => new SelectListItem
                 {
                     Value = l.Id.ToString(),
-                    Text = l.Description // PLACHOLDER FIX: Use the actual property name here
+                    Text = l.Description
                 })
                 .ToListAsync();
 
             return View(model);
         }
-
-        // GET: Admin/EditCustomer/7
-        [HttpGet]
-        public async Task<IActionResult> EditCustomer(int id)
-        {
-            var customer = await context.Customers
-                .Include(c => c.User)
-                .Include(c => c.Location)
-                .FirstOrDefaultAsync(c => c.Id == id);
-
-            if (customer == null)
-            {
-                TempData["ErrorMessage"] = "Error: Customer not found.";
-                return RedirectToAction("Customers");
-            }
-
-            // Fetch all locations for the dropdown
-            var locations = await context.Locations
-                .Select(l => new SelectListItem
-                {
-                    Value = l.Id.ToString(),
-                    Text = $"{l.Description} ({l.City}, {l.Province})"
-                })
-                .ToListAsync();
-
-            // Map Customer model to ViewModel
-            var viewModel = new EditCustomerViewModel
-            {
-                Id = customer.Id,
-                UserId = customer.UserId,
-                BusinessName = customer.BusinessName,
-                ContactName = customer.ContactName,
-                Phone = customer.Phone,
-                Email = customer.User?.Email ?? customer.Email,
-                BusinessType = customer.BusinessType,
-                PhysicalAddress = customer.PhysicalAddress,
-                LocationId = customer.LocationId,
-                CurrentLocationDescription = customer.Location?.Description,
-                AvailableLocations = locations
-            };
-
-            ViewData["Title"] = $"Edit Customer: {customer.BusinessName}";
-            return View(viewModel);
-        }
-
-        // POST: Admin/EditCustomer
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditCustomer(EditCustomerViewModel model)
-        {
-            // Re-fetch locations for dropdown in case model state fails
-            if (!ModelState.IsValid)
-            {
-                model.AvailableLocations = await context.Locations
-                    .Select(l => new SelectListItem
-                    {
-                        Value = l.Id.ToString(),
-                        Text = $"{l.Description} ({l.City}, {l.Province})"
-                    })
-                    .ToListAsync();
-                return View(model);
-            }
-
-            // 1. Fetch the Customer entity
-            var customer = await context.Customers
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.Id == model.Id);
-
-            if (customer == null)
-            {
-                TempData["ErrorMessage"] = "Error: Customer not found for update.";
-                return RedirectToAction("Customers");
-            }
-
-            // 2. Update Customer Profile data
-            customer.BusinessName = model.BusinessName;
-            customer.ContactName = model.ContactName;
-            customer.Phone = model.Phone;
-            customer.Email = model.Email; // Update Customer table email
-            customer.BusinessType = model.BusinessType;
-            customer.PhysicalAddress = model.PhysicalAddress;
-            customer.LocationId = model.LocationId;
-
-            // 3. Update ApplicationUser data (if the user is linked)
-            if (customer.User != null)
-            {
-                customer.User.FullName = model.ContactName; // Use ContactName as FullName
-                customer.User.Email = model.Email;
-                customer.User.UserName = model.Email;
-
-                // Ensure update is tracked
-                context.Users.Update(customer.User);
-            }
-
-            // 4. Save changes
-            context.Customers.Update(customer);
-            await context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = $"Customer '{model.BusinessName}' details updated successfully.";
-            return RedirectToAction("Customers");
-        }
-
-
-        // GET: Admin/DeleteCustomer/7 (Confirmation View)
-        [HttpGet]
-        public async Task<IActionResult> DeleteCustomer(int id)
-        {
-            var customer = await context.Customers
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.Id == id);
-
-            if (customer == null)
-            {
-                TempData["ErrorMessage"] = "Error: Customer not found.";
-                return RedirectToAction("Customers");
-            }
-
-            // Map the Customer data to the EditCustomerViewModel (used for displaying details)
-            var viewModel = new EditCustomerViewModel
-            {
-                Id = customer.Id,
-                UserId = customer.UserId,
-                BusinessName = customer.BusinessName,
-                ContactName = customer.ContactName,
-                Email = customer.User?.Email ?? customer.Email,
-                Phone = customer.Phone
-            };
-
-            ViewData["Title"] = $"Deactivate Customer: {customer.BusinessName}";
-            return View(viewModel); // Points to Views/Admin/DeleteCustomer.cshtml
-        }
-
-        // POST: Admin/DeleteCustomer/7 (Soft Delete/Deactivation Execution)
-        [HttpPost, ActionName("DeleteCustomer")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeactivateCustomerConfirmed(int id)
-        {
-            var customer = await context.Customers
-                .FirstOrDefaultAsync(c => c.Id == id);
-
-            if (customer == null)
-            {
-                TempData["ErrorMessage"] = "Error: Customer not found. Deactivation failed.";
-                return RedirectToAction("Customers");
-            }
-
-            // 1. Perform Soft Delete on the Customer record
-            customer.IsActive = false;
-            context.Customers.Update(customer);
-
-            // 2. Lock the ApplicationUser account to prevent login (if linked)
-            if (customer.UserId != null)
-            {
-                var user = await userManager.FindByIdAsync(customer.UserId);
-                if (user != null)
-                {
-                    // Lock the account indefinitely
-                    await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
-                    context.Users.Update(user);
-                }
-            }
-
-            await context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = $"Customer '{customer.BusinessName}' successfully deactivated (soft deleted).";
-            return RedirectToAction("Customers");
-        }
-
         #endregion
 
-        #region Role
-        //---------------------------------------------------------
-        // ROLE MANAGEMENT
-        //---------------------------------------------------------
-
-        // Manage Roles - Lists all users and their roles
-        public IActionResult ManageRoles()
-        {
-            var users = userManager.Users.ToList();
-            var roles = roleManager.Roles.ToList();
-            var userRoles = new Dictionary<string, IList<string>>();
-
-            foreach (var user in users)
-            {
-                var rolesForUser = userManager.GetRolesAsync(user).Result;
-                userRoles[user.Id] = rolesForUser;
-            }
-
-            var viewModel = new RoleManagementViewModel
-            {
-                Users = users,
-                Roles = roles,
-                UserRoles = userRoles
-            };
-
-            return View(viewModel);
-        }
-
-        // GET: Admin/CreateRole (NEW ACTION from AdminController1)
-        [HttpGet]
-        public IActionResult CreateRole()
-        {
-            ViewData["Title"] = "Create New Role";
-            return View();
-        }
-
-        // POST: Admin/CreateRole (NEW ACTION from AdminController1)
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateRole(string roleName)
-        {
-            if (string.IsNullOrWhiteSpace(roleName))
-            {
-                ModelState.AddModelError("", "Role name cannot be empty.");
-                return View();
-            }
-
-            if (await roleManager.RoleExistsAsync(roleName))
-            {
-                ModelState.AddModelError("", "This role already exists.");
-                return View();
-            }
-
-            var result = await roleManager.CreateAsync(new IdentityRole(roleName));
-
-            if (result.Succeeded)
-            {
-                TempData["SuccessMessage"] = $"Role '{roleName}' created successfully.";
-                return RedirectToAction("ManageRoles"); // point to your role listing page
-            }
-
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError("", error.Description);
-            }
-
-            return View();
-        }
-
-        // GET: Admin/EditUserRoles?userId=...
-        [HttpGet]
-        public async Task<IActionResult> EditUserRoles(string userId)
-        {
-            // 1. Find the user
-            var user = await userManager.FindByIdAsync(userId);
-            if (user == null)
-            {
-                TempData["ErrorMessage"] = "Error: User not found.";
-                return RedirectToAction("ManageRoles");
-            }
-
-            // 2. Get the current and all available roles
-            var currentRoles = await userManager.GetRolesAsync(user);
-            var allRoles = await roleManager.Roles
-                .Select(r => new SelectListItem
-                {
-                    Value = r.Name,
-                    Text = r.Name
-                })
-                .ToListAsync();
-
-            // 3. Map to ViewModel
-            var viewModel = new RoleAssignmentViewModel
-            {
-                UserId = user.Id,
-                // Attempt to get FullName from Employee or default to Email
-                FullName = (await context.Employees.Include(e => e.User).FirstOrDefaultAsync(e => e.ApplicationUserId == userId))?.User?.FullName ?? user.Email,
-                Email = user.Email,
-                AvailableRoles = allRoles,
-                SelectedRole = currentRoles.FirstOrDefault() ?? ""
-            };
-
-            ViewData["Title"] = $"Manage Roles for {user.Email}";
-            return View(viewModel);
-        }
-
-        // POST: Admin/EditUserRoles
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditUserRoles(RoleAssignmentViewModel model)
-        {
-            // Re-load roles if validation fails
-            if (!ModelState.IsValid)
-            {
-                model.AvailableRoles = await roleManager.Roles
-                    .Select(r => new SelectListItem
-                    {
-                        Value = r.Name,
-                        Text = r.Name
-                    })
-                    .ToListAsync();
-                return View(model);
-            }
-
-            var user = await userManager.FindByIdAsync(model.UserId);
-            if (user == null) return NotFound();
-
-            // 1. Get current roles
-            var currentRoles = await userManager.GetRolesAsync(user);
-
-            // 2. Remove all current roles
-            if (currentRoles.Any())
-            {
-                var removeResult = await userManager.RemoveFromRolesAsync(user, currentRoles);
-                if (!removeResult.Succeeded)
-                {
-                    TempData["ErrorMessage"] = $"Failed to remove old roles: {string.Join(", ", removeResult.Errors.Select(e => e.Description))}";
-                    return RedirectToAction("ManageRoles");
-                }
-            }
-
-            // 3. Add the new role
-            var result = await userManager.AddToRoleAsync(user, model.SelectedRole);
-
-            if (result.Succeeded)
-            {
-                TempData["SuccessMessage"] = $"Successfully assigned '{model.SelectedRole}' role to {user.Email}.";
-                return RedirectToAction("ManageRoles");
-            }
-
-            // Handle errors if role assignment fails
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-
-            // Re-load roles and return to view on error
-            model.AvailableRoles = await roleManager.Roles
-                .Select(r => new SelectListItem
-                {
-                    Value = r.Name,
-                    Text = r.Name
-                })
-                .ToListAsync();
-            return View(model);
-        }
-        #endregion
-
-        #region Supplier
-
-        public async Task<IActionResult> Suppliers()
-        {
-            var activeSuppliers = await context.Suppliers.Include(s => s.User)
-            .Where(s => s.IsActive)
-            .ToListAsync();
-            ViewBag.ActiveSupplierCount = activeSuppliers.Count;
-
-            ViewBag.InactiveSuppliersCount = await context.Suppliers.CountAsync(s => !s.IsActive);
-            return View(activeSuppliers);
-        }
-
-        public async Task<IActionResult> InactiveSuppliers()
-        {
-            var activeSuppliers = await context.Suppliers.Include(s => s.User)
-            .Where(s => s.IsActive)
-            .ToListAsync();
-            ViewBag.ActiveSupplierCount = activeSuppliers.Count;
-
-            var InactiveSuppliers = await context.Suppliers.Include(s => s.User)
-           .Where(s => !s.IsActive)
-           .ToListAsync();
-
-            ViewBag.InactiveSuppliersCount = InactiveSuppliers.Count;
-            return View(InactiveSuppliers);
-        }
-        #endregion
-
-        [HttpGet]
-        public IActionResult CreateSupplier()
-        {
-            ViewData["Title"] = "Create New Supplier";
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateSupplier(RegisterSupplierViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            var user = new ApplicationUser
-            {
-                UserName = model.Email,
-                Email = model.Email,
-                FullName = model.ContactPerson,
-                EmailConfirmed = true,
-                PhoneNumber = model.Phone
-            };
-            // Use a strong default password
-            var result = await userManager.CreateAsync(user, "Supplier@123!");
-
-            if (result.Succeeded)
-            {
-                user.EmailConfirmed = true;
-                await userManager.UpdateAsync(user);
-
-                var roleExists = await context.Roles.AnyAsync(r => r.Name == "Supplier");
-                if (!roleExists)
-                {
-                    ModelState.AddModelError(string.Empty, "Supplier role does not exist. Please create the role first.");
-                    return View(model);
-                }
-
-                var roleResult = await userManager.AddToRoleAsync(user, "Supplier");
-
-                if (roleResult.Succeeded)
-                {
-                    // 3. Create Supplier record
-                    var supplier = new Supplier
-                    {
-                        ApplicationUserId = user.Id,
-                        Name = model.CompanyName,
-                        Phone = model.Phone,
-                        Address = model.Address,
-                        IsActive = true
-                    };
-
-                    await context.Suppliers.AddAsync(supplier);
-                    await context.SaveChangesAsync();
-
-
-                    TempData["SuccessMessage"] = $"Supplier '{model.CompanyName}' created successfully.";
-                    return RedirectToAction("Suppliers"); // Adjust this action to your supplier list page
-                }
-
-                // Cleanup user if role assignment fails
-                await userManager.DeleteAsync(user);
-                ModelState.AddModelError(string.Empty, "Failed to assign 'Supplier' role. User has been deleted.");
-            }
-            else
-            {
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-            }
-
-            return View(model);
-        }
+        #region FridgeMaintenanceAndAssignment
 
         //=========================================================
-        // MAINTENANCE OVERSIGHT (GET)
+        // MAINTENANCE OVERSIGHT
         //=========================================================
 
-        //=========================================================
-        // MAINTENANCE OVERSIGHT (GET)
-        //=========================================================
-
-        [HttpGet]
+        // Lists fridges that need a technician assigned
         public async Task<IActionResult> MaintenanceOversight()
         {
-            // 1. Get all Maintenance Technicians for the dropdown (This remains the same)
-            var maintenanceRole = await roleManager.FindByNameAsync("Maintenance Technician");
-            var maintenanceTechnicians = await userManager.GetUsersInRoleAsync(maintenanceRole.Name);
-
-            // This list populates the Technician dropdown in the view
-            ViewBag.MaintenanceTechnicians = maintenanceTechnicians
-                .Select(u => new SelectListItem
-                {
-                    Value = u.Id,
-                    Text = u.FullName // Assuming ApplicationUser has a FullName property
-                })
-                .ToList();
-
-            // 2. Query for ALL fridges that require maintenance AND are unassigned.
-            var fridgesNeedingAssignment = await context.Fridges
-                .Include(f => f.Customer)
-                .Include(f => f.Technician)
-                .Where(f =>
-                    // 🚩 1. PRIMARY FILTER: Must be flagged for maintenance
-                    f.Condition == FridgeCondition.RequireMaintenance &&
-
-                    // 🚩 2. ALLOCATION FILTER: Must be allocated to a customer (i.e., in service)
-                    //f.CustomerId.HasValue &&
-
-                    // 🔥 3. CRITICAL FIX: Must be unassigned (TechnicianUserId is explicitly set to null by Fault Technician)
-                    f.TechnicianUserId == null)
-
-                .Select(f => new MaintenanceAssignmentViewModel
-                {
-                    FridgeId = f.Id,
-                    SerialNumber = f.SerialNumber,
-                    Model = f.Model,
-
-                    CustomerBusinessName = f.Customer != null ? f.Customer.BusinessName : "N/A",
-                    CustomerAddress = f.Customer != null ? f.Customer.PhysicalAddress : "N/A",
-
-                    Condition = f.Condition.ToString(),
-                    AllocatedTechnicianId = f.TechnicianUserId,
-                    AllocatedTechnicianName = f.Technician != null ? f.Technician.FullName : "Unassigned"
-                })
-                .OrderBy(f => f.CustomerBusinessName)
+            // CHANGE: Using context.FridgeUnits instead of context.Fridges
+            var fridgesNeedingAssignment = await context.FridgeUnits
+                .Where(f => f.TechnicianUserId == null || f.TechnicianUserId == "")
+                .Include(f => f.Location)
                 .ToListAsync();
 
             return View(fridgesNeedingAssignment);
@@ -1170,33 +692,37 @@ namespace Code_Vanta_Systems.Controllers
         // ASSIGN TECHNICIAN (POST)
         //=========================================================
         [HttpPost]
-            [ValidateAntiForgeryToken]
-            public async Task<IActionResult> AssignMaintenanceTechnician(int fridgeId, string technicianId)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignMaintenanceTechnician(int fridgeId, string technicianId)
+        {
+            // CHANGE: Using context.FridgeUnits and renaming local variable to fridgeUnit
+            var fridgeUnit = await context.FridgeUnits.FindAsync(fridgeId);
+
+            if (fridgeUnit == null)
             {
-                var fridge = await context.Fridges.FindAsync(fridgeId);
-
-                if (fridge == null)
-                {
-                    TempData["ErrorMessage"] = "Error: Fridge not found.";
-                    return RedirectToAction(nameof(MaintenanceOversight));
-                }
-
-                // CRITICAL FIX: Use the correct property: fridge.TechnicianUserId
-                fridge.TechnicianUserId = technicianId;
-
-                try
-                {
-                    context.Update(fridge);
-                    // Add audit trail logic here...
-                    await context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = $"Fridge {fridge.SerialNumber} successfully assigned to new technician.";
-                }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = $"Assignment failed: {ex.Message}";
-                }
-
+                TempData["ErrorMessage"] = "Error: Fridge not found.";
                 return RedirectToAction(nameof(MaintenanceOversight));
             }
+
+            // CRITICAL FIX: Use the correct property: fridgeUnit.TechnicianUserId
+            fridgeUnit.TechnicianUserId = technicianId;
+
+            try
+            {
+                // CHANGE: Updating fridgeUnit
+                context.Update(fridgeUnit);
+                // Add audit trail logic here...
+                await context.SaveChangesAsync();
+                // CHANGE: Using fridgeUnit.SerialNumber in the success message
+                TempData["SuccessMessage"] = $"Fridge {fridgeUnit.SerialNumber} successfully assigned to new technician.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Assignment failed: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(MaintenanceOversight));
+        }
     }
 }
+#endregion

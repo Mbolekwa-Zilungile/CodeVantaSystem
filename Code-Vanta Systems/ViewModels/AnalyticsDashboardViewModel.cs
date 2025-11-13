@@ -11,7 +11,7 @@ namespace Code_Vanta_Systems.ViewModels
         public List<StatusCount> OrderStatus { get; set; } = new();
         public List<StatusCount> CustomerStatus { get; set; } = new();
         public List<AllocationTrend> Allocations { get; set; } = new();
-        public List<Fridge> AllFridges { get; set; } = new();
+        public List<FridgeUnit> AllFridges { get; set; } = new();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
     }

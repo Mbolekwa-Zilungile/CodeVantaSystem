@@ -9,12 +9,12 @@ namespace Code_Vanta_Systems.Data.Configurations
         public void Configure(EntityTypeBuilder<FridgeMaintenance> builder)
         {
             builder.Property(fm => fm.Status)
-                   .HasConversion<string>();
+                    .HasConversion<string>();
 
-            // 🛠️ ADDED: Link to the Fridge (The asset being serviced)
-            builder.HasOne(fm => fm.Fridge)
-                   .WithMany(f => f.Maintenances)
-                   .HasForeignKey(fm => fm.FridgeId)
+            // CHANGE: Link to Fridge is now a link to FridgeUnit
+            builder.HasOne(fm => fm.FridgeUnit) // Change: fm.Fridge -> fm.FridgeUnit 
+                   .WithMany(fu => fu.Maintenances)
+                   .HasForeignKey(fm => fm.FridgeUnitId) // Change: fm.FridgeId -> fm.FridgeUnitId
                    .OnDelete(DeleteBehavior.Restrict);
 
             // Existing Technician Relationship

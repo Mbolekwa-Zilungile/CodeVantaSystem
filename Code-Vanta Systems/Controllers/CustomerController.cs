@@ -26,35 +26,32 @@ namespace Code_Vanta_Systems.Controllers
         }
         #region Index
 
-        public async Task<IActionResult> Index(string searchModel, int? category, int? status, int? supplier, int? location)
+        public async Task<IActionResult> Index(string searchModel, int? category, int? supplier)
         {
-            var fridgesQuery = _context.Fridges.AsQueryable().Where(f => !f.IsDeleted);
+            var modelsQuery = _context.FridgeModels.AsQueryable();
 
             if (!string.IsNullOrEmpty(searchModel))
-                fridgesQuery = fridgesQuery.Where(f => f.Model.Contains(searchModel));
+                modelsQuery = modelsQuery.Where(fm => fm.ModelName.Contains(searchModel));
 
             if (category.HasValue)
-                fridgesQuery = fridgesQuery.Where(f => (int)f.Category == category.Value);
-
-            if (status.HasValue)
-                fridgesQuery = fridgesQuery.Where(f => (int)f.Status == status.Value);
+                modelsQuery = modelsQuery.Where(fm => (int)fm.Category == category.Value);
 
             if (supplier.HasValue)
-                fridgesQuery = fridgesQuery.Where(f => f.SupplierId == supplier.Value);
+                modelsQuery = modelsQuery.Where(fm => fm.SupplierId == supplier.Value);
 
-            if (location.HasValue)
-                fridgesQuery = fridgesQuery.Where(f => f.LocationId == location.Value);
-
-            var model = await fridgesQuery
-                .Select(f => new RentalViewModel
+            var model = await modelsQuery
+                .Select(fm => new RentalViewModel
                 {
-                    Id = f.Id,
-                    Model = f.Model,
-                    SerialNumber = f.SerialNumber,
-                    PricePerMonth = f.RentalPricePerMonth,
-                    StockQuantity = f.StockQuantity,
-                    Location = f.Description,
-                    ImageUrl = f.ImageUrl
+                    Id = fm.Id,
+                    Model = fm.ModelName,
+                    PricePerMonth = fm.RentalPricePerMonth,
+
+                    // StockQuantity calculated dynamically by counting available FridgeUnits
+                    StockQuantity = _context.FridgeUnits
+                                            .Count(fu => fu.FridgeModelId == fm.Id && fu.Status == FridgeStatus.InWarehouse),
+
+                    Location = fm.Description,
+                    ImageUrl = fm.ImageUrl
                 })
                 .ToListAsync();
 
@@ -64,21 +61,8 @@ namespace Code_Vanta_Systems.Controllers
                                      .Select(c => new SelectListItem { Text = c.ToString(), Value = ((int)c).ToString() })
                                      .ToList();
 
-            ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
-                                   .Cast<FridgeStatus>()
-                                   .Select(s => new SelectListItem { Text = s.ToString(), Value = ((int)s).ToString() })
-                                   .ToList();
-
-            ViewBag.Suppliers = await _context.Fridges
-                                              .Select(f => f.Supplier)
-                                              .Distinct()
+            ViewBag.Suppliers = await _context.Suppliers
                                               .Select(s => new SelectListItem { Text = s.Name, Value = s.Id.ToString() })
-                                              .ToListAsync();
-
-            ViewBag.Locations = await _context.Fridges
-                                              .Select(f => f.Location)
-                                              .Distinct()
-                                              .Select(l => new SelectListItem { Text = l.Description, Value = l.Id.ToString() })
                                               .ToListAsync();
 
             return View(model);
@@ -270,59 +254,42 @@ namespace Code_Vanta_Systems.Controllers
         #endregion
 
         #region Rentals
-        public async Task<IActionResult> Rentals(string searchModel, int? category, int? status, int? supplier, int? location)
+        public async Task<IActionResult> Rentals(string searchModel, int? category, int? supplier)
         {
-            var fridgesQuery = _context.Fridges.AsQueryable().Where(f => !f.IsDeleted);
+            var modelsQuery = _context.FridgeModels.AsQueryable();
 
             if (!string.IsNullOrEmpty(searchModel))
-                fridgesQuery = fridgesQuery.Where(f => f.Model.Contains(searchModel));
+                modelsQuery = modelsQuery.Where(fm => fm.ModelName.Contains(searchModel));
 
             if (category.HasValue)
-                fridgesQuery = fridgesQuery.Where(f => (int)f.Category == category.Value);
-
-            if (status.HasValue)
-                fridgesQuery = fridgesQuery.Where(f => (int)f.Status == status.Value);
+                modelsQuery = modelsQuery.Where(fm => (int)fm.Category == category.Value);
 
             if (supplier.HasValue)
-                fridgesQuery = fridgesQuery.Where(f => f.SupplierId == supplier.Value);
+                modelsQuery = modelsQuery.Where(fm => fm.SupplierId == supplier.Value);
 
-            if (location.HasValue)
-                fridgesQuery = fridgesQuery.Where(f => f.LocationId == location.Value);
-
-            var model = await fridgesQuery
-                .Select(f => new RentalViewModel
+            var model = await modelsQuery
+                .Select(fm => new RentalViewModel
                 {
-                    Id = f.Id,
-                    Model = f.Model,
-                    SerialNumber = f.SerialNumber,
-                    PricePerMonth = f.RentalPricePerMonth,
-                    StockQuantity = f.StockQuantity,
-                    Location = f.Description,
-                    ImageUrl = f.ImageUrl
+                    Id = fm.Id,
+                    Model = fm.ModelName,
+                    PricePerMonth = fm.RentalPricePerMonth,
+
+                    // StockQuantity is calculated dynamically by counting available FridgeUnits of this model
+                    StockQuantity = _context.FridgeUnits
+                                            .Count(fu => fu.FridgeModelId == fm.Id && fu.Status == FridgeStatus.InWarehouse),
+
+                    Location = fm.Description,
+                    ImageUrl = fm.ImageUrl
                 })
                 .ToListAsync();
-
 
             ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory))
                                      .Cast<FridgeCategory>()
                                      .Select(c => new SelectListItem { Text = c.ToString(), Value = ((int)c).ToString() })
                                      .ToList();
 
-            ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
-                                   .Cast<FridgeStatus>()
-                                   .Select(s => new SelectListItem { Text = s.ToString(), Value = ((int)s).ToString() })
-                                   .ToList();
-
-            ViewBag.Suppliers = await _context.Fridges
-                                              .Select(f => f.Supplier)
-                                              .Distinct()
+            ViewBag.Suppliers = await _context.Suppliers
                                               .Select(s => new SelectListItem { Text = s.Name, Value = s.Id.ToString() })
-                                              .ToListAsync();
-
-            ViewBag.Locations = await _context.Fridges
-                                              .Select(f => f.Location)
-                                              .Distinct()
-                                              .Select(l => new SelectListItem { Text = l.Description, Value = l.Id.ToString() })
                                               .ToListAsync();
 
             return View(model);
@@ -330,63 +297,63 @@ namespace Code_Vanta_Systems.Controllers
 
 
 
-       
-        // List rental requests
-        public async Task<IActionResult> MyRentalRequests()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            var rentals = await _context.RentalRequests
-                .Include(r => r.Fridge)
-                .Where(r => r.RequestedByUserId == user.Id)
-                .OrderByDescending(r => r.CreatedAt)
-                .ToListAsync();
 
-            return View(rentals);
-        }
+        //// List rental requests
+        //public async Task<IActionResult> MyRentalRequests()
+        //{
+        //    var user = await _userManager.GetUserAsync(User);
+        //    var rentals = await _context.RentalRequests
+        //        .Include(r => r.Fridge)
+        //        .Where(r => r.RequestedByUserId == user.Id)
+        //        .OrderByDescending(r => r.CreatedAt)
+        //        .ToListAsync();
 
-        // Active rented fridges  
-        public async Task<IActionResult> MyRentedFridges()
-        {
-            var user = await _userManager.GetUserAsync(User);
+        //    return View(rentals);
+        //}
 
-            // Rentals (Approved & Paid)
-            var rentalFridges = await _context.RentalRequests
-                .Include(r => r.Fridge)
-                .Where(r => r.RequestedByUserId == user.Id && r.Status == "Approved" && r.IsPaid)
-                .Select(r => new FridgeAllocationDisplayViewModel
-                {
-                    FridgeModel = r.Fridge.Model,
-                    ImageUrl = r.Fridge.ImageUrl,
-                    Quantity = r.Quantity,
-                    AllocatedOn = r.UpdatedAt ?? r.CreatedAt,
-                    Source = "Rental",
-                    RentalId = r.Id
-                })
-                .ToListAsync();
+        //// Active rented fridges  
+        //public async Task<IActionResult> MyRentedFridges()
+        //{
+        //    var user = await _userManager.GetUserAsync(User);
 
-            // Manual allocations
-            var manualAllocations = await _context.FridgeAllocations
-                .Include(a => a.Fridge)
-                .Include(a => a.Customer)
-                .Where(a => a.Customer.UserId == user.Id)
-                .Select(a => new FridgeAllocationDisplayViewModel
-                {
-                    FridgeModel = a.Fridge.Model,
-                    ImageUrl = a.Fridge.ImageUrl,
-                    Quantity = a.Quantity,
-                    AllocatedOn = a.AllocationDate,
-                    Source = "Manual",
-                    RentalId = null
-                })
-                .ToListAsync();
+        //    // Rentals (Approved & Paid)
+        //    var rentalFridges = await _context.RentalRequests
+        //        .Include(r => r.Fridge)
+        //        .Where(r => r.RequestedByUserId == user.Id && r.Status == "Approved" && r.IsPaid)
+        //        .Select(r => new FridgeAllocationDisplayViewModel
+        //        {
+        //            FridgeModel = r.Fridge.Model,
+        //            ImageUrl = r.Fridge.ImageUrl,
+        //            Quantity = r.Quantity,
+        //            AllocatedOn = r.UpdatedAt ?? r.CreatedAt,
+        //            Source = "Rental",
+        //            RentalId = r.Id
+        //        })
+        //        .ToListAsync();
 
-            // ✅ Merge both safely
-            var combined = rentalFridges.Concat(manualAllocations)
-                .OrderByDescending(x => x.AllocatedOn)
-                .ToList();
+        //    // Manual allocations
+        //    var manualAllocations = await _context.FridgeAllocations
+        //        .Include(a => a.Fridge)
+        //        .Include(a => a.Customer)
+        //        .Where(a => a.Customer.UserId == user.Id)
+        //        .Select(a => new FridgeAllocationDisplayViewModel
+        //        {
+        //            FridgeModel = a.Fridge.Model,
+        //            ImageUrl = a.Fridge.ImageUrl,
+        //            Quantity = a.Quantity,
+        //            AllocatedOn = a.AllocationDate,
+        //            Source = "Manual",
+        //            RentalId = null
+        //        })
+        //        .ToListAsync();
 
-            return View(combined);
-        }
+        //    // ✅ Merge both safely
+        //    var combined = rentalFridges.Concat(manualAllocations)
+        //        .OrderByDescending(x => x.AllocatedOn)
+        //        .ToList();
+
+        //    return View(combined);
+        //}
 
         #endregion
 
@@ -441,618 +408,618 @@ namespace Code_Vanta_Systems.Controllers
                 })
                 .ToList();
 
-           // ---Build ViewModel-- -
-           var viewModel = new CustomerDashboardViewModel
-           {
-               TotalLogged = totalLoggedFaults,
-               TotalRequested = totalPendingRequests,
-               TotalPending = totalPending,
-               TotalAllocated = totalFridgesAllocated,
-               FaultsOverTime = faultsOverTime
-           };
+            // ---Build ViewModel-- -
+            var viewModel = new CustomerDashboardViewModel
+            {
+                TotalLogged = totalLoggedFaults,
+                TotalRequested = totalPendingRequests,
+                TotalPending = totalPending,
+                TotalAllocated = totalFridgesAllocated,
+                FaultsOverTime = faultsOverTime
+            };
 
             return View(viewModel);
         }
 
-        // List of Logged Faults
-        [HttpGet]
-        public async Task<IActionResult> LoggedFault(int? pageIndex, string? search)
-        {
-            try
-            {
-                var user = await _userManager.GetUserAsync(User);
-                if (user == null)
-                {
-                    TempData["ErrorMessage"] = "Unable to identify the current user.";
-                    return RedirectToAction(nameof(LoggedFault));
-                }
+        //// List of Logged Faults
+        //[HttpGet]
+        //public async Task<IActionResult> LoggedFault(int? pageIndex, string? search)
+        //{
+        //    try
+        //    {
+        //        var user = await _userManager.GetUserAsync(User);
+        //        if (user == null)
+        //        {
+        //            TempData["ErrorMessage"] = "Unable to identify the current user.";
+        //            return RedirectToAction(nameof(LoggedFault));
+        //        }
 
-                // 2️⃣ Find the associated Customer record
-                var customer = await _context.Customers
-                    .FirstOrDefaultAsync(c => c.UserId == user.Id);
+        //        // 2️⃣ Find the associated Customer record
+        //        var customer = await _context.Customers
+        //            .FirstOrDefaultAsync(c => c.UserId == user.Id);
 
-                if (customer == null)
-                {
-                    TempData["ErrorMessage"] = "No customer profile is linked to your account.";
-                    return RedirectToAction(nameof(LoggedFault));
-                }
+        //        if (customer == null)
+        //        {
+        //            TempData["ErrorMessage"] = "No customer profile is linked to your account.";
+        //            return RedirectToAction(nameof(LoggedFault));
+        //        }
 
-                var query = _context.FridgeFaults.Where(f => f.Status != FaultStatus.Cancelled)
-                    .Include(f => f.Fridge)
-                    .Include(f => f.ReportedBy)
-                    .Include(f => f.AssignedTechnician)
-                    .AsQueryable();
+        //        var query = _context.FridgeFaults.Where(f => f.Status != FaultStatus.Cancelled)
+        //            .Include(f => f.Fridge)
+        //            .Include(f => f.ReportedBy)
+        //            .Include(f => f.AssignedTechnician)
+        //            .AsQueryable();
 
-                // Search by Fridge Model, SerialNumber, or Fault Description
-                if (!string.IsNullOrEmpty(search))
-                {
-                    search = search.ToLower();
-                    query = query.Where(f =>
-                        f.Fridge.Model.ToLower().Contains(search) ||
-                        f.Fridge.SerialNumber.ToLower().Contains(search) ||
-                        f.FaultDescription.ToLower().Contains(search) ||
-                        f.ReportedBy.FullName.ToLower().Contains(search) ||
-                        (f.AssignedTechnician != null && f.AssignedTechnician.FullName.ToLower().Contains(search))
-                    );
-                }
+        //        // Search by Fridge Model, SerialNumber, or Fault Description
+        //        if (!string.IsNullOrEmpty(search))
+        //        {
+        //            search = search.ToLower();
+        //            query = query.Where(f =>
+        //                f.Fridge.Model.ToLower().Contains(search) ||
+        //                f.Fridge.SerialNumber.ToLower().Contains(search) ||
+        //                f.FaultDescription.ToLower().Contains(search) ||
+        //                f.ReportedBy.FullName.ToLower().Contains(search) ||
+        //                (f.AssignedTechnician != null && f.AssignedTechnician.FullName.ToLower().Contains(search))
+        //            );
+        //        }
 
-                // Order by most recent first
-                query = query.OrderByDescending(f => f.DateReported);
+        //        // Order by most recent first
+        //        query = query.OrderByDescending(f => f.DateReported);
 
-                // Pagination
-                pageIndex ??= 1;
-                int pageSize = 10;
-                int totalRecords = await query.CountAsync();
-                int totalPages = (int)Math.Ceiling((decimal)totalRecords / pageSize);
+        //        // Pagination
+        //        pageIndex ??= 1;
+        //        int pageSize = 10;
+        //        int totalRecords = await query.CountAsync();
+        //        int totalPages = (int)Math.Ceiling((decimal)totalRecords / pageSize);
 
-                var faults = await query
-                    .Skip((pageIndex.Value - 1) * pageSize)
-                    .Take(pageSize)
-                    .Select(f => new FridgeFaultViewModel
-                    {
-                        Id = f.Id,
-                        FridgeId = f.FridgeId,
-                        FridgeModel = f.Fridge.Model,
-                        FridgeSerialNumber = f.Fridge.SerialNumber,
-                        ReportedByUserId = f.ReportedByUserId,
-                        ReportedByFullName = f.ReportedBy.FullName,
-                        AssignedTechnicianId = f.AssignedTechnicianId,
-                        AssignedTechnicianName = f.AssignedTechnician != null ? f.AssignedTechnician.FullName : null,
-                        DateReported = f.DateReported,
-                        FaultDescription = f.FaultDescription,
-                        Status = f.Status,
-                        ResolutionDate = f.ResolutionDate
-                    })
-                    .ToListAsync();
+        //        var faults = await query
+        //            .Skip((pageIndex.Value - 1) * pageSize)
+        //            .Take(pageSize)
+        //            .Select(f => new FridgeFaultViewModel
+        //            {
+        //                Id = f.Id,
+        //                FridgeId = f.FridgeId,
+        //                FridgeModel = f.Fridge.Model,
+        //                FridgeSerialNumber = f.Fridge.SerialNumber,
+        //                ReportedByUserId = f.ReportedByUserId,
+        //                ReportedByFullName = f.ReportedBy.FullName,
+        //                AssignedTechnicianId = f.AssignedTechnicianId,
+        //                AssignedTechnicianName = f.AssignedTechnician != null ? f.AssignedTechnician.FullName : null,
+        //                DateReported = f.DateReported,
+        //                FaultDescription = f.FaultDescription,
+        //                Status = f.Status,
+        //                ResolutionDate = f.ResolutionDate
+        //            })
+        //            .ToListAsync();
 
-                ViewData["currentPage"] = pageIndex.Value;
-                ViewData["totalPages"] = totalPages;
-                ViewData["search"] = search ?? "";
+        //        ViewData["currentPage"] = pageIndex.Value;
+        //        ViewData["totalPages"] = totalPages;
+        //        ViewData["search"] = search ?? "";
 
-                // Load all fridges for dropdown
-                var fridges = await _context.FridgeAllocations
-                    .Include(fa => fa.Fridge)
-                    .Where(fa => fa.CustomerId == customer.Id &&
-                                 (fa.DeallocationDate == null || fa.DeallocationDate > DateTime.Now))
-                    .Select(fa => new
-                    {
-                        Id = fa.Fridge.Id,
-                        Name = $"{fa.Fridge.Model} - {fa.Fridge.SerialNumber}"
-                    })
-                    .ToListAsync();
+        //        // Load all fridges for dropdown
+        //        var fridges = await _context.FridgeAllocations
+        //            .Include(fa => fa.Fridge)
+        //            .Where(fa => fa.CustomerId == customer.Id &&
+        //                         (fa.DeallocationDate == null || fa.DeallocationDate > DateTime.Now))
+        //            .Select(fa => new
+        //            {
+        //                Id = fa.Fridge.Id,
+        //                Name = $"{fa.Fridge.Model} - {fa.Fridge.SerialNumber}"
+        //            })
+        //            .ToListAsync();
 
-                ViewBag.Fridges = new SelectList(fridges, "Id", "Name");
+        //        ViewBag.Fridges = new SelectList(fridges, "Id", "Name");
 
-                return View(faults);
-            }
-            catch (Exception)
-            {
-                TempData["ErrorMessage"] = $"Error loading logged faults";
-                return RedirectToAction("LoggedFault");
-            }
-        }
+        //        return View(faults);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        TempData["ErrorMessage"] = $"Error loading logged faults";
+        //        return RedirectToAction("LoggedFault");
+        //    }
+        //}
 
-        [HttpGet]
-        public async Task<IActionResult> LogFault()
-        {
-            try
-            {
-                // 1️⃣ Get the currently logged-in user
-                var user = await _userManager.GetUserAsync(User);
-                if (user == null)
-                {
-                    TempData["ErrorMessage"] = "Unable to identify the current user.";
-                    return RedirectToAction(nameof(LoggedFault));
-                }
+        //[HttpGet]
+        //public async Task<IActionResult> LogFault()
+        //{
+        //    try
+        //    {
+        //        // 1️⃣ Get the currently logged-in user
+        //        var user = await _userManager.GetUserAsync(User);
+        //        if (user == null)
+        //        {
+        //            TempData["ErrorMessage"] = "Unable to identify the current user.";
+        //            return RedirectToAction(nameof(LoggedFault));
+        //        }
 
-                // 2️⃣ Find the associated Customer record
-                var customer = await _context.Customers
-                    .FirstOrDefaultAsync(c => c.UserId == user.Id);
+        //        // 2️⃣ Find the associated Customer record
+        //        var customer = await _context.Customers
+        //            .FirstOrDefaultAsync(c => c.UserId == user.Id);
 
-                if (customer == null)
-                {
-                    TempData["ErrorMessage"] = "No customer profile is linked to your account.";
-                    return RedirectToAction(nameof(LoggedFault));
-                }
+        //        if (customer == null)
+        //        {
+        //            TempData["ErrorMessage"] = "No customer profile is linked to your account.";
+        //            return RedirectToAction(nameof(LoggedFault));
+        //        }
 
-                // 3️⃣ Load only fridges allocated to this customer
-                var fridges = await _context.FridgeAllocations
-                    .Include(fa => fa.Fridge)
-                    .Where(fa => fa.CustomerId == customer.Id &&
-                                 (fa.DeallocationDate == null || fa.DeallocationDate > DateTime.Now))
-                    .Select(fa => new
-                    {
-                        Id = fa.Fridge.Id,
-                        Name = $"{fa.Fridge.Model} - {fa.Fridge.SerialNumber}"
-                    })
-                    .ToListAsync();
+        //        // 3️⃣ Load only fridges allocated to this customer
+        //        var fridges = await _context.FridgeAllocations
+        //            .Include(fa => fa.Fridge)
+        //            .Where(fa => fa.CustomerId == customer.Id &&
+        //                         (fa.DeallocationDate == null || fa.DeallocationDate > DateTime.Now))
+        //            .Select(fa => new
+        //            {
+        //                Id = fa.Fridge.Id,
+        //                Name = $"{fa.Fridge.Model} - {fa.Fridge.SerialNumber}"
+        //            })
+        //            .ToListAsync();
 
-                ViewBag.Fridges = new SelectList(fridges, "Id", "Name");
+        //        ViewBag.Fridges = new SelectList(fridges, "Id", "Name");
 
-                return View(new CreateFridgeFaultViewModel());
-            }
-            catch (Exception)
-            {
-                TempData["ErrorMessage"] = "Error loading form.";
-                return RedirectToAction(nameof(LoggedFault));
-            }
-        }
-
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> LogFault(CreateFridgeFaultViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                TempData["ErrorMessage"] = "Please correct the errors in the form.";
-                return View(model);
-            }
-
-            try
-            {
-                var user = await _userManager.GetUserAsync(User);
-                var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == user.Id);
-
-                if (customer == null)
-                {
-                    TempData["ErrorMessage"] = "No customer profile is linked to your account.";
-                    return RedirectToAction(nameof(LoggedFault));
-                }
-
-                // 1️⃣ Ensure the selected fridge belongs to this customer
-                var allocation = await _context.FridgeAllocations
-                    .Include(a => a.Fridge)
-                    .FirstOrDefaultAsync(a => a.FridgeId == model.FridgeId && a.CustomerId == customer.Id);
-
-                if (allocation == null)
-                {
-                    TempData["ErrorMessage"] = "Invalid fridge selection. You can only log faults for your allocated fridges.";
-                    return RedirectToAction(nameof(LogFault));
-                }
-
-                // 2️⃣ Create the fridge fault
-                var fault = new FridgeFault
-                {
-                    FridgeId = model.FridgeId,
-                    ReportedByUserId = user.Id,
-                    DateReported = DateTime.Now,
-                    FaultDescription = model.FaultDescription,
-                    Status = FaultStatus.Open
-                };
-
-                _context.FridgeFaults.Add(fault);
-                await _context.SaveChangesAsync();
-
-                // 3️⃣ Audit trail
-                var systemAudit = new AuditTrail
-                {
-                    ChangeType = "Create",
-                    EntityName = "FridgeFault",
-                    EntityId = fault.Id,
-                    ChangedByUserId = user.Id,
-                    ChangeDate = DateTime.Now,
-                    ChangeDetails = $"Fridge fault logged with ID {fault.Id} by user {user.FullName}."
-                };
-                _context.AuditTrails.Add(systemAudit);
-                await _context.SaveChangesAsync();
-
-                // 4️⃣ Notify all admins
-                var admins = await _userManager.GetUsersInRoleAsync("Admin");
-                foreach (var admin in admins)
-                {
-                    var notification = new Notification
-                    {
-                        RecipientUserId = admin.Id,
-                        Title = "New Fridge Fault Reported",
-                        Message = $"User '{user.FullName}' reported a new fridge fault (ID {fault.Id}).",
-                        CreatedAt = DateTime.Now,
-                        IsRead = false,
-                        TargetController = "AdminFaults",
-                        TargetAction = "Index"
-                    };
-                    _context.Notifications.Add(notification);
-                }
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = "Fridge fault logged successfully!";
-                return RedirectToAction(nameof(LoggedFault));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                TempData["ErrorMessage"] = "Error logging fridge fault. Please try again.";
-                return View(model);
-            }
-        }
+        //        return View(new CreateFridgeFaultViewModel());
+        //    }
+        //    catch (Exception)
+        //    {
+        //        TempData["ErrorMessage"] = "Error loading form.";
+        //        return RedirectToAction(nameof(LoggedFault));
+        //    }
+        //}
 
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditFault(CustomerEditFridgeFaultViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                TempData["ErrorMessage"] = "Please correct the errors in the form.";
-                return RedirectToAction(nameof(LoggedFault));
-            }
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> LogFault(CreateFridgeFaultViewModel model)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        TempData["ErrorMessage"] = "Please correct the errors in the form.";
+        //        return View(model);
+        //    }
 
-            try
-            {
-                var user = await _userManager.GetUserAsync(User);
-                var fault = await _context.FridgeFaults.FindAsync(model.Id);
+        //    try
+        //    {
+        //        var user = await _userManager.GetUserAsync(User);
+        //        var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == user.Id);
 
-                if (fault == null)
-                {
-                    TempData["ErrorMessage"] = "Fridge fault not found.";
-                    return RedirectToAction(nameof(LoggedFault));
-                }
+        //        if (customer == null)
+        //        {
+        //            TempData["ErrorMessage"] = "No customer profile is linked to your account.";
+        //            return RedirectToAction(nameof(LoggedFault));
+        //        }
 
-                // Update only allowed fields
-                fault.FridgeId = model.FridgeId;
-                fault.FaultDescription = model.FaultDescription;
+        //        // 1️⃣ Ensure the selected fridge belongs to this customer
+        //        var allocation = await _context.FridgeAllocations
+        //            .Include(a => a.Fridge)
+        //            .FirstOrDefaultAsync(a => a.FridgeId == model.FridgeId && a.CustomerId == customer.Id);
 
-                await _context.SaveChangesAsync();
+        //        if (allocation == null)
+        //        {
+        //            TempData["ErrorMessage"] = "Invalid fridge selection. You can only log faults for your allocated fridges.";
+        //            return RedirectToAction(nameof(LogFault));
+        //        }
 
-                // Audit trail
-                var audit = new AuditTrail
-                {
-                    EntityName = "FridgeFault",
-                    EntityId = fault.Id,
-                    ChangedByUserId = user.Id,
-                    ChangeType = "Update",
-                    ChangeDate = DateTime.Now,
-                    ChangeDetails = $"Customer '{user.FullName}' updated Fridge Fault ID {fault.Id}."
-                };
-                _context.AuditTrails.Add(audit);
-                await _context.SaveChangesAsync();
+        //        // 2️⃣ Create the fridge fault
+        //        var fault = new FridgeFault
+        //        {
+        //            FridgeId = model.FridgeId,
+        //            ReportedByUserId = user.Id,
+        //            DateReported = DateTime.Now,
+        //            FaultDescription = model.FaultDescription,
+        //            Status = FaultStatus.Open
+        //        };
 
-                // Notification to Admin
-                var admin = await _userManager.GetUsersInRoleAsync("Admin");
-                foreach (var a in admin)
-                {
-                    _context.Notifications.Add(new Notification
-                    {
-                        RecipientUserId = a.Id,
-                        Title = "Fridge Fault Updated",
-                        Message = $"Fridge Fault ID {fault.Id} was updated by Customer '{user.FullName}'.",
-                        CreatedAt = DateTime.UtcNow,
-                        IsRead = false,
-                        TargetController = "AdminFaults",
-                        TargetAction = "LoggedFault"
-                    });
-                }
-                await _context.SaveChangesAsync();
+        //        _context.FridgeFaults.Add(fault);
+        //        await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "Fridge fault updated successfully!";
-            }
-            catch
-            {
-                TempData["ErrorMessage"] = "Error updating fridge fault.";
-            }
+        //        // 3️⃣ Audit trail
+        //        var systemAudit = new AuditTrail
+        //        {
+        //            ChangeType = "Create",
+        //            EntityName = "FridgeFault",
+        //            EntityId = fault.Id,
+        //            ChangedByUserId = user.Id,
+        //            ChangeDate = DateTime.Now,
+        //            ChangeDetails = $"Fridge fault logged with ID {fault.Id} by user {user.FullName}."
+        //        };
+        //        _context.AuditTrails.Add(systemAudit);
+        //        await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(LoggedFault));
-        }
+        //        // 4️⃣ Notify all admins
+        //        var admins = await _userManager.GetUsersInRoleAsync("Admin");
+        //        foreach (var admin in admins)
+        //        {
+        //            var notification = new Notification
+        //            {
+        //                RecipientUserId = admin.Id,
+        //                Title = "New Fridge Fault Reported",
+        //                Message = $"User '{user.FullName}' reported a new fridge fault (ID {fault.Id}).",
+        //                CreatedAt = DateTime.Now,
+        //                IsRead = false,
+        //                TargetController = "AdminFaults",
+        //                TargetAction = "Index"
+        //            };
+        //            _context.Notifications.Add(notification);
+        //        }
+        //        await _context.SaveChangesAsync();
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            try
-            {
-                var user = await _userManager.GetUserAsync(User);
-                var fault = await _context.FridgeFaults.FindAsync(id);
-
-                if (fault == null)
-                {
-                    TempData["ErrorMessage"] = "Fridge fault not found.";
-                    return RedirectToAction(nameof(LoggedFault));
-                }
-
-                // Soft delete by setting status to Cancelled
-                fault.Status = FaultStatus.Cancelled;
-
-                // Update fault
-                _context.FridgeFaults.Update(fault);
-
-                // Create audit trail
-                var audit = new AuditTrail
-                {
-                    EntityName = "FridgeFault",
-                    EntityId = fault.Id,
-                    ChangedByUserId = user.Id,
-                    ChangeType = "Delete",
-                    ChangeDate = DateTime.Now,
-                    ChangeDetails = $"Fridge fault ID {fault.Id} was cancelled by Customer '{user.FullName}'."
-                };
-                _context.AuditTrails.Add(audit);
-
-                // Notify all admins
-                var admins = await _userManager.GetUsersInRoleAsync("Admin");
-                foreach (var admin in admins)
-                {
-                    _context.Notifications.Add(new Notification
-                    {
-                        RecipientUserId = admin.Id,
-                        Title = "Fridge Fault Cancelled",
-                        Message = $"Fridge fault ID {fault.Id} was cancelled by Customer '{user.FullName}'.",
-                        CreatedAt = DateTime.UtcNow,
-                        IsRead = false,
-                        TargetController = "AdminFaults",
-                        TargetAction = "LoggedFault"
-                    });
-                }
-
-                // Save all changes in one transaction
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = "Fridge fault has been cancelled successfully!";
-            }
-            catch (Exception)
-            {
-                TempData["ErrorMessage"] = "Error cancelling fridge fault.";
-            }
-
-            return RedirectToAction(nameof(LoggedFault));
-        }
-#endregion
-
-        #region Checkout Logic
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Checkout([FromBody] List<RentalViewModel> cartItems)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Json(new { success = false, message = "User not found." });
-
-            if (cartItems == null || !cartItems.Any())
-                return Json(new { success = false, message = "Your cart is empty." });
-
-            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == user.Id);
-            if (customer == null)
-                return Json(new { success = false, message = "Customer profile not found." });
-
-            if (customer.Status != CustomerStatus.Active)
-                return Json(new { success = false, message = "Your account is not verified. Please wait for verification before making rental requests." });
+        //        TempData["SuccessMessage"] = "Fridge fault logged successfully!";
+        //        return RedirectToAction(nameof(LoggedFault));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine(ex.Message);
+        //        TempData["ErrorMessage"] = "Error logging fridge fault. Please try again.";
+        //        return View(model);
+        //    }
+        //}
 
 
-            var rentalsToSave = cartItems.Select(item => new RentalRequest
-            {
-                FridgeId = item.Id,
-                Quantity = item.Quantity,
-                Status = "Pending",
-                RequestedByUserId = user.Id,
-                CreatedAt = DateTime.UtcNow,
-                IsPaid = false
-            }).ToList();
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> EditFault(CustomerEditFridgeFaultViewModel model)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        TempData["ErrorMessage"] = "Please correct the errors in the form.";
+        //        return RedirectToAction(nameof(LoggedFault));
+        //    }
 
-            _context.RentalRequests.AddRange(rentalsToSave);
-            await _context.SaveChangesAsync();
+        //    try
+        //    {
+        //        var user = await _userManager.GetUserAsync(User);
+        //        var fault = await _context.FridgeFaults.FindAsync(model.Id);
 
+        //        if (fault == null)
+        //        {
+        //            TempData["ErrorMessage"] = "Fridge fault not found.";
+        //            return RedirectToAction(nameof(LoggedFault));
+        //        }
 
-            var rentalIds = rentalsToSave.Select(r => r.Id).ToList();
+        //        // Update only allowed fields
+        //        fault.FridgeId = model.FridgeId;
+        //        fault.FaultDescription = model.FaultDescription;
 
-            var redirectUrl = Url.Action("PayLater", new { rentalIds = string.Join(",", rentalIds) });
+        //        await _context.SaveChangesAsync();
 
-            return Json(new
-            {
-                success = true,
-                message = "Rental request submitted! You can pay later if you want.",
-                redirectUrl
-            });
-        }
+        //        // Audit trail
+        //        var audit = new AuditTrail
+        //        {
+        //            EntityName = "FridgeFault",
+        //            EntityId = fault.Id,
+        //            ChangedByUserId = user.Id,
+        //            ChangeType = "Update",
+        //            ChangeDate = DateTime.Now,
+        //            ChangeDetails = $"Customer '{user.FullName}' updated Fridge Fault ID {fault.Id}."
+        //        };
+        //        _context.AuditTrails.Add(audit);
+        //        await _context.SaveChangesAsync();
+
+        //        // Notification to Admin
+        //        var admin = await _userManager.GetUsersInRoleAsync("Admin");
+        //        foreach (var a in admin)
+        //        {
+        //            _context.Notifications.Add(new Notification
+        //            {
+        //                RecipientUserId = a.Id,
+        //                Title = "Fridge Fault Updated",
+        //                Message = $"Fridge Fault ID {fault.Id} was updated by Customer '{user.FullName}'.",
+        //                CreatedAt = DateTime.UtcNow,
+        //                IsRead = false,
+        //                TargetController = "AdminFaults",
+        //                TargetAction = "LoggedFault"
+        //            });
+        //        }
+        //        await _context.SaveChangesAsync();
+
+        //        TempData["SuccessMessage"] = "Fridge fault updated successfully!";
+        //    }
+        //    catch
+        //    {
+        //        TempData["ErrorMessage"] = "Error updating fridge fault.";
+        //    }
+
+        //    return RedirectToAction(nameof(LoggedFault));
+        //}
+
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> DeleteConfirmed(int id)
+        //{
+        //    try
+        //    {
+        //        var user = await _userManager.GetUserAsync(User);
+        //        var fault = await _context.FridgeFaults.FindAsync(id);
+
+        //        if (fault == null)
+        //        {
+        //            TempData["ErrorMessage"] = "Fridge fault not found.";
+        //            return RedirectToAction(nameof(LoggedFault));
+        //        }
+
+        //        // Soft delete by setting status to Cancelled
+        //        fault.Status = FaultStatus.Cancelled;
+
+        //        // Update fault
+        //        _context.FridgeFaults.Update(fault);
+
+        //        // Create audit trail
+        //        var audit = new AuditTrail
+        //        {
+        //            EntityName = "FridgeFault",
+        //            EntityId = fault.Id,
+        //            ChangedByUserId = user.Id,
+        //            ChangeType = "Delete",
+        //            ChangeDate = DateTime.Now,
+        //            ChangeDetails = $"Fridge fault ID {fault.Id} was cancelled by Customer '{user.FullName}'."
+        //        };
+        //        _context.AuditTrails.Add(audit);
+
+        //        // Notify all admins
+        //        var admins = await _userManager.GetUsersInRoleAsync("Admin");
+        //        foreach (var admin in admins)
+        //        {
+        //            _context.Notifications.Add(new Notification
+        //            {
+        //                RecipientUserId = admin.Id,
+        //                Title = "Fridge Fault Cancelled",
+        //                Message = $"Fridge fault ID {fault.Id} was cancelled by Customer '{user.FullName}'.",
+        //                CreatedAt = DateTime.UtcNow,
+        //                IsRead = false,
+        //                TargetController = "AdminFaults",
+        //                TargetAction = "LoggedFault"
+        //            });
+        //        }
+
+        //        // Save all changes in one transaction
+        //        await _context.SaveChangesAsync();
+
+        //        TempData["SuccessMessage"] = "Fridge fault has been cancelled successfully!";
+        //    }
+        //    catch (Exception)
+        //    {
+        //        TempData["ErrorMessage"] = "Error cancelling fridge fault.";
+        //    }
+
+        //    return RedirectToAction(nameof(LoggedFault));
+        //}
         #endregion
 
-        #region Mock Payment Page
-        [HttpGet]
-        public IActionResult Payment(string rentalIds)
-        {
-            if (string.IsNullOrEmpty(rentalIds))
-                return RedirectToAction("Rentals");
+        //#region Checkout Logic
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Checkout([FromBody] List<RentalViewModel> cartItems)
+        //{
+        //    var user = await _userManager.GetUserAsync(User);
+        //    if (user == null)
+        //        return Json(new { success = false, message = "User not found." });
 
-            ViewBag.RentalIds = rentalIds;
-            return View();
-        }
-        #endregion
+        //    if (cartItems == null || !cartItems.Any())
+        //        return Json(new { success = false, message = "Your cart is empty." });
 
-        #region Confirm Payment
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmPayment(string rentalIds)
-        {
-            if (string.IsNullOrEmpty(rentalIds))
-                return RedirectToAction("Rentals");
+        //    var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == user.Id);
+        //    if (customer == null)
+        //        return Json(new { success = false, message = "Customer profile not found." });
 
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return RedirectToAction("Rentals");
-
-            var ids = rentalIds.Split(',')
-                               .Where(id => int.TryParse(id, out _))
-                               .Select(int.Parse)
-                               .ToList();
-
-            var rentals = await _context.RentalRequests
-                .Where(r => ids.Contains(r.Id) && r.RequestedByUserId == user.Id)
-                .ToListAsync();
-
-            if (!rentals.Any())
-                return RedirectToAction("Rentals");
-
-            foreach (var rental in rentals)
-            {
-
-                if (!rental.IsPaid)
-                {
-                    rental.IsPaid = true;
-                    rental.Status = "Awaiting Approval";
-                    rental.UpdatedAt = DateTime.UtcNow;
-                }
-            }
-
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("PaymentSuccess");
-        }
-        #endregion
-
-        #region Payment Success
-        public IActionResult PaymentSuccess(string rentalIds = "")
-        {
-            ViewBag.RentalIds = rentalIds.Split(',')
-                                          .Where(id => int.TryParse(id, out _))
-                                          .Select(int.Parse)
-                                          .ToList();
-            return View();
-        }
-        #endregion
-
-        #region Pay Later
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PayLater([FromBody] dynamic data)
-        {
-            if (data == null || data.rentalId == null)
-                return Json(new { success = false, message = "Invalid request." });
-
-            int rentalId = (int)data.rentalId;
-
-            var rental = await _context.RentalRequests.FirstOrDefaultAsync(r => r.Id == rentalId);
-            if (rental == null)
-                return Json(new { success = false, message = "Rental not found." });
-
-            if (rental.IsPaid)
-                return Json(new { success = false, message = "This rental is already paid." });
-
-            rental.Status = "Pay Later";
-            rental.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Rental marked as Pay Later." });
-        }
-        #endregion
+        //    if (customer.Status != CustomerStatus.Active)
+        //        return Json(new { success = false, message = "Your account is not verified. Please wait for verification before making rental requests." });
 
 
-        #region Pay Later Page
+        //    var rentalsToSave = cartItems.Select(item => new RentalRequest
+        //    {
+        //        FridgeId = item.Id,
+        //        Quantity = item.Quantity,
+        //        Status = "Pending",
+        //        RequestedByUserId = user.Id,
+        //        CreatedAt = DateTime.UtcNow,
+        //        IsPaid = false
+        //    }).ToList();
 
-        [HttpGet]
-        public async Task<IActionResult> PayLater(string rentalIds)
-        {
-            if (string.IsNullOrEmpty(rentalIds))
-                return RedirectToAction("Rentals");
-
-            var ids = rentalIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                               .Select(id => int.TryParse(id.Trim(), out var val) ? val : (int?)null)
-                               .Where(id => id.HasValue)
-                               .Select(id => id.Value)
-                               .ToList();
-
-            var rentals = await _context.RentalRequests
-                .Include(r => r.Fridge)
-                .Where(r => ids.Contains(r.Id) && !r.IsPaid)
-                .ToListAsync();
-
-            if (!rentals.Any())
-                return RedirectToAction("Rentals");
-
-            return View(rentals);
-        }
-        #endregion
-
-        #region Confirm Pay Later 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmPayLater(string rentalIds)
-        {
-            if (string.IsNullOrEmpty(rentalIds))
-                return RedirectToAction("Rentals");
-
-            var ids = rentalIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                               .Select(id => int.TryParse(id.Trim(), out var val) ? val : (int?)null)
-                               .Where(id => id.HasValue)
-                               .Select(id => id.Value)
-                               .ToList();
-
-            if (!ids.Any())
-                return RedirectToAction("Rentals");
-
-            var rentals = await _context.RentalRequests
-                .Where(r => ids.Contains(r.Id))
-                .ToListAsync();
-
-            foreach (var rental in rentals)
-            {
-                rental.IsPaid = false;
-                rental.Status = "Pay Later Requested";
-                rental.UpdatedAt = DateTime.UtcNow;
-            }
-
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Rentals are now marked as 'Pay Later'. You will be notified once they are approved.";
-            return RedirectToAction("MyRentals");
-        }
-        #endregion
-
-        #region Pay Single Rental
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PayRental(int id)
-        {
-            var rental = await _context.RentalRequests.FindAsync(id);
-            if (rental == null)
-                return Json(new { success = false, message = "Rental not found." });
-
-            if (rental.IsPaid)
-                return Json(new { success = false, message = "Rental is already paid." });
-
-            rental.IsPaid = true;
-            rental.Status = "Awaiting Approval";
-            rental.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Payment successful!" });
-        }
-        #endregion
+        //    _context.RentalRequests.AddRange(rentalsToSave);
+        //    await _context.SaveChangesAsync();
 
 
-        #region Fridge more info
-        public async Task<IActionResult> FridgeMoreInfo(int id)
-        {
-            var fridge = await _context.Fridges
-                .Include(f => f.Supplier)
-                .Include(f => f.Location)
-                .FirstOrDefaultAsync(f => f.Id == id);
+        //    var rentalIds = rentalsToSave.Select(r => r.Id).ToList();
 
-            if (fridge == null)
-                return NotFound();
+        //    var redirectUrl = Url.Action("PayLater", new { rentalIds = string.Join(",", rentalIds) });
 
-            return View("FridgeMoreInfo", fridge);
-        }
-        #endregion
+        //    return Json(new
+        //    {
+        //        success = true,
+        //        message = "Rental request submitted! You can pay later if you want.",
+        //        redirectUrl
+        //    });
+        //}
+        //#endregion
+
+        //#region Mock Payment Page
+        //[HttpGet]
+        //public IActionResult Payment(string rentalIds)
+        //{
+        //    if (string.IsNullOrEmpty(rentalIds))
+        //        return RedirectToAction("Rentals");
+
+        //    ViewBag.RentalIds = rentalIds;
+        //    return View();
+        //}
+        //#endregion
+
+        //#region Confirm Payment
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> ConfirmPayment(string rentalIds)
+        //{
+        //    if (string.IsNullOrEmpty(rentalIds))
+        //        return RedirectToAction("Rentals");
+
+        //    var user = await _userManager.GetUserAsync(User);
+        //    if (user == null)
+        //        return RedirectToAction("Rentals");
+
+        //    var ids = rentalIds.Split(',')
+        //                       .Where(id => int.TryParse(id, out _))
+        //                       .Select(int.Parse)
+        //                       .ToList();
+
+        //    var rentals = await _context.RentalRequests
+        //        .Where(r => ids.Contains(r.Id) && r.RequestedByUserId == user.Id)
+        //        .ToListAsync();
+
+        //    if (!rentals.Any())
+        //        return RedirectToAction("Rentals");
+
+        //    foreach (var rental in rentals)
+        //    {
+
+        //        if (!rental.IsPaid)
+        //        {
+        //            rental.IsPaid = true;
+        //            rental.Status = "Awaiting Approval";
+        //            rental.UpdatedAt = DateTime.UtcNow;
+        //        }
+        //    }
+
+        //    await _context.SaveChangesAsync();
+
+        //    return RedirectToAction("PaymentSuccess");
+        //}
+        //#endregion
+
+        //#region Payment Success
+        //public IActionResult PaymentSuccess(string rentalIds = "")
+        //{
+        //    ViewBag.RentalIds = rentalIds.Split(',')
+        //                                  .Where(id => int.TryParse(id, out _))
+        //                                  .Select(int.Parse)
+        //                                  .ToList();
+        //    return View();
+        //}
+        //#endregion
+
+        //#region Pay Later
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> PayLater([FromBody] dynamic data)
+        //{
+        //    if (data == null || data.rentalId == null)
+        //        return Json(new { success = false, message = "Invalid request." });
+
+        //    int rentalId = (int)data.rentalId;
+
+        //    var rental = await _context.RentalRequests.FirstOrDefaultAsync(r => r.Id == rentalId);
+        //    if (rental == null)
+        //        return Json(new { success = false, message = "Rental not found." });
+
+        //    if (rental.IsPaid)
+        //        return Json(new { success = false, message = "This rental is already paid." });
+
+        //    rental.Status = "Pay Later";
+        //    rental.UpdatedAt = DateTime.UtcNow;
+
+        //    await _context.SaveChangesAsync();
+
+        //    return Json(new { success = true, message = "Rental marked as Pay Later." });
+        //}
+        //#endregion
+
+
+        //#region Pay Later Page
+
+        //[HttpGet]
+        //public async Task<IActionResult> PayLater(string rentalIds)
+        //{
+        //    if (string.IsNullOrEmpty(rentalIds))
+        //        return RedirectToAction("Rentals");
+
+        //    var ids = rentalIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+        //                       .Select(id => int.TryParse(id.Trim(), out var val) ? val : (int?)null)
+        //                       .Where(id => id.HasValue)
+        //                       .Select(id => id.Value)
+        //                       .ToList();
+
+        //    var rentals = await _context.RentalRequests
+        //        .Include(r => r.Fridge)
+        //        .Where(r => ids.Contains(r.Id) && !r.IsPaid)
+        //        .ToListAsync();
+
+        //    if (!rentals.Any())
+        //        return RedirectToAction("Rentals");
+
+        //    return View(rentals);
+        //}
+        //#endregion
+
+        //#region Confirm Pay Later 
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> ConfirmPayLater(string rentalIds)
+        //{
+        //    if (string.IsNullOrEmpty(rentalIds))
+        //        return RedirectToAction("Rentals");
+
+        //    var ids = rentalIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+        //                       .Select(id => int.TryParse(id.Trim(), out var val) ? val : (int?)null)
+        //                       .Where(id => id.HasValue)
+        //                       .Select(id => id.Value)
+        //                       .ToList();
+
+        //    if (!ids.Any())
+        //        return RedirectToAction("Rentals");
+
+        //    var rentals = await _context.RentalRequests
+        //        .Where(r => ids.Contains(r.Id))
+        //        .ToListAsync();
+
+        //    foreach (var rental in rentals)
+        //    {
+        //        rental.IsPaid = false;
+        //        rental.Status = "Pay Later Requested";
+        //        rental.UpdatedAt = DateTime.UtcNow;
+        //    }
+
+        //    await _context.SaveChangesAsync();
+
+        //    TempData["SuccessMessage"] = "Rentals are now marked as 'Pay Later'. You will be notified once they are approved.";
+        //    return RedirectToAction("MyRentals");
+        //}
+        //#endregion
+
+        //#region Pay Single Rental
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> PayRental(int id)
+        //{
+        //    var rental = await _context.RentalRequests.FindAsync(id);
+        //    if (rental == null)
+        //        return Json(new { success = false, message = "Rental not found." });
+
+        //    if (rental.IsPaid)
+        //        return Json(new { success = false, message = "Rental is already paid." });
+
+        //    rental.IsPaid = true;
+        //    rental.Status = "Awaiting Approval";
+        //    rental.UpdatedAt = DateTime.UtcNow;
+
+        //    await _context.SaveChangesAsync();
+
+        //    return Json(new { success = true, message = "Payment successful!" });
+        //}
+        //#endregion
+
+
+        //#region Fridge more info
+        //public async Task<IActionResult> FridgeMoreInfo(int id)
+        //{
+        //    var fridge = await _context.Fridges
+        //        .Include(f => f.Supplier)
+        //        .Include(f => f.Location)
+        //        .FirstOrDefaultAsync(f => f.Id == id);
+
+        //    if (fridge == null)
+        //        return NotFound();
+
+        //    return View("FridgeMoreInfo", fridge);
+        //}
+        //#endregion
 
         #region Edit Profile
         [HttpGet]

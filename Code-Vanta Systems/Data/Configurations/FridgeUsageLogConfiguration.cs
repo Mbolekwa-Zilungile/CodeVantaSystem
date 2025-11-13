@@ -8,9 +8,10 @@ namespace Code_Vanta_Systems.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<FridgeUsageLog> builder)
         {
-            builder.HasOne(fu => fu.Fridge)
-                   .WithMany(f => f.UsageLogs)
-                   .HasForeignKey(fu => fu.FridgeId)
+            // CHANGE: Fridge -> FridgeUnit
+            builder.HasOne(ful => ful.FridgeUnit)
+                   .WithMany(fu => fu.UsageLogs)
+                   .HasForeignKey(ful => ful.FridgeUnitId) // CHANGE: FridgeId -> FridgeUnitId
                    .OnDelete(DeleteBehavior.Restrict);
         }
     }

@@ -8,9 +8,10 @@ namespace Code_Vanta_Systems.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<MaintenanceSchedule> builder)
         {
-            builder.HasOne(ms => ms.Fridge)
-                   .WithMany(f => f.MaintenanceSchedules)
-                   .HasForeignKey(ms => ms.FridgeId)
+            // CHANGE: Fridge -> FridgeUnit
+            builder.HasOne(ms => ms.FridgeUnit)
+                   .WithMany(fu => fu.MaintenanceSchedules)
+                   .HasForeignKey(ms => ms.FridgeUnitId) // CHANGE: FridgeId -> FridgeUnitId
                    .OnDelete(DeleteBehavior.Restrict);
         }
     }

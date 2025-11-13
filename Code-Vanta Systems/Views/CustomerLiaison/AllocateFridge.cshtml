@@ -2,30 +2,47 @@
 
 @{
     Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
-    ViewData["Title"] = "Allocate Fridge";
+    ViewData["Title"] = "Allocate Fridge Unit";
 }
 
-<div class="container mt-4">
-    <h3>Allocate Fridge to @ViewBag.CustomerName</h3>
+<div class="container py-4">
+    <h3 class="mb-4 text-primary">
+        <i class="bi bi-truck me-2"></i> Allocate Fridge Unit to <span class="text-success">@ViewBag.CustomerName</span>
+    </h3>
     <hr />
 
-    <form asp-action="AllocateFridge" method="post">
+    <form asp-action="AllocateFridge" method="post" class="card p-4 shadow-sm bg-light">
         <input type="hidden" asp-for="CustomerId" />
 
-        <div class="form-group">
-            <label for="FridgeId">Select Fridge</label>
-            <select asp-for="FridgeId" class="form-control" required>
-                <option value="">-- Select Available Fridge --</option>
-                @foreach (var fridge in ViewBag.Fridges)
+        <div class="mb-4">
+            <label asp-for="FridgeUnitId" class="form-label fw-semibold">Select Available Fridge Unit</label>
+            @* The asp-for has been updated to FridgeUnitId to match the new model *@
+            <select asp-for="FridgeUnitId" class="form-select form-control-lg" required>
+                <option value="">-- Select Available Fridge Unit (S/N & Model) --</option>
+                @if (ViewBag.Fridges != null)
                 {
-                    <option value="@fridge.Id">@fridge.SerialNumber (@fridge.ModelName)</option>
+                    @* Assuming ViewBag.Fridges contains objects with Id, SerialNumber, and ModelName properties *@
+                    @foreach (var unit in ViewBag.Fridges)
+                    {
+                        <option value="@unit.Id">S/N: @unit.SerialNumber (@unit.ModelName)</option>
+                    }
                 }
             </select>
+            @* Add validation message for the new field *@
+            <span asp-validation-for="FridgeUnitId" class="text-danger"></span>
         </div>
 
-        
-
-        <button type="submit" class="btn btn-primary mt-3">Allocate</button>
-        <a asp-action="ActiveCustomers" class="btn btn-secondary mt-3">Cancel</a>
+        <div class="mt-3 border-top pt-3">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-patch-check me-2"></i> Confirm Allocation
+            </button>
+            <a asp-action="ActiveCustomers" class="btn btn-secondary btn-lg ms-2">
+                <i class="bi bi-x-circle me-2"></i> Cancel
+            </a>
+        </div>
     </form>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

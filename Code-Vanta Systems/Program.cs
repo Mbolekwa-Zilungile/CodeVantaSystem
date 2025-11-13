@@ -1,7 +1,6 @@
 using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Services;
-using Code_Vanta_Systems.Services.Reports;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,8 +13,6 @@ QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<EmailService>();
 
-// Report Service
-builder.Services.AddScoped<IFaultReportService, FaultReportService>();
 
 
 // Configure Entity Framework and SQL Server

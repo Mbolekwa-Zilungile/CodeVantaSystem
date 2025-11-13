@@ -7,6 +7,7 @@
         Allocated,
         Operational,
         ReturnedToStock,
+        InWarehouse,
         InRepair,
         Retired
     }

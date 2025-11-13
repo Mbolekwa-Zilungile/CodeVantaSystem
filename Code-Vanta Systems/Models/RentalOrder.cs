@@ -1,10 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Code_Vanta_Systems.Models
 {
     public class RentalOrder
     {
         public int? Id { get; set; }
+        [Required]
+        public int CustomerId { get; set; }
+        public virtual Customer Customer { get; set; }
         public string CustomerName { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public string Status { get; set; } = "Pending";

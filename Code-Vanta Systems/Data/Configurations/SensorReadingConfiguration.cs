@@ -16,10 +16,11 @@ namespace Code_Vanta_Systems.Data.Configurations
             builder.Property(sr => sr.HumidityPercent)
                    .HasColumnType("decimal(4,2)");
 
-            // Relationship: SensorReading (Many) → Fridge (One)
-            builder.HasOne(sr => sr.Fridge)
-                   .WithMany(f => f.SensorReadings)
-                   .HasForeignKey(sr => sr.FridgeId)
+            // Relationship: SensorReading (Many) → FridgeUnit (One)
+            // CHANGE: Fridge -> FridgeUnit
+            builder.HasOne(sr => sr.FridgeUnit)
+                   .WithMany(fu => fu.SensorReadings) // CHANGE: f -> fu
+                   .HasForeignKey(sr => sr.FridgeUnitId) // CHANGE: FridgeId -> FridgeUnitId
                    .OnDelete(DeleteBehavior.Restrict);
         }
     }

@@ -28,5 +28,9 @@ namespace Code_Vanta_Systems.Models
 
         public string CreatedByUserId { get; set; } // Retained from FridgeAllocation.cs
         public virtual ApplicationUser CreatedBy { get; set; } // Retained from FridgeAllocation.cs
+
+        // FridgeAllocation.cs
+        public bool IsActive { get; set; } = true; // <--- ADD THIS LINE (if you prefer the bool property)
+                                               
     }
 }

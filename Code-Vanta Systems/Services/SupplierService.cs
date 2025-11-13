@@ -1,6 +1,9 @@
 ﻿using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Code_Vanta_Systems.Services
 {
@@ -16,7 +19,8 @@ namespace Code_Vanta_Systems.Services
         public async Task<IEnumerable<Supplier>> GetAllAsync()
         {
             return await _context.Suppliers
-                .Include(s => s.Fridges)
+                // 🔄 CHANGE: Now including the Supplier's catalogue (FridgeModels)
+                .Include(s => s.FridgeModels)
                 .Include(s => s.Quotations)
                 .ToListAsync();
         }
@@ -24,7 +28,8 @@ namespace Code_Vanta_Systems.Services
         public async Task<Supplier> GetByIdAsync(int id)
         {
             return await _context.Suppliers
-                .Include(s => s.Fridges)
+                // 🔄 CHANGE: Now including the Supplier's catalogue (FridgeModels)
+                .Include(s => s.FridgeModels)
                 .Include(s => s.Quotations)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
@@ -51,5 +56,4 @@ namespace Code_Vanta_Systems.Services
             }
         }
     }
-
 }

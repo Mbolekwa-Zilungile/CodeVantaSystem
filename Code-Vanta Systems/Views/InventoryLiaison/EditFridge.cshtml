@@ -1,13 +1,17 @@
-﻿@model Code_Vanta_Systems.ViewModels.CreateFridgeViewModel
+﻿@model Code_Vanta_Systems.ViewModels.InventoryLiaison.EditFridgeModelViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Code_Vanta_Systems.Models.Enums
+
 @{
     Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
-    ViewData["Title"] = "Edit Fridge";
+    ViewData["Title"] = "Edit Fridge Model";
+    var existingImageUrl = string.IsNullOrEmpty(Model.ExistingImageUrl) ? "/images/fridgemodels/placeholder.png" : Model.ExistingImageUrl;
 }
 
 <div class="container py-4">
 
-    <h2 class="mb-4 text-primary">
-        <i class="bi bi-pencil-square"></i> Edit Fridge
+    <h2 class="mb-4 text-warning">
+        <i class="bi bi-pencil-square"></i> Edit Fridge Model
     </h2>
 
     @if (TempData["SuccessMessage"] != null)
@@ -17,38 +21,33 @@
         </div>
     }
 
-    <form asp-action="EditFridge" method="post" enctype="multipart/form-data" class="border p-4 rounded bg-light shadow-sm">
+    <form asp-action="EditFridgeModel" method="post" enctype="multipart/form-data" class="border p-4 rounded bg-light shadow-sm">
 
         <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ExistingImageUrl" />
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
 
         <div class="row g-4">
 
             <div class="col-md-6">
-                <h5 class="mb-3"><i class="bi bi-box"></i> Fridge Information</h5>
+                <h5 class="mb-3"><i class="bi bi-box"></i> Model Details</h5>
 
                 <div class="mb-3">
-                    <label asp-for="Model" class="form-label"></label>
+                    <label asp-for="ModelName" class="form-label"></label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-box"></i></span>
-                        <input asp-for="Model" class="form-control" placeholder="Fridge Model" />
+                        <span class="input-group-text"><i class="bi bi-tag"></i></span>
+                        <input asp-for="ModelName" class="form-control" placeholder="Model Name (e.g., Slimline CC-100)" />
                     </div>
-                    <span asp-validation-for="Model" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="SerialNumber" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
-                        <input asp-for="SerialNumber" class="form-control" placeholder="Serial Number" />
-                    </div>
-                    <span asp-validation-for="SerialNumber" class="text-danger"></span>
+                    <span asp-validation-for="ModelName" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="Category" class="form-label"></label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-list-ul"></i></span>
-                        <select asp-for="Category" class="form-select" asp-items="Html.GetEnumSelectList<Code_Vanta_Systems.Models.Enums.FridgeCategory>()">
+                        <span class="input-group-text"><i class="bi bi-list-task"></i></span>
+                        <select asp-for="Category" class="form-select" asp-items="Html.GetEnumSelectList<FridgeCategory>()">
                             <option value="">-- Select Category --</option>
                         </select>
                     </div>
@@ -56,35 +55,10 @@
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Status" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-info-circle"></i></span>
-                        <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<Code_Vanta_Systems.Models.Enums.FridgeStatus>()">
-                            <option value="">-- Select Status --</option>
-                        </select>
-                    </div>
-                    <span asp-validation-for="Status" class="text-danger"></span>
-                </div>
-
-
-                <div class="mt-3 text-center">
-                    <img id="imagePreview"
-                         src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/fridges/placeholder.png" : Model.ImageUrl)"
-                         alt="Image Preview"
-                         class="img-fluid rounded shadow-sm"
-                         style="max-height:300px; border:1px solid #ccc; padding:5px;" />
-                </div>
-            </div>
-
-
-            <div class="col-md-6">
-                <h5 class="mb-3"><i class="bi bi-gear"></i> Inventory & Image</h5>
-
-                <div class="mb-3">
                     <label asp-for="SupplierId" class="form-label"></label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
-                        <select asp-for="SupplierId" class="form-select" asp-items="@(new SelectList(Model.Suppliers, "Id", "Name", Model.SupplierId))">
+                        <span class="input-group-text"><i class="bi bi-truck"></i></span>
+                        <select asp-for="SupplierId" class="form-select" asp-items="ViewBag.Suppliers">
                             <option value="">-- Select Supplier --</option>
                         </select>
                     </div>
@@ -92,49 +66,31 @@
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="LocationId" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
-                        <select asp-for="LocationId" class="form-select" asp-items="@(new SelectList(Model.Locations, "Id", "Name", Model.LocationId))">
-                            <option value="">-- Select Location --</option>
-                        </select>
-                    </div>
-                    <span asp-validation-for="LocationId" class="text-danger"></span>
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Detailed description of the model..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
+
+            </div>
+
+            <div class="col-md-6">
+                <h5 class="mb-3"><i class="bi bi-currency-dollar"></i> Pricing & Media</h5>
 
                 <div class="mb-3">
                     <label asp-for="RentalPricePerMonth" class="form-label"></label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-currency-dollar"></i></span>
-                        <input asp-for="RentalPricePerMonth" class="form-control"
-                               type="number" step="0.01" min="0" placeholder="Rental Price per Month (ZAR)" />
+                        <span class="input-group-text">R</span>
+                        <input asp-for="RentalPricePerMonth" type="number" step="0.01" class="form-control" placeholder="0.00" />
                     </div>
                     <span asp-validation-for="RentalPricePerMonth" class="text-danger"></span>
                 </div>
 
-
                 <div class="mb-3">
-                    <label asp-for="StockQuantity" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-stack"></i></span>
-                        <input asp-for="StockQuantity" class="form-control" placeholder="Stock Quantity" />
+                    <label asp-for="ImageFile" class="form-label">Model Image</label>
+                    <div class="text-center mb-3 border p-2 bg-white rounded">
+                        <img id="imagePreview" src="@existingImageUrl" class="img-fluid rounded" alt="Image Preview" style="max-height: 200px; object-fit: cover;" />
                     </div>
-                    <span asp-validation-for="StockQuantity" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="Description" class="form-label"></label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-card-text"></i></span>
-                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="Description"></textarea>
-                    </div>
-                    <span asp-validation-for="Description" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="ImageFile" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-image"></i></span>
                         <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" onchange="previewImage(event)" />
                     </div>
                     <span asp-validation-for="ImageFile" class="text-danger"></span>
@@ -144,8 +100,8 @@
         </div>
 
         <div class="mt-4">
-            <button type="submit" class="btn btn-success"><i class="bi bi-pencil-square"></i> Update Fridge</button>
-            <a asp-action="Index" class="btn btn-secondary ms-2"><i class="bi bi-x-circle"></i> Cancel</a>
+            <button type="submit" class="btn btn-success"><i class="bi bi-pencil-square"></i> Update Fridge Model</button>
+            <a asp-action="ModelList" class="btn btn-secondary ms-2"><i class="bi bi-x-circle"></i> Cancel</a>
         </div>
     </form>
 </div>
@@ -156,13 +112,16 @@
         function previewImage(event) {
             const input = event.target;
             const preview = document.getElementById('imagePreview');
+            // Use the ExistingImageUrl property if available, otherwise use a placeholder
+            const existingPath = '@Model.ExistingImageUrl';
+            const placeholder = '/images/fridgemodels/placeholder.png';
 
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 if (!file.type.startsWith('image/')) {
                     alert('Please select a valid image file.');
                     input.value = '';
-                    preview.src = '/images/fridges/placeholder.png';
+                    preview.src = existingPath || placeholder; // Revert to existing or placeholder
                     return;
                 }
                 const reader = new FileReader();
@@ -171,8 +130,21 @@
                 };
                 reader.readAsDataURL(file);
             } else {
-                preview.src = '@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/fridges/placeholder.png" : Model.ImageUrl)';
+                // If no new file is selected, ensure it displays the existing image (if any)
+                preview.src = existingPath || placeholder;
             }
         }
+
+        // Ensure initial display uses the existing image
+        document.addEventListener('DOMContentLoaded', function() {
+            const preview = document.getElementById('imagePreview');
+            const existingPath = '@Model.ExistingImageUrl';
+            const placeholder = '/images/fridgemodels/placeholder.png';
+            if (existingPath) {
+                preview.src = existingPath;
+            } else {
+                preview.src = placeholder;
+            }
+        });
     </script>
 }

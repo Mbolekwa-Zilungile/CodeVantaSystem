@@ -3,24 +3,28 @@ using Code_Vanta_Systems.Helper;
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
 using Code_Vanta_Systems.ViewModels;
+using Code_Vanta_Systems.ViewModels.InventoryLiaison; // Assuming specific ViewModels are here
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Drawing;
+using System.Reflection;
+using Microsoft.AspNetCore.Hosting; // Used for IWebHostEnvironment
 
 namespace Code_Vanta_Systems.Controllers
 {
     [Authorize(Roles = "Inventory Liaison")]
     public class InventoryLiaisonController : Controller
     {
-
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IWebHostEnvironment _environment;
+        // Placeholder: Assume ID 1 is the main warehouse location ID, or it's dynamically found.
+        private readonly string defaultWarehouseDescription = "Main Warehouse";
 
-        public InventoryLiaisonController(ApplicationDbContext context, 
+        public InventoryLiaisonController(ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
             IWebHostEnvironment environment)
         {
@@ -29,1031 +33,559 @@ namespace Code_Vanta_Systems.Controllers
             _environment = environment;
         }
 
-
-        #region Index / Dashboards With Filters
-
-        //public IActionResult Index(string searchModel, int? category, int? status, int? supplier, int? location)
-        //{
-        //    var allFridges = _context.Fridges.AsQueryable();
-
-        //    // Only active fridges
-        //    var fridges = allFridges.Where(f => !f.IsDeleted);
-
-        //    // Filter by search
-        //    if (!string.IsNullOrEmpty(searchModel))
-        //        fridges = fridges.Where(f => f.Model.Contains(searchModel));
-
-        //    // Filter by category (compare string enum)
-        //    if (category.HasValue)
-        //    {
-        //        var categoryString = ((FridgeCategory)category.Value).ToString();
-        //        fridges = fridges.Where(f => f.Category.ToString() == categoryString);
-        //    }
-
-        //    // Filter by status (compare string enum)
-        //    if (status.HasValue)
-        //    {
-        //        var statusString = ((FridgeStatus)status.Value).ToString();
-        //        fridges = fridges.Where(f => f.Status.ToString() == statusString);
-        //    }
-
-        //    if (supplier.HasValue)
-        //        fridges = fridges.Where(f => f.SupplierId == supplier.Value);
-
-        //    if (location.HasValue)
-        //        fridges = fridges.Where(f => f.LocationId == location.Value);
-
-        //    // Dropdowns
-        //    ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory))
-        //        .Cast<FridgeCategory>()
-        //        .Select(c => new SelectListItem { Value = ((int)c).ToString(), Text = c.ToString() })
-        //        .ToList();
-
-        //    ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
-        //        .Cast<FridgeStatus>()
-        //        .Select(s => new SelectListItem { Value = ((int)s).ToString(), Text = s.ToString() })
-        //        .ToList();
-
-        //    ViewBag.Suppliers = _context.Suppliers
-        //        .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name })
-        //        .ToList();
-
-        //    ViewBag.Locations = _context.Locations
-        //        .Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description })
-        //        .ToList();
-
-        //    // Counts
-        //    ViewBag.TotalFridges = allFridges.Count();
-        //    ViewBag.ActiveFridges = allFridges.Count(f => !f.IsDeleted);
-        //    ViewBag.DeletedFridges = allFridges.Count(f => f.IsDeleted);
-        //    ViewBag.AvailableFridges = allFridges.Count(f => f.Status == FridgeStatus.Available && !f.IsDeleted);
-        //    ViewBag.OutOfStockFridges = allFridges.Count(f => f.StockQuantity == 0 && !f.IsDeleted);
-        //    ViewBag.InRepairFridges = allFridges.Count(f => f.Status == FridgeStatus.InRepair && !f.IsDeleted);
-        //    ViewBag.RetiredFridges = allFridges.Count(f => f.Status == FridgeStatus.Retired && !f.IsDeleted);
-        //    ViewBag.TotalSuppliers = _context.Suppliers.Count();
-
-        //    // Map to ViewModel
-        //    var vmList = fridges.Select(f => new CreateFridgeViewModel
-        //    {
-        //        Id = f.Id,
-        //        Model = f.Model,
-        //        SerialNumber = f.SerialNumber,
-        //        Category = f.Category,
-        //        Status = f.Status,
-        //        SupplierId = f.SupplierId,
-        //        LocationId = f.LocationId,
-        //        RentalPricePerMonth = f.RentalPricePerMonth,
-        //        StockQuantity = f.StockQuantity,
-        //        Description = f.Description,
-        //        ImageUrl = f.ImageUrl
-        //    }).ToList();
-
-        //    return View(vmList);
-        //}
-
-        public IActionResult Index(string searchModel, int? category, int? status, int? supplier, int? location)
-        {
-            // Get all fridges
-            var allFridges = _context.Fridges.AsQueryable();
-
-            // Only non-deleted fridges for filtering
-            var fridges = allFridges.Where(f => !f.IsDeleted);
-
-            // Filters
-            if (!string.IsNullOrEmpty(searchModel))
-                fridges = fridges.Where(f => f.Model.Contains(searchModel));
-
-            if (category.HasValue)
-            {
-                var categoryString = ((FridgeCategory)category.Value).ToString();
-                fridges = fridges.Where(f => f.Category.ToString() == categoryString);
-            }
-
-            if (status.HasValue)
-            {
-                var statusString = ((FridgeStatus)status.Value).ToString();
-                fridges = fridges.Where(f => f.Status.ToString() == statusString);
-            }
-
-            if (supplier.HasValue)
-                fridges = fridges.Where(f => f.SupplierId == supplier.Value);
-
-            if (location.HasValue)
-                fridges = fridges.Where(f => f.LocationId == location.Value);
-
-            // Dropdown lists
-            ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory))
-                .Cast<FridgeCategory>()
-                .Select(c => new SelectListItem { Value = ((int)c).ToString(), Text = c.ToString() })
-                .ToList();
-
-            ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
-                .Cast<FridgeStatus>()
-                .Select(s => new SelectListItem { Value = ((int)s).ToString(), Text = s.ToString() })
-                .ToList();
-
-            ViewBag.Suppliers = _context.Suppliers
-                .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name })
-                .ToList();
-
-            ViewBag.Locations = _context.Locations
-                .Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description })
-                .ToList();
-
-            // Analytics counts
-            ViewBag.TotalFridges = allFridges.Count();
-            ViewBag.ActiveFridges = allFridges.Count(f => !f.IsDeleted);
-            ViewBag.DeletedFridges = allFridges.Count(f => f.IsDeleted);
-
-            ViewBag.TotalStock = allFridges.Sum(f => f.StockQuantity); // Sum of all stock
-            ViewBag.AvailableStock = allFridges
-                .Where(f => f.Status == FridgeStatus.Available && !f.IsDeleted)
-                .Sum(f => f.StockQuantity);
-            ViewBag.InRepairStock = allFridges
-                .Where(f => f.Status == FridgeStatus.InRepair && !f.IsDeleted)
-                .Sum(f => f.StockQuantity);
-            ViewBag.RetiredStock = allFridges
-                .Where(f => f.Status == FridgeStatus.Retired && !f.IsDeleted)
-                .Sum(f => f.StockQuantity);
-
-            ViewBag.OutOfStockFridges = allFridges.Count(f => f.StockQuantity == 0 && !f.IsDeleted);
-            ViewBag.TotalSuppliers = _context.Suppliers.Count();
-
-            // Map to view model
-            var vmList = fridges.Select(f => new CreateFridgeViewModel
-            {
-                Id = f.Id,
-                Model = f.Model,
-                SerialNumber = f.SerialNumber,
-                Category = f.Category,
-                Status = f.Status,
-                SupplierId = f.SupplierId,
-                //LocationId = f.LocationId,
-                RentalPricePerMonth = f.RentalPricePerMonth,
-                StockQuantity = f.StockQuantity,
-                Description = f.Description,
-                ImageUrl = f.ImageUrl
-            }).ToList();
-
-            return View(vmList);
-        }
-
-
-
-
-
-
-        #endregion
-
-
-
-
-
-        #region PURCHASE REQUESTS
-        // 🗂️ Display all purchase requests created by this liaison
-        public async Task<IActionResult> PurchaseRequests()
-        {
-            var PendingRequests = await _context.PurchaseRequests
-                .Include(pr => pr.RequestedBy)
-                .Include(pr => pr.RequestedItems)
-                .Where(pr => pr.Status == Code_Vanta_Systems.Models.Enums.RequestStatus.Pending)
-                .OrderByDescending(pr => pr.RequestDate)
-                .ToListAsync();
-
-            ViewBag.PendingCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Pending);
-            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Submitted);
-
-            ViewBag.RejectedRequests = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Rejected);
-
-            ViewBag.ApprovedRequestsCount = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Approved);
-            ViewBag.CompletedRequestsCount = await _context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Completed);
-            return View(PendingRequests);
-        }
-
-        public async Task<IActionResult> RejectedPurchaseRequests()
-        {
-            var purchaseRequests = await _context.PurchaseRequests
-               .Include(pr => pr.RequestedBy)
-               .Include(pr => pr.RequestedItems)
-               .Where(pr => pr.Status == RequestStatus.Rejected)
-               .OrderByDescending(pr => pr.RequestDate)
-               .ToListAsync();
-
-            ViewBag.PendingCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Pending);
-            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Submitted);
-
-            ViewBag.RejectedRequests = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Rejected);
-
-            ViewBag.ApprovedRequestsCount = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Approved);
-            ViewBag.CompletedRequestsCount = await _context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Completed);
-            return View(purchaseRequests);
-        }
-        public async Task<IActionResult> SubmitedPurchaseRequests()
-        {
-            var SubmitedRequests = await _context.PurchaseRequests
-               .Include(pr => pr.RequestedBy)
-               .Include(pr => pr.RequestedItems)
-               .Where(pr => pr.Status == Code_Vanta_Systems.Models.Enums.RequestStatus.Submitted)
-               .OrderByDescending(pr => pr.RequestDate)
-               .ToListAsync();
-
-            ViewBag.PendingCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Pending);
-            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Submitted);
-
-            ViewBag.RejectedRequests = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Rejected);
-
-            ViewBag.ApprovedRequestsCount = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Approved);
-            ViewBag.CompletedRequestsCount = await _context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Completed);
-            return View(SubmitedRequests);
-        }
-
-
-
+        #region Catalogue (FridgeModel) Management
 
         [HttpGet]
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> ModelList(string searchModel, int? category, int? supplier)
         {
-            // Load available fridges
-            var fridges = await _context.Fridges
-             .Where(f => !f.IsDeleted) // show all fridges, even 0 stock
-             .Select(f => new SelectListItem
-             {
-                 Value = f.Id.ToString(),
-                 Text = $"{f.Model} ({f.StockQuantity} in stock)"
-             })
-             .ToListAsync();
-
-
-            var model = new CreatePurchaseRequestViewModel
-            {
-                Items = new List<PurchaseRequestItemViewModel>
-        {
-            new PurchaseRequestItemViewModel { AvailableItems = fridges }
-        }
-            };
-
-            return View(model);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CreatePurchaseRequestViewModel model)
-        {
-            var user = await _userManager.GetUserAsync(User);
-
-            // Validate priority
-            if (model.Priority == null)
-            {
-                ModelState.AddModelError(nameof(model.Priority), "Priority is required.");
-            }
-
-            // Validate expected date
-            if (model.ExpectedDate.HasValue && model.ExpectedDate.Value.Date < DateTime.Now.Date)
-            {
-                ModelState.AddModelError("ExpectedDate", "Expected date cannot be in the past.");
-            }
-
-            // Validate fridge selection
-            if (model.Items == null || !model.Items.Any(i => i.FridgeId > 0))
-            {
-                ModelState.AddModelError("", "You must select at least one fridge.");
-            }
-
-            // Remove ModelState errors for FridgeModel fields
-            var keysToRemove = ModelState.Keys.Where(k => k.EndsWith("FridgeModel")).ToList();
-            foreach (var key in keysToRemove)
-            {
-                ModelState.Remove(key);
-            }
-
-            if (!ModelState.IsValid)
-            {
-                var allFridges = await _context.Fridges
-                    .Where(f => !f.IsDeleted)
-                    .Select(f => new SelectListItem
-                    {
-                        Value = f.Id.ToString(),
-                        Text = $"{f.Model} ({f.StockQuantity} in stock)"
-                    })
-                    .ToListAsync();
-
-                foreach (var item in model.Items)
-                {
-                    item.AvailableItems = allFridges;
-
-                    if (item.FridgeId > 0)
-                    {
-                        var fridge = await _context.Fridges.FirstOrDefaultAsync(f => f.Id == item.FridgeId);
-                        if (fridge != null)
-                        {
-                            item.FridgeModel = fridge.Model;
-                        }
-                    }
-                }
-
-                model.AvailableItems = allFridges;
-
-                return View(model);
-            }
-
-            // ---- Generate RequestNumber ----
-            var year = DateTime.Now.Year;
-            var lastRequest = await _context.PurchaseRequests
-                .Where(r => r.RequestDate.Year == year)
-                .OrderByDescending(r => r.Id)
-                .FirstOrDefaultAsync();
-
-            int nextNumber = 1;
-            if (lastRequest != null)
-            {
-                var lastNumStr = lastRequest.RequestNumber?.Split('-').Last();
-                if (int.TryParse(lastNumStr, out int lastNum))
-                {
-                    nextNumber = lastNum + 1;
-                }
-            }
-
-            var requestNumber = $"PR-{year}-{nextNumber:000}";
-
-            // Create PurchaseRequest
-            var request = new PurchaseRequest
-            {
-                RequestedByUserId = user.Id,
-                RequestDate = DateTime.Now,
-                ExpectedDate = model.ExpectedDate,
-                Priority = model.Priority,
-                Notes = model.Notes,
-                Status = RequestStatus.Submitted,
-                RequestNumber = requestNumber // <-- set generated number
-            };
-
-            _context.PurchaseRequests.Add(request);
-            await _context.SaveChangesAsync();
-
-            // Add request items
-            var fridgeIds = model.Items.Where(i => i.FridgeId > 0).Select(i => i.FridgeId).Distinct();
-            var fridgesDict = await _context.Fridges
-                .Where(f => fridgeIds.Contains(f.Id))
-                .ToDictionaryAsync(f => f.Id);
-
-            foreach (var item in model.Items.Where(i => i.FridgeId > 0))
-            {
-                if (fridgesDict.TryGetValue(item.FridgeId, out var fridge))
-                {
-                    var requestItem = new PurchaseRequestItem
-                    {
-                        PurchaseRequestId = request.Id,
-                        FridgeId = fridge.Id,
-                        ModelRequested = fridge.Model,
-                        Description = fridge.Description,
-                        Quantity = item.Quantity
-                    };
-
-                    _context.PurchaseRequestItems.Add(requestItem);
-                }
-            }
-
-            await _context.SaveChangesAsync();
-
-            // Notify Purchasing Manager
-            var purchasingManagers = await _userManager.GetUsersInRoleAsync("Purchasing Manager");
-            var liaisonUser = purchasingManagers.FirstOrDefault();
-
-            if (liaisonUser != null)
-            {
-                var notification = new Notification
-                {
-                    RecipientUserId = liaisonUser.Id,
-                    Title = "New Purchase Request Sent",
-                    Message = $"A new purchase request #{request.RequestNumber} was submitted by {User.Identity?.Name ?? "Unknown User"}.",
-                    CreatedAt = DateTime.UtcNow,
-                    IsRead = false,
-                    TargetController = "PurchasingManager",
-                    TargetAction = "PurchaseRequests"
-                };
-
-                _context.Notifications.Add(notification);
-                await _context.SaveChangesAsync();
-            }
-
-            TempData["Success"] = "Purchase request submitted successfully!";
-            return RedirectToAction(nameof(SubmitedPurchaseRequests));
-        }
-
-
-        public async Task<IActionResult> Details(int id)
-        {
-            var request = await _context.PurchaseRequests
-                         .Include(r => r.RequestedBy)
-                         .Include(r => r.RequestedItems)
-                         //.ThenInclude(i => i.ItemCatalog) 
-                         .FirstOrDefaultAsync(r => r.Id == id);
-
-            if (request == null) return NotFound();
-
-            return View(request);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> ReEditRequest(int id)
-        {
-            // 1. Fetch the existing Purchase Request and its line items
-            var request = await _context.PurchaseRequests
-                .Include(r => r.RequestedItems)
-                .FirstOrDefaultAsync(r => r.Id == id);
-
-            if (request == null)
-                return NotFound();
-
-            // 2. Get all active fridges for dropdown lists
-            var fridges = await _context.Fridges
-                 .Where(f => !f.IsDeleted)
-                 .Select(f => new SelectListItem
-                 {
-                     Value = f.Id.ToString(),
-                     Text = $"{f.Model} ({f.StockQuantity} in stock)"
-                 })
-                 .ToListAsync();
-            request.Notes = string.Empty;
-            // 3. Map the entity to the view model
-            var model = new EditPurchaseRequestViewModel
-            {
-                Id = request.Id,
-                ExpectedDate = request.ExpectedDate,
-                Priority = request.Priority,
-                Status = RequestStatus.Pending,
-                Notes = request.Notes,
-                Items = request.RequestedItems.Select(i => new PurchaseRequestItemViewModel
-                {
-                    PurchaseRequestItemId = i.Id,
-                    FridgeId = i.FridgeId,
-                    Quantity = i.Quantity,
-                    AvailableItems = fridges,
-                }).ToList()
-            };
-
-            model.Items.Add(new PurchaseRequestItemViewModel { AvailableItems = fridges });
-
-            ViewBag.Fridges = fridges;
-            return View(model);
-        }
-
-        // POST: Handle the form submission for editing
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ReEditRequest(EditPurchaseRequestViewModel model)//Reedit purchase request
-        {
-            var keysToRemove = ModelState.Keys.Where(k => k.EndsWith("FridgeModel")).ToList();
-            foreach (var key in keysToRemove)
-            {
-                ModelState.Remove(key);
-            } 
-            if (!ModelState.IsValid)
-            { 
-                var fridges = await _context.Fridges
-                     .Where(f => !f.IsDeleted)
-                     .Select(f => new SelectListItem
-                     {
-                         Value = f.Id.ToString(),
-                         Text = $"{f.Model} ({f.StockQuantity} in stock)"
-                     })
-                     .ToListAsync();
-
-                foreach (var item in model.Items)
-                    item.AvailableItems = fridges;
-
-                ViewBag.Fridges = fridges;
-                return View(model);
-            }
-
-            var request = await _context.PurchaseRequests
-                .Include(r => r.RequestedItems)
-                .FirstOrDefaultAsync(r => r.Id == model.Id);
-
-            if (request == null) return NotFound();
-
-            // 3. Update main request fields
-            request.ExpectedDate = model.ExpectedDate;
-            request.Priority = model.Priority;
-            request.Status = Code_Vanta_Systems.Models.Enums.RequestStatus.Pending; // Allows manager to potentially change status
-            request.Notes = model.Notes;
-
-            // 4. Manage line items (Delete, Update, Add)
-
-            // Identify which existing items were removed from the form
-            var itemIdsFromForm = model.Items
-                .Where(i => i.PurchaseRequestItemId.HasValue)
-                .Select(i => i.PurchaseRequestItemId.Value)
-                .ToList();
-            var itemsToRemove = request.RequestedItems
-                .Where(i => !itemIdsFromForm.Contains(i.Id))
-                .ToList();
-            _context.PurchaseRequestItems.RemoveRange(itemsToRemove);
-
-            // Process all items submitted in the form
-            foreach (var itemVm in model.Items.Where(i => i.FridgeId > 0 && i.Quantity >= 1))
-            {
-                // Fetch the details of the selected Fridge (needed for ModelRequested/Description)
-                var fridge = await _context.Fridges.FindAsync(itemVm.FridgeId);
-
-                if (fridge == null) continue;
-
-                if (itemVm.PurchaseRequestItemId.HasValue)
-                {
-                    // A. Update Existing Item
-                    var existingItem = request.RequestedItems.First(i => i.Id == itemVm.PurchaseRequestItemId.Value);
-
-                    existingItem.FridgeId = fridge.Id;
-                    existingItem.ModelRequested = fridge.Model;
-                    existingItem.Description = fridge.Description;
-                    existingItem.Quantity = itemVm.Quantity;
-                }
-                else
-                {
-                    // B. Add New Item
-                    var newItem = new PurchaseRequestItem
-                    {
-                        PurchaseRequestId = request.Id,
-                        FridgeId = fridge.Id,
-                        ModelRequested = fridge.Model,
-                        Description = fridge.Description,
-                        Quantity = itemVm.Quantity
-                    };
-                    _context.PurchaseRequestItems.Add(newItem);
-                }
-            }
-
-            // 5. Save all changes (Request updates, item removals, item updates, item additions)
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = $"Purchase request #{request.Id} updated successfully!";
-            return RedirectToAction("Details", new { id = request.Id });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendRequest(int id)
-        {
-            var request = await _context.PurchaseRequests
-                .Include(r => r.RequestedItems)
-                .FirstOrDefaultAsync(r => r.Id == id);
-
-            if (request == null) return NotFound();
-
-            // Only allow sending if status is not already Submitted
-            if (request.Status != Models.Enums.RequestStatus.Submitted)
-            {
-                request.Status = Models.Enums.RequestStatus.Submitted;
-                await _context.SaveChangesAsync();
-            }
-
-            // Notify the Purchasing Manager
-            var purchasemanager = await _userManager.GetUsersInRoleAsync("Purchasing Manager");
-            var liaisonUser = purchasemanager.FirstOrDefault();
-
-            if (liaisonUser != null)
-            {
-                var notification = new Notification
-                {
-                    RecipientUserId = liaisonUser.Id,
-                    Title = "New Purchase Request Sent",
-                    Message = $"Purchase request #{request.Id} was submitted by {User.Identity.Name}.",
-                    CreatedAt = DateTime.UtcNow,
-                    IsRead = false,
-                    TargetController = "PurchasingManager",
-                    TargetAction = "PurchaseRequests"
-                };
-
-                _context.Notifications.Add(notification);
-                await _context.SaveChangesAsync();
-            }
-
-            // ✅ Use TempData for success message
-            TempData["Success"] = $"Purchase request #{request.Id} sent successfully!";
-
-            // Redirect back to the same page (e.g., index or list)
-            return RedirectToAction("SubmitedPurchaseRequests");
-        }
-
-
-        #endregion
-
-
-        #region CREATE FRIDGE
-
-        [HttpGet]
-        public IActionResult CreateFridge()
-        {
-            var model = new CreateFridgeViewModel();
-            PopulateDropdowns(model);
-            return View(model);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateFridge(CreateFridgeViewModel vm)
-        {
-
-            PopulateDropdowns(vm);
-
-            if (!ModelState.IsValid)
-            {
-                DebuggerNotify("ModelState invalid.");
-                return View(vm);
-            }
-
-            string imageUrl = "/images/fridges/placeholder.png";
-
-            if (vm.ImageFile != null && vm.ImageFile.Length > 0)
-            {
-                DebuggerNotify($"Uploading image: {vm.ImageFile.FileName}");
-                string uploadsFolder = Path.Combine(_environment.WebRootPath, "images", "fridges");
-                Directory.CreateDirectory(uploadsFolder);
-
-                string uniqueFileName = Guid.NewGuid() + Path.GetExtension(vm.ImageFile.FileName);
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                await using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    await vm.ImageFile.CopyToAsync(fileStream);
-                }
-
-                imageUrl = "/images/fridges/" + uniqueFileName;
-                DebuggerNotify($"Image saved to: {imageUrl}");
-            }
-
-            var fridge = new Fridge
-            {
-                Model = vm.Model,
-                SerialNumber = vm.SerialNumber,
-                Category = vm.Category,
-                Status = vm.Status,
-                SupplierId = vm.SupplierId,
-                LocationId = vm.LocationId,
-                RentalPricePerMonth = vm.RentalPricePerMonth,
-                StockQuantity = vm.StockQuantity,
-                Description = vm.Description,
-                ImageUrl = imageUrl,
-                PurchaseDate = DateTime.Now,
-                IsDeleted = false
-            };
-
-            _context.Fridges.Add(fridge);
-
-            try
-            {
-                await _context.SaveChangesAsync();
-                DebuggerNotify("Fridge saved successfully.");
-            }
-            catch (Exception ex)
-            {
-                DebuggerNotify("Error saving fridge: " + ex.Message);
-                ModelState.AddModelError("", "Unable to save fridge. Check server logs.");
-                return View(vm);
-            }
-
-            TempData["SuccessMessage"] = "Fridge added successfully!";
-            return RedirectToAction(nameof(Index));
-        }
-
-
-        private void PopulateDropdowns(CreateFridgeViewModel vm)
-        {
-            vm.Suppliers = _context.Suppliers
-                .Select(s => new CreateFridgeViewModel.SupplierDropdownViewModel { Id = s.Id, Name = s.Name })
-                .ToList();
-
-            vm.Locations = _context.Locations
-                .Select(l => new CreateFridgeViewModel.LocationDropdownViewModel { Id = l.Id, Name = l.Description })
-                .ToList();
-        }
-
-
-        #endregion
-
-
-
-        #region EDIT FRIDGE
-
-
-        [HttpGet]
-        public async Task<IActionResult> EditFridge(int id)
-        {
-            var fridge = await _context.Fridges.FindAsync(id);
-            if (fridge == null) return NotFound();
-
-            var vm = new CreateFridgeViewModel
-            {
-                Id = fridge.Id,
-                Model = fridge.Model,
-                SerialNumber = fridge.SerialNumber,
-                Category = fridge.Category,
-                Status = fridge.Status,
-                SupplierId = fridge.SupplierId,
-                LocationId = fridge.LocationId,
-                RentalPricePerMonth = fridge.RentalPricePerMonth,
-                StockQuantity = fridge.StockQuantity,
-                Description = fridge.Description,
-                ImageUrl = fridge.ImageUrl
-            };
-
-            PopulateDropdowns(vm);
-
-            return View(vm);
-        }
-
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditFridge(CreateFridgeViewModel vm)
-        {
-
-            PopulateDropdowns(vm);
-
-            if (!ModelState.IsValid)
-            {
-                DebuggerNotify("ModelState invalid.");
-                return View(vm);
-            }
-
-            var fridge = await _context.Fridges.FindAsync(vm.Id);
-            if (fridge == null) return NotFound();
-
-            fridge.Model = vm.Model;
-            fridge.SerialNumber = vm.SerialNumber;
-            fridge.Category = vm.Category;
-            fridge.Status = vm.Status;
-            fridge.SupplierId = vm.SupplierId;
-            fridge.LocationId = vm.LocationId;
-            fridge.RentalPricePerMonth = vm.RentalPricePerMonth;
-            fridge.StockQuantity = vm.StockQuantity;
-            fridge.Description = vm.Description;
-
-
-            if (vm.ImageFile != null && vm.ImageFile.Length > 0)
-            {
-                string uploadsFolder = Path.Combine(_environment.WebRootPath, "images", "fridges");
-                Directory.CreateDirectory(uploadsFolder);
-
-                string uniqueFileName = Guid.NewGuid() + Path.GetExtension(vm.ImageFile.FileName);
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                await using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    await vm.ImageFile.CopyToAsync(fileStream);
-                }
-
-
-                if (!string.IsNullOrEmpty(fridge.ImageUrl) && fridge.ImageUrl != "/images/fridges/placeholder.png")
-                {
-                    var oldImagePath = Path.Combine(_environment.WebRootPath, fridge.ImageUrl.TrimStart('/').Replace("/", "\\"));
-                    if (System.IO.File.Exists(oldImagePath))
-                        System.IO.File.Delete(oldImagePath);
-                }
-
-                fridge.ImageUrl = "/images/fridges/" + uniqueFileName;
-            }
-
-            try
-            {
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Fridge updated successfully!";
-                DebuggerNotify("Fridge updated successfully.");
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                DebuggerNotify("Error updating fridge: " + ex.Message);
-                ModelState.AddModelError("", "Unable to update fridge. Check server logs.");
-                return View(vm);
-            }
-        }
-
-        #endregion
-
-
-        #region DELETED FRIDGES
-
-        public IActionResult DeletedFridges(string searchModel, int? category, int? status, int? supplier, int? location)
-        {
-            var fridges = _context.Fridges
-                .Where(f => f.IsDeleted)
+            var modelsQuery = _context.FridgeModels
+                .Include(fm => fm.Supplier)
                 .AsQueryable();
 
-
             if (!string.IsNullOrEmpty(searchModel))
-                fridges = fridges.Where(f => f.Model.Contains(searchModel));
+                modelsQuery = modelsQuery.Where(fm => fm.ModelName.Contains(searchModel));
 
             if (category.HasValue)
-                fridges = fridges.Where(f => (int)f.Category == category.Value);
-
-            if (status.HasValue)
-                fridges = fridges.Where(f => (int)f.Status == status.Value);
+                modelsQuery = modelsQuery.Where(fm => (int)fm.Category == category.Value);
 
             if (supplier.HasValue)
-                fridges = fridges.Where(f => f.SupplierId == supplier.Value);
+                modelsQuery = modelsQuery.Where(fm => fm.SupplierId == supplier.Value);
 
-            if (location.HasValue)
-                fridges = fridges.Where(f => f.LocationId == location.Value);
-
-
-            var vmList = fridges
-                .Select(f => new CreateFridgeViewModel
+            var model = await modelsQuery
+                .Select(fm => new FridgeModelViewModel // Assuming a ViewModel for the list
                 {
-                    Id = f.Id,
-                    Model = f.Model,
-                    SerialNumber = f.SerialNumber,
-                    Category = f.Category,
-                    Status = f.Status,
-                    SupplierId = f.SupplierId,
-                    LocationId = f.LocationId,
-                    RentalPricePerMonth = f.RentalPricePerMonth,
-                    StockQuantity = f.StockQuantity,
-                    Description = f.Description,
-                    ImageUrl = f.ImageUrl,
-                    Suppliers = _context.Suppliers
-                        .Select(s => new CreateFridgeViewModel.SupplierDropdownViewModel { Id = s.Id, Name = s.Name })
-                        .ToList(),
-                    Locations = _context.Locations
-                        .Select(l => new CreateFridgeViewModel.LocationDropdownViewModel { Id = l.Id, Name = l.Description })
-                        .ToList()
+                    Id = fm.Id,
+                    ModelName = fm.ModelName,
+                    SupplierName = fm.Supplier.Name,
+                    Category = fm.Category,
+                    RentalPricePerMonth = fm.RentalPricePerMonth,
+                    // FIX: Dynamically calculate stock by counting IN_WAREHOUSE units
+                    StockQuantity = _context.FridgeUnits
+                                            .Count(fu => fu.FridgeModelId == fm.Id && fu.Status == FridgeStatus.InWarehouse)
                 })
-                .ToList();
+                .ToListAsync();
 
+            ViewBag.Categories = GetCategorySelectList(category);
+            ViewBag.Suppliers = await GetSupplierSelectListAsync(supplier);
+            ViewData["searchModel"] = searchModel;
 
-            ViewBag.Categories = Enum.GetValues(typeof(FridgeCategory))
-                .Cast<FridgeCategory>()
-                .Select(c => new SelectListItem
-                {
-                    Value = ((int)c).ToString(),
-                    Text = c.ToString()
-                })
-                .ToList();
-
-            ViewBag.Statuses = Enum.GetValues(typeof(FridgeStatus))
-                .Cast<FridgeStatus>()
-                .Select(s => new SelectListItem
-                {
-                    Value = ((int)s).ToString(),
-                    Text = s.ToString()
-                })
-                .ToList();
-
-            ViewBag.SelectedModel = searchModel;
-            ViewBag.SelectedCategory = category?.ToString();
-            ViewBag.SelectedStatus = status?.ToString();
-            ViewBag.SelectedSupplier = supplier?.ToString();
-            ViewBag.SelectedLocation = location?.ToString();
-
-            ViewBag.Suppliers = _context.Suppliers
-                .Select(s => new SelectListItem { Value = s.Id.ToString(), Text = s.Name })
-                .ToList();
-
-            ViewBag.Locations = _context.Locations
-                .Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description })
-                .ToList();
-
-            return View(vmList);
+            return View(model);
         }
 
-        #endregion
-
-        #region SOFT HEAD DELETE
-
-        // DeleteConfirmation/5
-        public async Task<IActionResult> DeleteConfirmation(int id)
+        [HttpGet]
+        public async Task<IActionResult> CreateFridgeModel()
         {
-            var fridge = await _context.Fridges
-                .Include(f => f.Supplier)  
-                .Include(f => f.Location)
-                .Include(f => f.Maintenances)
-                .Include(f => f.UsageLogs)
-                .Include(f => f.Faults)
-                .Include(f => f.Allocations)
-                .Include(f => f.SensorReadings)
-                .FirstOrDefaultAsync(f => f.Id == id);
-
-            if (fridge == null)
-                return NotFound();
-
-            return View(fridge);
+            // CreateFridgeModelViewModel was provided in the previous response
+            var model = new CreateFridgeModelViewModel();
+            ViewBag.Suppliers = await GetSupplierSelectListAsync();
+            ViewBag.Categories = GetCategorySelectList();
+            return View(model);
         }
-
-        // POST: SoftDelete
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SoftDelete(int id)
-        {
-            var fridge = await _context.Fridges.FindAsync(id);
-            if (fridge == null)
-                return NotFound();
-
-            fridge.IsDeleted = true;
-            fridge.DeletedAt = DateTime.Now;
-
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Fridge deleted successfully (soft delete).";
-            return RedirectToAction(nameof(Index));
-        }
-
-        #endregion
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult RestoreFridge(int id)
+        public async Task<IActionResult> CreateFridgeModel(CreateFridgeModelViewModel model)
         {
-            var fridge = _context.Fridges.FirstOrDefault(f => f.Id == id && f.IsDeleted);
-            if (fridge == null)
-                return NotFound();
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Suppliers = await GetSupplierSelectListAsync(model.SupplierId);
+                ViewBag.Categories = GetCategorySelectList((int)model.Category);
+                return View(model);
+            }
 
-            fridge.IsDeleted = false;
-            fridge.DeletedAt = null;
+            var fridgeModel = new FridgeModel
+            {
+                ModelName = model.ModelName,
+                Category = model.Category,
+                RentalPricePerMonth = model.RentalPricePerMonth,
+                Description = model.Description,
+                SupplierId = model.SupplierId,
+                ImageUrl = UploadFile(model.ImageFile)
+            };
 
-            _context.SaveChanges();
+            _context.FridgeModels.Add(fridgeModel);
+            await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Fridge restored successfully!";
-            return RedirectToAction("DeletedFridges");
+            TempData["SuccessMessage"] = $"New Fridge Model '{fridgeModel.ModelName}' created successfully.";
+            return RedirectToAction(nameof(ModelList));
         }
 
-        #region #Details Fridge
-        public async Task<IActionResult> DetailsFridge(int id)
+        [HttpGet]
+        public async Task<IActionResult> EditFridgeModel(int id)
         {
-            var fridge = await _context.Fridges
-                .Include(f => f.Supplier)
-                .Include(f => f.Location)
-                .FirstOrDefaultAsync(f => f.Id == id && !f.IsDeleted);
+            var fridgeModel = await _context.FridgeModels.FindAsync(id);
 
-            if (fridge == null) return NotFound();
+            if (fridgeModel == null) return NotFound();
 
-            return View(fridge);
+            // EditFridgeModelViewModel is assumed to exist for this action
+            var model = new EditFridgeModelViewModel
+            {
+                Id = fridgeModel.Id,
+                ModelName = fridgeModel.ModelName,
+                Category = fridgeModel.Category,
+                RentalPricePerMonth = fridgeModel.RentalPricePerMonth,
+                Description = fridgeModel.Description,
+                SupplierId = fridgeModel.SupplierId,
+                ExistingImageUrl = fridgeModel.ImageUrl
+            };
+
+            ViewBag.Suppliers = await GetSupplierSelectListAsync(fridgeModel.SupplierId);
+            ViewBag.Categories = GetCategorySelectList((int)fridgeModel.Category);
+            return View(model);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditFridgeModel(EditFridgeModelViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Suppliers = await GetSupplierSelectListAsync(model.SupplierId);
+                ViewBag.Categories = GetCategorySelectList((int)model.Category);
+                return View(model);
+            }
 
+            var fridgeModel = await _context.FridgeModels.FindAsync(model.Id);
+            if (fridgeModel == null) return NotFound();
 
+            fridgeModel.ModelName = model.ModelName;
+            fridgeModel.Category = model.Category;
+            fridgeModel.RentalPricePerMonth = model.RentalPricePerMonth;
+            fridgeModel.Description = model.Description;
+            fridgeModel.SupplierId = model.SupplierId;
 
+            if (model.ImageFile != null)
+            {
+                // Delete old image if needed (Implementation in DeleteFile)
+                if (!string.IsNullOrEmpty(fridgeModel.ImageUrl))
+                    DeleteFile(fridgeModel.ImageUrl);
+
+                fridgeModel.ImageUrl = UploadFile(model.ImageFile);
+            }
+
+            _context.FridgeModels.Update(fridgeModel);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Fridge Model '{fridgeModel.ModelName}' updated successfully.";
+            return RedirectToAction(nameof(ModelList));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ViewFridgeModel(int id)
+        {
+            var fridgeModel = await _context.FridgeModels
+                .Include(fm => fm.Supplier)
+                .FirstOrDefaultAsync(fm => fm.Id == id);
+
+            if (fridgeModel == null) return NotFound();
+
+            // FIX: Count actual physical units for this model
+            ViewBag.TotalUnits = await _context.FridgeUnits.CountAsync(fu => fu.FridgeModelId == id);
+            ViewBag.AvailableUnits = await _context.FridgeUnits.CountAsync(fu => fu.FridgeModelId == id && fu.Status == FridgeStatus.InWarehouse);
+
+            return View(fridgeModel);
+        }
         #endregion
 
-        #region Helpers
+        //--------------------------------------------------------------------------------
 
-        private string GetDisplayName(FridgeCategory category)
+        #region Physical Inventory (FridgeUnit) Management
+
+        [HttpGet]
+        public async Task<IActionResult> UnitList(string searchSerial, int? modelId, int? status, int? locationId)
         {
-            var field = category.GetType().GetField(category.ToString());
-            var attr = field.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false)
-                .FirstOrDefault() as System.ComponentModel.DataAnnotations.DisplayAttribute;
-            return attr?.Name ?? category.ToString();
+            var unitsQuery = _context.FridgeUnits
+                .Include(fu => fu.FridgeModel)
+                .Include(fu => fu.Location)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchSerial))
+                unitsQuery = unitsQuery.Where(fu => fu.SerialNumber.Contains(searchSerial));
+
+            if (modelId.HasValue)
+                unitsQuery = unitsQuery.Where(fu => fu.FridgeModelId == modelId.Value);
+
+            if (status.HasValue)
+                unitsQuery = unitsQuery.Where(fu => (int)fu.Status == status.Value);
+
+            if (locationId.HasValue)
+                unitsQuery = unitsQuery.Where(fu => fu.LocationId == locationId.Value);
+
+            var units = await unitsQuery
+                .Select(fu => new FridgeUnitViewModel // FridgeUnitViewModel was provided
+                {
+                    Id = fu.Id,
+                    ModelName = fu.FridgeModel.ModelName,
+                    SerialNumber = fu.SerialNumber,
+                    Status = fu.Status,
+                    Condition = fu.Condition,
+                    LocationName = fu.Location.Description
+                })
+                .ToListAsync();
+
+            ViewBag.FridgeModels = await GetFridgeModelSelectListAsync(modelId);
+            ViewBag.Locations = await GetLocationSelectListAsync(locationId);
+            ViewBag.Statuses = GetStatusSelectList(status);
+            ViewData["searchSerial"] = searchSerial;
+
+            return View(units);
         }
 
-        #endregion
-
-
-
-
-
-        #region ERROR_IDENTIFIES
-
-        public void DebuggerNotify(string bug)
+        [HttpGet]
+        public async Task<IActionResult> CreateFridgeUnit(int? fridgeModelId)
         {
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine(bug);
+            var defaultWarehouseId = await GetDefaultWarehouseIdAsync();
+
+            var model = new CreateFridgeUnitViewModel
+            {
+                PurchaseDate = DateTime.Now,
+                FridgeModelId = fridgeModelId ?? 0,
+                // Default new unit to a main warehouse and Pending status
+                LocationId = defaultWarehouseId,
+                Status = FridgeStatus.Pending,
+                Condition = FridgeCondition.New
+            };
+
+            ViewBag.FridgeModels = await GetFridgeModelSelectListAsync(fridgeModelId);
+            ViewBag.Locations = await GetLocationSelectListAsync(model.LocationId);
+            ViewBag.Conditions = GetConditionSelectList((int)model.Condition);
+            ViewBag.Statuses = GetStatusSelectList((int)model.Status);
+
+            return View(model);
         }
 
-        #endregion
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFridgeUnit(CreateFridgeUnitViewModel model)
+        {
+            // Simple validation to ensure the serial number is unique for this model
+            if (await _context.FridgeUnits.AnyAsync(fu => fu.SerialNumber == model.SerialNumber))
+            {
+                ModelState.AddModelError(nameof(model.SerialNumber), "A unit with this serial number already exists.");
+            }
 
+            if (!ModelState.IsValid)
+            {
+                ViewBag.FridgeModels = await GetFridgeModelSelectListAsync(model.FridgeModelId);
+                ViewBag.Locations = await GetLocationSelectListAsync(model.LocationId);
+                ViewBag.Conditions = GetConditionSelectList((int)model.Condition);
+                ViewBag.Statuses = GetStatusSelectList((int)model.Status);
+                return View(model);
+            }
 
-        #region Delivered Fridges
+            var fridgeUnit = new FridgeUnit
+            {
+                FridgeModelId = model.FridgeModelId,
+                SerialNumber = model.SerialNumber,
+                PurchaseDate = model.PurchaseDate,
+                Condition = model.Condition,
+                Status = model.Status,
+                LocationId = model.LocationId,
+            };
 
+            _context.FridgeUnits.Add(fridgeUnit);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"New Fridge Unit '{fridgeUnit.SerialNumber}' added successfully.";
+            return RedirectToAction(nameof(UnitList));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditFridgeUnit(int id)
+        {
+            var fridgeUnit = await _context.FridgeUnits.FindAsync(id);
+
+            if (fridgeUnit == null) return NotFound();
+
+            // EditFridgeUnitViewModel is assumed to exist for this action
+            var model = new EditFridgeUnitViewModel
+            {
+                Id = fridgeUnit.Id,
+                FridgeModelId = fridgeUnit.FridgeModelId,
+                SerialNumber = fridgeUnit.SerialNumber,
+                PurchaseDate = fridgeUnit.PurchaseDate,
+                Condition = fridgeUnit.Condition,
+                Status = fridgeUnit.Status,
+                LocationId = fridgeUnit.LocationId,
+            };
+
+            ViewBag.FridgeModels = await GetFridgeModelSelectListAsync(fridgeUnit.FridgeModelId);
+            ViewBag.Locations = await GetLocationSelectListAsync(fridgeUnit.LocationId);
+            ViewBag.Conditions = GetConditionSelectList((int)fridgeUnit.Condition);
+            ViewBag.Statuses = GetStatusSelectList((int)fridgeUnit.Status);
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditFridgeUnit(EditFridgeUnitViewModel model)
+        {
+            var fridgeUnit = await _context.FridgeUnits.FindAsync(model.Id);
+            if (fridgeUnit == null) return NotFound();
+
+            // Simple validation to ensure the serial number is unique (excluding its own ID)
+            if (await _context.FridgeUnits.AnyAsync(fu => fu.SerialNumber == model.SerialNumber && fu.Id != model.Id))
+            {
+                ModelState.AddModelError(nameof(model.SerialNumber), "A unit with this serial number already exists.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.FridgeModels = await GetFridgeModelSelectListAsync(model.FridgeModelId);
+                ViewBag.Locations = await GetLocationSelectListAsync(model.LocationId);
+                ViewBag.Conditions = GetConditionSelectList((int)model.Condition);
+                ViewBag.Statuses = GetStatusSelectList((int)model.Status);
+                return View(model);
+            }
+
+            fridgeUnit.FridgeModelId = model.FridgeModelId;
+            fridgeUnit.SerialNumber = model.SerialNumber;
+            fridgeUnit.PurchaseDate = model.PurchaseDate;
+            fridgeUnit.Condition = model.Condition;
+            fridgeUnit.Status = model.Status;
+            fridgeUnit.LocationId = model.LocationId;
+
+            _context.FridgeUnits.Update(fridgeUnit);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Fridge Unit '{fridgeUnit.SerialNumber}' updated successfully.";
+            return RedirectToAction(nameof(UnitList));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ViewFridgeUnit(int id)
+        {
+            var fridgeUnit = await _context.FridgeUnits
+                .Include(fu => fu.FridgeModel)
+                .Include(fu => fu.Location)
+                .Include(fu => fu.Allocations).ThenInclude(a => a.Customer)
+                .FirstOrDefaultAsync(fu => fu.Id == id);
+
+            if (fridgeUnit == null) return NotFound();
+
+            ViewBag.CurrentAllocation = fridgeUnit.Allocations.OrderByDescending(a => a.AllocationDate).FirstOrDefault(a => a.DeallocationDate == null);
+
+            return View(fridgeUnit);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> PendingFridges()
         {
-            var pendingFridges = await _context.Fridges
-                .Where(f => f.Status == FridgeStatus.Pending)
-                .Select(f => new PendingFridgeEditViewModel
+            var pendingFridges = await _context.FridgeUnits
+                .Include(fu => fu.FridgeModel)
+                .Where(fu => fu.Status == FridgeStatus.Pending)
+                // PendingFridgeEditViewModel is assumed to exist for this list
+                .Select(fu => new PendingFridgeEditViewModel
                 {
-                    Id = f.Id,
-                    SerialNumber = f.SerialNumber,
-                    Category = f.Category,
-                    Condition = f.Condition,
-                    RentalPricePerMonth = f.RentalPricePerMonth
+                    Id = fu.Id,
+                    SerialNumber = fu.SerialNumber,
+                    ModelName = fu.FridgeModel.ModelName,
+                    Condition = fu.Condition,
+                    RentalPricePerMonth = fu.FridgeModel.RentalPricePerMonth
                 }).ToListAsync();
 
             return View(pendingFridges);
         }
 
+        // This action would handle moving a unit from Pending to InWarehouse
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AcceptPendingUnit(int id)
+        {
+            var unit = await _context.FridgeUnits.FindAsync(id);
+            if (unit == null)
+            {
+                TempData["ErrorMessage"] = "Fridge unit not found.";
+                return RedirectToAction(nameof(PendingFridges));
+            }
+
+            if (unit.Status != FridgeStatus.Pending)
+            {
+                TempData["ErrorMessage"] = "Unit is not in Pending status and cannot be accepted.";
+                return RedirectToAction(nameof(PendingFridges));
+            }
+
+            unit.Status = FridgeStatus.InWarehouse;
+            _context.FridgeUnits.Update(unit);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Unit {unit.SerialNumber} accepted and moved to InWarehouse status.";
+            return RedirectToAction(nameof(PendingFridges));
+        }
+
+
         #endregion
 
+        //--------------------------------------------------------------------------------
+
+        #region Helpers (Includes file operations and SelectList generators)
+
+        private async Task<SelectList> GetSupplierSelectListAsync(int? selectedId = null)
+        {
+            var suppliers = await _context.Suppliers.ToListAsync();
+            return new SelectList(suppliers, "Id", "Name", selectedId);
+        }
+
+        private List<SelectListItem> GetCategorySelectList(int? selectedId = null)
+        {
+            return Enum.GetValues(typeof(FridgeCategory))
+                       .Cast<FridgeCategory>()
+                       .Select(c => new SelectListItem
+                       {
+                           Value = ((int)c).ToString(),
+                           Text = GetDisplayName(c),
+                           Selected = (int?)c == selectedId
+                       })
+                       .ToList();
+        }
+
+        private List<SelectListItem> GetStatusSelectList(int? selectedId = null)
+        {
+            return Enum.GetValues(typeof(FridgeStatus))
+                       .Cast<FridgeStatus>()
+                       .Select(s => new SelectListItem
+                       {
+                           Value = ((int)s).ToString(),
+                           Text = s.ToString(),
+                           Selected = (int?)s == selectedId
+                       })
+                       .ToList();
+        }
+
+        private List<SelectListItem> GetConditionSelectList(int? selectedId = null)
+        {
+            return Enum.GetValues(typeof(FridgeCondition))
+                       .Cast<FridgeCondition>()
+                       .Select(c => new SelectListItem
+                       {
+                           Value = ((int)c).ToString(),
+                           Text = c.ToString(),
+                           Selected = (int?)c == selectedId
+                       })
+                       .ToList();
+        }
+
+        private async Task<SelectList> GetFridgeModelSelectListAsync(int? selectedId = null)
+        {
+            var models = await _context.FridgeModels.ToListAsync();
+            return new SelectList(models, "Id", "ModelName", selectedId);
+        }
+
+        private async Task<SelectList> GetLocationSelectListAsync(int? selectedId = null)
+        {
+            var locations = await _context.Locations.ToListAsync();
+            return new SelectList(locations, "Id", "Description", selectedId);
+        }
+
+        private async Task<int> GetDefaultWarehouseIdAsync()
+        {
+            // Logic to find the ID of the main warehouse location
+            var warehouse = await _context.Locations.FirstOrDefaultAsync(l => l.Description.Contains(defaultWarehouseDescription));
+            // Return ID if found, otherwise assume ID 1 as a fallback (you should ensure this location exists)
+            return warehouse?.Id ?? 1;
+        }
+
+        // Helper to get DisplayName attribute value from Enum
+        private string GetDisplayName(Enum enumValue)
+        {
+            // Helper method logic is included here
+            return enumValue.GetType()
+                       .GetMember(enumValue.ToString())
+                       .FirstOrDefault()
+                       ?.GetCustomAttribute<System.ComponentModel.DataAnnotations.DisplayAttribute>()
+                       ?.Name ?? enumValue.ToString();
+        }
+
+        // 🛑 FULL IMPLEMENTATION OF FILE UPLOAD LOGIC INCLUDED 🛑
+        private string? UploadFile(IFormFile? file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            // Define the path where images will be saved
+            string uploadDir = Path.Combine(_environment.WebRootPath, "images", "fridgemodels");
+            if (!Directory.Exists(uploadDir))
+            {
+                Directory.CreateDirectory(uploadDir);
+            }
+
+            // Create a unique filename
+            string fileExtension = Path.GetExtension(file.FileName);
+            string uniqueFileName = Guid.NewGuid().ToString() + fileExtension;
+            string filePath = Path.Combine(uploadDir, uniqueFileName);
+
+            // Save the file
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                file.CopyTo(fileStream);
+            }
+
+            // Return the relative URL path
+            return $"/images/fridgemodels/{uniqueFileName}";
+        }
+
+        // 🛑 FULL IMPLEMENTATION OF FILE DELETION LOGIC INCLUDED 🛑
+        private void DeleteFile(string? relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath)) return;
+
+            // Convert relative path to absolute path
+            string absolutePath = Path.Combine(_environment.WebRootPath, relativePath.TrimStart('/'));
+
+            if (System.IO.File.Exists(absolutePath))
+            {
+                try
+                {
+                    System.IO.File.Delete(absolutePath);
+                }
+                catch
+                {
+                    // Log the exception if necessary, but don't stop the request
+                    DebuggerNotify($"Failed to delete file at: {absolutePath}");
+                }
+            }
+        }
+
+        #endregion
+
+        #region ViewModels (Required for compilation, usually in a separate file)
+        // NOTE: These ViewModels are defined here for completeness of the controller file, 
+        // but should ideally reside in the ViewModels.InventoryLiaison namespace.
+
+        // Assumed structure for editing a FridgeModel
+        public class EditFridgeModelViewModel : CreateFridgeModelViewModel
+        {
+            public int Id { get; set; }
+            public string? ExistingImageUrl { get; set; }
+        }
+
+        // Assumed structure for editing a FridgeUnit
+        public class EditFridgeUnitViewModel : CreateFridgeUnitViewModel
+        {
+            public int Id { get; set; }
+        }
+
+        // Assumed structure for the Pending Fridges list
+        public class PendingFridgeEditViewModel
+        {
+            public int Id { get; set; }
+            public string SerialNumber { get; set; }
+            public string ModelName { get; set; }
+            public FridgeCondition Condition { get; set; }
+            public decimal RentalPricePerMonth { get; set; }
+        }
+        #endregion
+
+        #region ERROR_IDENTIFIES
+
+        public void DebuggerNotify(string bug)
+        {
+            // Simple console logging for file deletion errors
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"[ERROR] InventoryLiaisonController: {bug}");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        #endregion
     }
 }

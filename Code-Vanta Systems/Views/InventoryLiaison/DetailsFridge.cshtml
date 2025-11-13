@@ -1,74 +1,75 @@
-﻿@model Code_Vanta_Systems.Models.Fridge
+﻿@model Code_Vanta_Systems.Models.FridgeModel
+@using Code_Vanta_Systems.Models.Enums
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+
 @{
     Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
-    ViewData["Title"] = "Fridge Details";
+    ViewData["Title"] = "Fridge Model Details";
+
+    string GetEnumDisplayName(Enum enumValue)
+    {
+        return enumValue.GetType()
+                       .GetMember(enumValue.ToString())
+                       .FirstOrDefault()
+                       ?.GetCustomAttribute<DisplayAttribute>()
+                       ?.Name ?? enumValue.ToString();
+    }
 }
 
 <div class="container mt-4">
-    <h3 class="mb-4"><i class="bi bi-eye-fill me-2"></i>Fridge Details</h3>
+    <h3 class="mb-4 text-primary"><i class="bi bi-eye-fill me-2"></i>Model Details</h3>
 
     <div class="card shadow-sm">
         <div class="row g-0">
-            <!-- Image -->
-            <div class="col-md-4 p-3 text-center">
+            <div class="col-md-4 p-3 text-center d-flex flex-column align-items-center justify-content-center">
                 @if (!string.IsNullOrEmpty(Model.ImageUrl))
                 {
-                    <img src="@Model.ImageUrl" class="img-fluid rounded" alt="Fridge Image" />
+                    <img src="@Model.ImageUrl" class="img-fluid rounded shadow-lg" alt="Model Image" style="max-height: 350px; object-fit: cover;" />
                 }
                 else
                 {
-                    <img src="/images/no-image.png" class="img-fluid rounded" alt="No Image" />
+                    <img src="/images/fridgemodels/no-image.png" class="img-fluid rounded" alt="No Image" style="max-height: 350px;" />
                 }
+                <a asp-action="EditFridgeModel" asp-route-id="@Model.Id" class="btn btn-warning mt-3 w-75">
+                    <i class="bi bi-pencil-square me-1"></i> Edit Model
+                </a>
             </div>
 
-            <!-- Details -->
             <div class="col-md-8">
                 <div class="card-body">
-                    <h5 class="card-title">@Model.Model (@Model.Category)</h5>
-                    <p class="card-text"><strong>Serial Number:</strong> @Model.SerialNumber</p>
-                    <p class="card-text"><strong>Status:</strong> @Model.Status</p>
-                    <p class="card-text"><strong>In Stock:</strong> @Model.StockQuantity</p>
-                    <p class="card-text"><strong>Purchase Date:</strong> @Model.PurchaseDate.ToString("yyyy-MM-dd")</p>
-                    <p class="card-text"><strong>Rental Price / Month:</strong> @Model.RentalPricePerMonth.ToString("C")</p>
-                    <p class="card-text"><strong>Description:</strong> @Model.Description</p>
+                    <h1 class="card-title text-primary">@Model.ModelName</h1>
+                    <h5 class="text-muted">@GetEnumDisplayName(Model.Category) Category</h5>
 
                     <hr />
 
-                    <h6>Supplier Details</h6>
-                    <p class="card-text"><strong>Name:</strong> @Model.Supplier?.ContactName</p>
-                    <p class="card-text"><strong>Contact:</strong> @Model.Supplier?.Phone</p>
-                    <p class="card-text"><strong>Email:</strong> @Model.Supplier?.ContactEmail</p>
-                    <p class="card-text"><strong>Address:</strong> @Model.Supplier?.Address</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-info-circle-fill me-1"></i> General Information</h6>
+                            <p class="card-text"><strong>Catalogue ID:</strong> @Model.Id</p>
+                            <p class="card-text"><strong>Supplier:</strong> @Model.Supplier.Name</p>
+                            <p class="card-text"><strong>Rental Price / Month:</strong> @Model.RentalPricePerMonth.ToString("C")</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-box-seam-fill me-1"></i> Inventory Summary</h6>
+                            <p class="card-text"><strong>Total Units:</strong> @ViewBag.TotalUnits</p>
+                            <p class="card-text text-success"><strong>Available Stock:</strong> @ViewBag.AvailableUnits</p>
+                            <p class="card-text text-danger"><strong>Allocated/Faulty:</strong> @((int)ViewBag.TotalUnits - (int)ViewBag.AvailableUnits)</p>
+                        </div>
+                    </div>
 
                     <hr />
 
-                    <h6>Location</h6>
-                    <p class="card-text"><strong>Description:</strong> @Model.Location?.Description</p>
+                    <h6><i class="bi bi-card-text me-1"></i> Description</h6>
+                    <p class="card-text">@(string.IsNullOrEmpty(Model.Description) ? "No description provided." : Model.Description)</p>
 
-                    <a asp-action="Index" class="btn btn-secondary mt-3">
-                        <i class="bi bi-arrow-left-circle me-1"></i>Back to Dashboard
+                    <hr />
+
+                    <a asp-action="ModelList" class="btn btn-secondary mt-3">
+                        <i class="bi bi-arrow-left-circle me-1"></i>Back to Catalogue
                     </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    .card-body p {
-        margin-bottom: 0.5rem;
-    }
-
-    body {
-        background-color: rgba(0,0,0,0.7);
-    }
-
-    .card {
-        background-color: rgba(255,255,255,0.95);
-    }
-</style>
-@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
