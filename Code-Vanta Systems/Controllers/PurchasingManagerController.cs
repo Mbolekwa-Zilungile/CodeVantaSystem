@@ -1558,22 +1558,33 @@ namespace Code_Vanta_Systems.Controllers
                 context.Fridges.Update(fridge);
 
                 // AUTO-GENERATE FRIDGE UNITS
+                var lastUnit = await context.FridgeUnits
+       .Where(u => u.FridgeId == fridge.Id)
+       .OrderByDescending(u => u.SerialNumber)
+       .FirstOrDefaultAsync();
+
+                int lastNumber = 0;
+                if (lastUnit != null)
+                {
+                    string serial = lastUnit.SerialNumber;
+                    string numberPart = serial.Substring(serial.Length - 3);
+                    int.TryParse(numberPart, out lastNumber);
+                }
+
                 for (int i = 1; i <= item.Quantity; i++)
                 {
+                    int currentNumber = lastNumber + i;
                     var unit = new Code_Vanta_Systems.Models.FridgeUnit
                     {
                         FridgeId = fridge.Id,
-
-                        // SERIAL: e.g. ABC123-006
-                        SerialNumber = $"{fridge.SerialNumber}-{(previousStock + i):D3}",
-
+                        SerialNumber = $"{fridge.SerialNumber}-{currentNumber:D3}",
                         Condition = fridge.Condition,
                         Status = fridge.Status,
                     };
-
                     context.FridgeUnits.Add(unit);
                 }
             }
+        
 
             // 4. Notify Inventory Liaisons
             var liaisons = await userManager.GetUsersInRoleAsync("InventoryLiaison");
