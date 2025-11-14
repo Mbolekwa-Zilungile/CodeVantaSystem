@@ -42,8 +42,10 @@
             background-color: @SecondaryColor; /* Deep Navy sidebar */
             color: #fff;
             padding-top: 20px;
-            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3); /* Deeper shadow for authority */
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
             transition: all 0.3s;
+            /* ✅ FIX: Enable vertical scrolling when content overflows */
+            overflow-y: auto;
         }
 
         #main-content {
@@ -53,11 +55,24 @@
             transition: all 0.3s;
         }
 
+        /* 📱 FIX: Media Query for smaller screens (e.g., Bootstrap's md breakpoint) */
+        @@media (max-width: 992px) {
+            #sidebar {
+                /* Hide the sidebar completely for small devices. A toggle button would be needed. */
+                left: -280px;
+            }
+
+            #main-content {
+                /* Remove the left margin so content fills the screen */
+                margin-left: 0;
+            }
+        }
+
         .sidebar-link {
             padding: 12px 15px;
             display: flex;
             align-items: center;
-            color: #C0C0C0; /* Lighter gray for better contrast on dark sidebar */
+            color: #C0C0C0;
             text-decoration: none;
             font-weight: 500;
             transition: background-color 0.2s, color 0.2s;
@@ -77,10 +92,10 @@
             }
 
         .nav-title {
-            color: #A0A0A0; /* Slightly lighter gray for section headers */
+            color: #A0A0A0;
             font-weight: 700;
-            letter-spacing: 1px; /* Increased letter spacing for structure */
-            font-size: 0.8rem; /* Slightly smaller font size */
+            letter-spacing: 1px;
+            font-size: 0.8rem;
         }
     </style>
 </head>

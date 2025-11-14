@@ -175,73 +175,73 @@ namespace Code_Vanta_Systems.Controllers
         // GET: MaintenanceTechnician/FridgeDetails/5
         public async Task<IActionResult> FridgeDetails(int id)
         {
-            // 1. Fetch the general Fridge Model/Stock Item and all its associated MODEL-LEVEL history
-            var fridgeModel = await _context.Fridges
-                .Include(f => f.Location)
+            // 1. Fetch the specific Fridge UNIT, including all necessary related data
+            var unit = await _context.FridgeUnits
+                .Include(u => u.Fridge)         // Unit's general model data
+                .Include(u => u.Customer)       // Unit's assigned customer
+                .Include(u => u.Technician)     // Unit's assigned technician (if applicable)
 
-                // FIX 1: Include Faults and ServiceRecords to support the ViewModel mapping
-                .Include(f => f.Faults.OrderByDescending(ff => ff.DateReported))
-                .Include(f => f.ServiceRecords.OrderByDescending(sr => sr.DateOfService))
+                // FIX: Include Unit-level history using a filtered join against FridgeUnitId.
+                // This requires FridgeFault/ServiceRecord to have a FridgeUnitId foreign key.
+                // If not, this relationship must be defined in your DBContext.
+                .Include(u => u.Faults.OrderByDescending(f => f.DateReported))
 
-                .Include(f => f.MaintenanceSchedules) // Schedules linked to the model
-                .FirstOrDefaultAsync(f => f.Id == id);
+                .Include(u => u.ServiceRecords
+                    .Where(s => s.FridgeUnitId == id) // Filter service records by the Unit's ID
+                    .OrderByDescending(s => s.DateOfService))
 
-            if (fridgeModel == null)
+                .Include(u => u.MaintenanceSchedules) // Assumes schedules link to FridgeUnit
+
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (unit == null)
             {
                 return NotFound();
             }
 
-            // 2. Fetch ALL Fridge Units associated with this model, loading their specific data
-            var fridgeUnits = await _context.FridgeUnits
-                .Where(u => u.FridgeId == id)
-                .Include(u => u.Customer)          // Unit's current customer
-                .Include(u => u.Technician)        // Unit's assigned technician
-                .ToListAsync();
-
-            // 3. Map the fetched data to the ViewModel
+            // 2. Map the SINGLE UNIT's data to the ViewModel
             var viewModel = new MaintenanceFridgeDetailsViewModel
             {
-                // 1. Map the Summary Data (Summary of the Model)
+                // Use the unit's data to populate the summary card
                 FridgeSummary = new MaintenanceFridgeListViewModel
                 {
-                    FridgeId = fridgeModel.Id,
-                    SerialNumber = fridgeModel.SerialNumber,
-                    Model = fridgeModel.Model,
-                    FridgeStatus = fridgeModel.Status.ToString(),
+                    FridgeId = unit.Id, // This is the Unit ID
+                    SerialNumber = unit.SerialNumber, // This is the unique unit serial
+                    Model = unit.Fridge.Model,
+                    FridgeStatus = unit.Status.ToString(), // Unit Status
+                    CustomerBusinessName = unit.Customer?.BusinessName ?? "In Stock",
+                    CustomerAddress = unit.Customer?.PhysicalAddress ?? unit.Fridge.Location?.Description,
 
-                    CustomerBusinessName = $"{fridgeUnits.Count} Units in Circulation",
-                    CustomerAddress = $"Stock Location: {fridgeModel.Location?.Description}",
-
-                    NextScheduledVisit = fridgeModel.MaintenanceSchedules
+                    // Find the closest upcoming schedule linked to the UNIT
+                    NextScheduledVisit = unit.MaintenanceSchedules
                          .Where(ms => ms.ScheduledDate >= DateTime.Today)
                          .OrderBy(ms => ms.ScheduledDate)
                          .FirstOrDefault()
                          ?.ScheduledDate
                 },
 
-                // 🚨 CRITICAL FIX: The ViewModel should display the details for ALL units.
-                UnitDetails = fridgeUnits.Select(u => new UnitDetailViewModel
-                {
-                    UnitId = u.Id,
-                    SerialNumber = u.SerialNumber,
-                    Condition = u.Condition.ToString(),
-                    UnitStatus = u.Status.ToString(),
-                    CurrentCustomer = u.Customer?.BusinessName ?? "In Stock",
-                    AssignedTechnician = u.Technician?.FullName ?? "N/A",
+                // This is a single unit view, so UnitDetails should be a list containing only this unit
+                // NOTE: This assumes UnitDetailViewModel exists and maps unit properties correctly.
+                UnitDetails = new List<UnitDetailViewModel> // Simplified mapping for the single unit view
+        {
+             new UnitDetailViewModel
+             {
+                 UnitId = unit.Id,
+                 SerialNumber = unit.SerialNumber,
+                 Condition = unit.Condition.ToString(),
+                 UnitStatus = unit.Status.ToString(),
+                 CurrentCustomer = unit.Customer?.BusinessName ?? "In Stock",
+                 AssignedTechnician = unit.Technician?.FullName ?? "N/A"
+             }
+        },
 
-                    // NOTE: Unit-level history would be loaded here if the ViewModel allowed it, 
-                    // e.g., FaultHistory = _context.FridgeFaults.Where(f => f.FridgeUnitId == u.Id).ToList() 
-                }).ToList(),
-
-                // 2. Map the History Data for the *Model* (Now supported by FIX 1)
-                FaultHistory = fridgeModel.Faults.ToList(),
-                ServiceHistory = fridgeModel.ServiceRecords.ToList(),
-
-                // Filter upcoming schedules linked to the MODEL
-                UpcomingSchedules = fridgeModel.MaintenanceSchedules
-                     .Where(ms => ms.ScheduledDate >= DateTime.Today)
-                     .OrderBy(ms => ms.ScheduledDate)
-                     .ToList()
+                // 3. Map the Unit's History (from the filtered Includes in step 1)
+                FaultHistory = unit.Faults.ToList(),
+                ServiceHistory = unit.ServiceRecords.ToList(),
+                UpcomingSchedules = unit.MaintenanceSchedules
+                    .Where(ms => ms.ScheduledDate >= DateTime.Today)
+                    .OrderBy(ms => ms.ScheduledDate)
+                    .ToList()
             };
 
             return View(viewModel);

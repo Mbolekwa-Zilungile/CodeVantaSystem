@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class FinalMigration : Migration
+    public partial class CreateDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -854,35 +854,6 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MaintenanceSchedules",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    FridgeId = table.Column<int>(type: "int", nullable: false),
-                    ScheduledDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    TechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MaintenanceSchedules", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_MaintenanceSchedules_AspNetUsers_TechnicianId",
-                        column: x => x.TechnicianId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_MaintenanceSchedules_Fridges_FridgeId",
-                        column: x => x.FridgeId,
-                        principalTable: "Fridges",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "PurchaseRequestItems",
                 columns: table => new
                 {
@@ -1087,6 +1058,41 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "MaintenanceSchedules",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FridgeId = table.Column<int>(type: "int", nullable: false),
+                    ScheduledDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    TechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    FridgeUnitId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MaintenanceSchedules", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MaintenanceSchedules_AspNetUsers_TechnicianId",
+                        column: x => x.TechnicianId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MaintenanceSchedules_FridgeUnits_FridgeUnitId",
+                        column: x => x.FridgeUnitId,
+                        principalTable: "FridgeUnits",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_MaintenanceSchedules_Fridges_FridgeId",
+                        column: x => x.FridgeId,
+                        principalTable: "Fridges",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "QuotationItems",
                 columns: table => new
                 {
@@ -1196,12 +1202,13 @@ namespace Code_Vanta_Systems.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    FridgeId = table.Column<int>(type: "int", nullable: false),
+                    FridgeUnitId = table.Column<int>(type: "int", nullable: false),
                     DateOfService = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TechnicianUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ServiceDetails = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     FaultId = table.Column<int>(type: "int", nullable: true),
-                    PartsUsed = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                    PartsUsed = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    FridgeId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -1211,18 +1218,24 @@ namespace Code_Vanta_Systems.Migrations
                         column: x => x.TechnicianUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ServiceRecords_FridgeFaults_FaultId",
                         column: x => x.FaultId,
                         principalTable: "FridgeFaults",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ServiceRecords_FridgeUnits_FridgeUnitId",
+                        column: x => x.FridgeUnitId,
+                        principalTable: "FridgeUnits",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ServiceRecords_Fridges_FridgeId",
                         column: x => x.FridgeId,
                         principalTable: "Fridges",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.InsertData(
@@ -1458,6 +1471,11 @@ namespace Code_Vanta_Systems.Migrations
                 column: "FridgeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_MaintenanceSchedules_FridgeUnitId",
+                table: "MaintenanceSchedules",
+                column: "FridgeUnitId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MaintenanceSchedules_TechnicianId",
                 table: "MaintenanceSchedules",
                 column: "TechnicianId");
@@ -1596,6 +1614,11 @@ namespace Code_Vanta_Systems.Migrations
                 name: "IX_ServiceRecords_FridgeId",
                 table: "ServiceRecords",
                 column: "FridgeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ServiceRecords_FridgeUnitId",
+                table: "ServiceRecords",
+                column: "FridgeUnitId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ServiceRecords_TechnicianUserId",

@@ -9,11 +9,18 @@ namespace Code_Vanta_Systems.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
-        public int FridgeId { get; set; }
+        //[Required]
+        //public int FridgeId { get; set; }
 
-        [ForeignKey("FridgeId")]
-        public Fridge Fridge { get; set; }
+        //[ForeignKey("FridgeId")]
+        //public Fridge Fridge { get; set; }
+
+        // ✅ FIX 1: Add FridgeUnitId foreign key (Must be nullable if old records exist, or NOT NULL if data is clean)
+        [Required]
+        public int FridgeUnitId { get; set; }
+
+        [ForeignKey(nameof(FridgeUnitId))]
+        public FridgeUnit FridgeUnit { get; set; }
 
         [Required]
         public DateTime DateOfService { get; set; }

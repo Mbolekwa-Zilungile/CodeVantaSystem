@@ -30,6 +30,12 @@ namespace Code_Vanta_Systems.Data.Configurations
                    .WithMany() // Assuming FridgeUnit doesn't have a navigation property back to FridgeFaults
                    .HasForeignKey(ff => ff.FridgeUnitId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure link to FridgeUnit
+            builder.HasOne(ff => ff.FridgeUnit)
+                   .WithMany(u => u.Faults) // Links to the ICollection<FridgeFault> on FridgeUnit
+                   .HasForeignKey(ff => ff.FridgeUnitId)
+                   .OnDelete(DeleteBehavior.Restrict); // Crucial to prevent cascade loop
         }
     }
 }

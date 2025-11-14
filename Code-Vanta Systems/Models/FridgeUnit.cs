@@ -43,5 +43,11 @@ namespace Code_Vanta_Systems.Models
 
         // Maintenance Schedules linked directly to this unit
         public virtual ICollection<MaintenanceSchedule>? MaintenanceSchedules { get; set; }
+
+        // Collection of faults associated with this specific unit
+        public virtual ICollection<FridgeFault>? Faults { get; set; }
+
+        // Collection of service records associated with this specific unit
+        public virtual ICollection<ServiceRecord>? ServiceRecords { get; set; }
     }
 }
