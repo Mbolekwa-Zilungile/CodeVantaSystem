@@ -22,6 +22,14 @@ namespace Code_Vanta_Systems.Data.Configurations
                    .WithMany(u => u.ReportedFaults)
                    .HasForeignKey(ff => ff.ReportedByUserId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            // ✅ FIX: NEW RELATIONSHIP TO FRIDGE UNIT
+            // This links the fault to the specific unit instance.
+            // Using OnDelete(DeleteBehavior.Restrict) prevents the "multiple cascade paths" error.
+            builder.HasOne(ff => ff.FridgeUnit)
+                   .WithMany() // Assuming FridgeUnit doesn't have a navigation property back to FridgeFaults
+                   .HasForeignKey(ff => ff.FridgeUnitId)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

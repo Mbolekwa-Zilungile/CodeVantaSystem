@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class DB : Migration
+    public partial class FinalMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -527,34 +527,6 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PurchaseOrders",
-                columns: table => new
-                {
-                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    SupplierId = table.Column<int>(type: "int", nullable: false),
-                    OrderedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PurchaseOrders", x => x.PurchaseOrderId);
-                    table.ForeignKey(
-                        name: "FK_PurchaseOrders_AspNetUsers_OrderedByUserId",
-                        column: x => x.OrderedByUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_PurchaseOrders_Suppliers_SupplierId",
-                        column: x => x.SupplierId,
-                        principalTable: "Suppliers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "RequestQuotations",
                 columns: table => new
                 {
@@ -565,7 +537,8 @@ namespace Code_Vanta_Systems.Migrations
                     RequestedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    PurchaseRequestId = table.Column<int>(type: "int", nullable: false)
+                    PurchaseRequestId = table.Column<int>(type: "int", nullable: false),
+                    ExpectedDeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -704,46 +677,12 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "DeliveryNotes",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    DeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    SupplierId = table.Column<int>(type: "int", nullable: false),
-                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
-                    ReceivedById = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_DeliveryNotes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_DeliveryNotes_AspNetUsers_ReceivedById",
-                        column: x => x.ReceivedById,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_DeliveryNotes_PurchaseOrders_PurchaseOrderId",
-                        column: x => x.PurchaseOrderId,
-                        principalTable: "PurchaseOrders",
-                        principalColumn: "PurchaseOrderId",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_DeliveryNotes_Suppliers_SupplierId",
-                        column: x => x.SupplierId,
-                        principalTable: "Suppliers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Quotations",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    QuotationNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     DateReceived = table.Column<DateTime>(type: "datetime2", nullable: false),
                     SupplierId = table.Column<int>(type: "int", nullable: false),
                     PurchaseRequestId = table.Column<int>(type: "int", nullable: false),
@@ -809,46 +748,6 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FridgeFaults",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    FridgeId = table.Column<int>(type: "int", nullable: false),
-                    ReportedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    AssignedTechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    DateReported = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    FaultDescription = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    Severity = table.Column<int>(type: "int", nullable: false),
-                    RepairDescription = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    PartsUsed = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ResolutionDate = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FridgeFaults", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_FridgeFaults_AspNetUsers_AssignedTechnicianId",
-                        column: x => x.AssignedTechnicianId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_FridgeFaults_AspNetUsers_ReportedByUserId",
-                        column: x => x.ReportedByUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_FridgeFaults_Fridges_FridgeId",
-                        column: x => x.FridgeId,
-                        principalTable: "Fridges",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "FridgeMaintenances",
                 columns: table => new
                 {
@@ -884,6 +783,46 @@ namespace Code_Vanta_Systems.Migrations
                         principalTable: "Fridges",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FridgeUnits",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FridgeId = table.Column<int>(type: "int", nullable: false),
+                    SerialNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Condition = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CustomerId = table.Column<int>(type: "int", nullable: true),
+                    TechnicianUserId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    IsRented = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FridgeUnits", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_FridgeUnits_AspNetUsers_TechnicianId",
+                        column: x => x.TechnicianId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_FridgeUnits_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_FridgeUnits_Fridges_FridgeId",
+                        column: x => x.FridgeId,
+                        principalTable: "Fridges",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -1023,31 +962,44 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PurchaseOrderItems",
+                name: "PurchaseOrders",
                 columns: table => new
                 {
-                    ItemId = table.Column<int>(type: "int", nullable: false)
+                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
-                    InventoryItemId = table.Column<int>(type: "int", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    PONumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    QuotationId = table.Column<int>(type: "int", nullable: false),
+                    SupplierId = table.Column<int>(type: "int", nullable: false),
+                    OrderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpectedDeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeliveryAddress = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    PaymentTerms = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    DeliveryTerms = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    OrderedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PurchaseOrderItems", x => x.ItemId);
+                    table.PrimaryKey("PK_PurchaseOrders", x => x.PurchaseOrderId);
                     table.ForeignKey(
-                        name: "FK_PurchaseOrderItems_InventoryItems_InventoryItemId",
-                        column: x => x.InventoryItemId,
-                        principalTable: "InventoryItems",
+                        name: "FK_PurchaseOrders_AspNetUsers_OrderedByUserId",
+                        column: x => x.OrderedByUserId,
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_PurchaseOrderItems_PurchaseOrders_PurchaseOrderId",
-                        column: x => x.PurchaseOrderId,
-                        principalTable: "PurchaseOrders",
-                        principalColumn: "PurchaseOrderId",
+                        name: "FK_PurchaseOrders_Quotations_QuotationId",
+                        column: x => x.QuotationId,
+                        principalTable: "Quotations",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrders_Suppliers_SupplierId",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1088,34 +1040,46 @@ namespace Code_Vanta_Systems.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ServiceRecords",
+                name: "FridgeFaults",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FridgeId = table.Column<int>(type: "int", nullable: false),
-                    DateOfService = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    TechnicianUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ServiceDetails = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    FaultId = table.Column<int>(type: "int", nullable: true),
-                    PartsUsed = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                    FridgeUnitId = table.Column<int>(type: "int", nullable: false),
+                    ReportedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    AssignedTechnicianId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    DateReported = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    FaultDescription = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    Severity = table.Column<int>(type: "int", nullable: false),
+                    RepairDescription = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    PartsUsed = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ResolutionDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ServiceRecords", x => x.Id);
+                    table.PrimaryKey("PK_FridgeFaults", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ServiceRecords_AspNetUsers_TechnicianUserId",
-                        column: x => x.TechnicianUserId,
+                        name: "FK_FridgeFaults_AspNetUsers_AssignedTechnicianId",
+                        column: x => x.AssignedTechnicianId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_ServiceRecords_FridgeFaults_FaultId",
-                        column: x => x.FaultId,
-                        principalTable: "FridgeFaults",
-                        principalColumn: "Id");
+                        name: "FK_FridgeFaults_AspNetUsers_ReportedByUserId",
+                        column: x => x.ReportedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_ServiceRecords_Fridges_FridgeId",
+                        name: "FK_FridgeFaults_FridgeUnits_FridgeUnitId",
+                        column: x => x.FridgeUnitId,
+                        principalTable: "FridgeUnits",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_FridgeFaults_Fridges_FridgeId",
                         column: x => x.FridgeId,
                         principalTable: "Fridges",
                         principalColumn: "Id",
@@ -1153,6 +1117,112 @@ namespace Code_Vanta_Systems.Migrations
                         principalTable: "Quotations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DeliveryNotes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DeliveryDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SupplierId = table.Column<int>(type: "int", nullable: false),
+                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
+                    ReceivedById = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    IsApproved = table.Column<bool>(type: "bit", nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    GeneratedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DeliveryNotes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DeliveryNotes_AspNetUsers_ReceivedById",
+                        column: x => x.ReceivedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DeliveryNotes_PurchaseOrders_PurchaseOrderId",
+                        column: x => x.PurchaseOrderId,
+                        principalTable: "PurchaseOrders",
+                        principalColumn: "PurchaseOrderId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_DeliveryNotes_Suppliers_SupplierId",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PurchaseOrderItems",
+                columns: table => new
+                {
+                    ItemId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PurchaseOrderId = table.Column<int>(type: "int", nullable: false),
+                    FridgeId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    InventoryItemId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PurchaseOrderItems", x => x.ItemId);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrderItems_Fridges_FridgeId",
+                        column: x => x.FridgeId,
+                        principalTable: "Fridges",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrderItems_InventoryItems_InventoryItemId",
+                        column: x => x.InventoryItemId,
+                        principalTable: "InventoryItems",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrderItems_PurchaseOrders_PurchaseOrderId",
+                        column: x => x.PurchaseOrderId,
+                        principalTable: "PurchaseOrders",
+                        principalColumn: "PurchaseOrderId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ServiceRecords",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FridgeId = table.Column<int>(type: "int", nullable: false),
+                    DateOfService = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    TechnicianUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ServiceDetails = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    FaultId = table.Column<int>(type: "int", nullable: true),
+                    PartsUsed = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ServiceRecords", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ServiceRecords_AspNetUsers_TechnicianUserId",
+                        column: x => x.TechnicianUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ServiceRecords_FridgeFaults_FaultId",
+                        column: x => x.FaultId,
+                        principalTable: "FridgeFaults",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ServiceRecords_Fridges_FridgeId",
+                        column: x => x.FridgeId,
+                        principalTable: "Fridges",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.InsertData(
@@ -1283,6 +1353,11 @@ namespace Code_Vanta_Systems.Migrations
                 column: "FridgeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FridgeFaults_FridgeUnitId",
+                table: "FridgeFaults",
+                column: "FridgeUnitId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FridgeFaults_ReportedByUserId",
                 table: "FridgeFaults",
                 column: "ReportedByUserId");
@@ -1338,6 +1413,21 @@ namespace Code_Vanta_Systems.Migrations
                 column: "TechnicianUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FridgeUnits_CustomerId",
+                table: "FridgeUnits",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FridgeUnits_FridgeId",
+                table: "FridgeUnits",
+                column: "FridgeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FridgeUnits_TechnicianId",
+                table: "FridgeUnits",
+                column: "TechnicianId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FridgeUsageLogs_AccessedByUserId",
                 table: "FridgeUsageLogs",
                 column: "AccessedByUserId");
@@ -1378,6 +1468,11 @@ namespace Code_Vanta_Systems.Migrations
                 column: "RecipientUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrderItems_FridgeId",
+                table: "PurchaseOrderItems",
+                column: "FridgeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PurchaseOrderItems_InventoryItemId",
                 table: "PurchaseOrderItems",
                 column: "InventoryItemId");
@@ -1391,6 +1486,11 @@ namespace Code_Vanta_Systems.Migrations
                 name: "IX_PurchaseOrders_OrderedByUserId",
                 table: "PurchaseOrders",
                 column: "OrderedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_QuotationId",
+                table: "PurchaseOrders",
+                column: "QuotationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PurchaseOrders_SupplierId",
@@ -1614,9 +1714,6 @@ namespace Code_Vanta_Systems.Migrations
                 name: "PurchaseRequestItems");
 
             migrationBuilder.DropTable(
-                name: "Quotations");
-
-            migrationBuilder.DropTable(
                 name: "RentalOrders");
 
             migrationBuilder.DropTable(
@@ -1627,6 +1724,12 @@ namespace Code_Vanta_Systems.Migrations
 
             migrationBuilder.DropTable(
                 name: "ItemCatalogs");
+
+            migrationBuilder.DropTable(
+                name: "Quotations");
+
+            migrationBuilder.DropTable(
+                name: "FridgeUnits");
 
             migrationBuilder.DropTable(
                 name: "RequestQuotations");

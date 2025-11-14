@@ -63,22 +63,77 @@ namespace Code_Vanta_Systems.Controllers
         {
             var currentUserId = _userManager.GetUserId(User);
 
-            var allocatedFridges = await _context.Fridges
-                // REMOVED: .Include(f => f.Customer) 
+            var allocatedUnits = await _context.FridgeUnits
+                .Include(u => u.Fridge)
+                .Include(u => u.Customer)
+                    .ThenInclude(c => c.Location)
+                .Include(u => u.MaintenanceSchedules) // Requires FridgeUnit.cs update and migration
+                .Where(u =>
+                    // 1. Filter by the assigned technician on the UNIT
+                    u.TechnicianUserId == currentUserId &&
+
+                    // 2. FIX: Use valid FridgeStatus members
+                    (u.Status == FridgeStatus.Allocated || u.Status == FridgeStatus.Operational) &&
+
+                    // 3. Ensure it's not deleted
+                    !u.IsDeleted)
+                .ToListAsync();
+
+            var viewModel = allocatedUnits.Select(u =>
+            {
+                var customer = u.Customer;
+
+                return new MaintenanceFridgeListViewModel
+                {
+                    FridgeId = u.Id,
+                    SerialNumber = u.SerialNumber,
+                    Model = u.Fridge.Model,
+                    FridgeStatus = u.Status.ToString(),
+
+                    CustomerBusinessName = customer?.BusinessName ?? "N/A",
+                    CustomerAddress = customer?.PhysicalAddress ?? "N/A",
+
+                    // This line assumes you fix the MaintenanceSchedules property on FridgeUnit.cs
+                    NextScheduledVisit = u.MaintenanceSchedules?
+                         .Where(ms => ms.ScheduledDate >= DateTime.Today)
+                         .OrderBy(ms => ms.ScheduledDate)
+                         .FirstOrDefault()
+                         ?.ScheduledDate
+                };
+            }).OrderBy(vm => vm.CustomerBusinessName).ToList();
+
+            return View(viewModel);
+        }
+
+        // -------------------------------------------------------------
+
+        // New: GET: MaintenanceTechnician/AllFridges (List of ALL fridges in the system)
+        [HttpGet]
+        public async Task<IActionResult> AllFridges(int? locationId)
+        {
+            // 1. Start query for ALL fridges (excluding deleted)
+            var query = _context.Fridges
                 .Include(f => f.Location)
-                .Include(f => f.MaintenanceSchedules)
+                .Include(f => f.MaintenanceSchedules) // Assumes MaintenanceSchedules links to Fridge Model
+
                 // CRITICAL FIX: Include ONLY the active Allocation record to get the current customer
                 .Include(f => f.Allocations.Where(a => a.DeallocationDate == null))
                     .ThenInclude(a => a.Customer)
-                .Where(f =>
-                    f.TechnicianUserId == currentUserId &&  // The technician-specific filter
-                    f.Status == FridgeStatus.Allocated &&
-                    !f.IsDeleted)
-                .ToListAsync();
+                .Where(f => !f.IsDeleted);
 
-            var viewModel = allocatedFridges.Select(f =>
+            // 2. Apply Location Filter if a locationId is provided and valid
+            if (locationId.HasValue && locationId.Value > 0)
             {
-                // NEW: Get the customer from the active allocation record
+                query = query.Where(f => f.LocationId == locationId.Value);
+                ViewBag.CurrentLocationId = locationId.Value;
+            }
+
+            var allFridges = await query.ToListAsync();
+
+            // 3. Map the Fridge models to your MaintenanceFridgeListViewModel
+            var viewModel = allFridges.Select(f =>
+            {
+                // Get the customer from the active allocation record
                 var activeAllocation = f.Allocations.FirstOrDefault();
                 var customer = activeAllocation?.Customer;
 
@@ -91,6 +146,8 @@ namespace Code_Vanta_Systems.Controllers
 
                     // Use the Customer from the Allocation table (the source of truth)
                     CustomerBusinessName = customer?.BusinessName ?? "N/A",
+
+                    // Default to customer's address, fall back to the fridge's warehouse location
                     CustomerAddress = customer?.PhysicalAddress ?? f.Location?.Description,
 
                     NextScheduledVisit = f.MaintenanceSchedules
@@ -101,61 +158,7 @@ namespace Code_Vanta_Systems.Controllers
                 };
             }).OrderBy(vm => vm.CustomerBusinessName).ToList();
 
-            return View(viewModel); // Use the AllocatedFridges View
-        }
-
-        // -------------------------------------------------------------
-
-        // New: GET: MaintenanceTechnician/AllFridges (List of ALL fridges in the system)
-        [HttpGet]
-        public async Task<IActionResult> AllFridges(int? locationId) // Re-added the locationId for filtering
-        {
-            // 1. Start query for ALL fridges (excluding deleted)
-            var query = _context.Fridges
-                // REMOVED: .Include(f => f.Customer)
-                .Include(f => f.Location)
-                .Include(f => f.MaintenanceSchedules)
-                // CRITICAL FIX: Include ONLY the active Allocation record to get the current customer
-                .Include(f => f.Allocations.Where(a => a.DeallocationDate == null))
-                    .ThenInclude(a => a.Customer)
-                .Where(f => !f.IsDeleted);
-
-            // 2. Apply Location Filter if a locationId is provided and valid (using existing logic)
-            if (locationId.HasValue && locationId.Value > 0)
-            {
-                query = query.Where(f => f.LocationId == locationId.Value);
-                ViewBag.CurrentLocationId = locationId.Value;
-            }
-
-            var allFridges = await query.ToListAsync();
-
-            // 3. Map the Fridge models to your MaintenanceFridgeListViewModel
-            var viewModel = allFridges.Select(f =>
-            {
-                // NEW: Get the customer from the active allocation record
-                var activeAllocation = f.Allocations.FirstOrDefault();
-                var customer = activeAllocation?.Customer;
-
-                return new MaintenanceFridgeListViewModel
-                {
-                    FridgeId = f.Id,
-                    SerialNumber = f.SerialNumber,
-                    Model = f.Model,
-                    FridgeStatus = f.Status.ToString(), // Provides the fridge status
-
-                    // Use the Customer from the Allocation table (the source of truth)
-                    CustomerBusinessName = customer?.BusinessName ?? "N/A",
-                    CustomerAddress = customer?.PhysicalAddress ?? f.Location?.Description,
-
-                    NextScheduledVisit = f.MaintenanceSchedules
-                         .Where(ms => ms.ScheduledDate >= DateTime.Today)
-                         .OrderBy(ms => ms.ScheduledDate)
-                         .FirstOrDefault()
-                         ?.ScheduledDate
-                };
-            }).OrderBy(vm => vm.CustomerBusinessName).ToList();
-
-            // 4. Populate Locations for Filter Dropdown (using existing logic)
+            // 4. Populate Locations for Filter Dropdown
             var allLocations = await _context.Locations
                 .OrderBy(l => l.Description)
                 .Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description })
@@ -172,58 +175,73 @@ namespace Code_Vanta_Systems.Controllers
         // GET: MaintenanceTechnician/FridgeDetails/5
         public async Task<IActionResult> FridgeDetails(int id)
         {
-            var fridge = await _context.Fridges
-                // REMOVED: .Include(f => f.Customer)
+            // 1. Fetch the general Fridge Model/Stock Item and all its associated MODEL-LEVEL history
+            var fridgeModel = await _context.Fridges
                 .Include(f => f.Location)
-                .Include(f => f.Faults.OrderByDescending(ff => ff.DateReported))          // Load Fault History
-                .Include(f => f.ServiceRecords.OrderByDescending(sr => sr.DateOfService)) // Load Service History
-                .Include(f => f.MaintenanceSchedules) // Load Maintenance Schedules
-                                                      // CRITICAL FIX: Include ONLY the active Allocation record to get the current customer
-                .Include(f => f.Allocations.Where(a => a.DeallocationDate == null))
-                    .ThenInclude(a => a.Customer)
+
+                // FIX 1: Include Faults and ServiceRecords to support the ViewModel mapping
+                .Include(f => f.Faults.OrderByDescending(ff => ff.DateReported))
+                .Include(f => f.ServiceRecords.OrderByDescending(sr => sr.DateOfService))
+
+                .Include(f => f.MaintenanceSchedules) // Schedules linked to the model
                 .FirstOrDefaultAsync(f => f.Id == id);
 
-            if (fridge == null)
+            if (fridgeModel == null)
             {
                 return NotFound();
             }
 
-            // NEW: Get the customer from the active allocation record
-            var activeAllocation = fridge.Allocations.FirstOrDefault();
-            var customer = activeAllocation?.Customer;
+            // 2. Fetch ALL Fridge Units associated with this model, loading their specific data
+            var fridgeUnits = await _context.FridgeUnits
+                .Where(u => u.FridgeId == id)
+                .Include(u => u.Customer)          // Unit's current customer
+                .Include(u => u.Technician)        // Unit's assigned technician
+                .ToListAsync();
 
-            // Map the fetched data to the ViewModel
+            // 3. Map the fetched data to the ViewModel
             var viewModel = new MaintenanceFridgeDetailsViewModel
             {
-                // 1. Map the Summary Data (Using the structure from MaintenanceFridgeListViewModel)
+                // 1. Map the Summary Data (Summary of the Model)
                 FridgeSummary = new MaintenanceFridgeListViewModel
                 {
-                    FridgeId = fridge.Id,
-                    SerialNumber = fridge.SerialNumber,
-                    Model = fridge.Model,
-                    FridgeStatus = fridge.Status.ToString(),
+                    FridgeId = fridgeModel.Id,
+                    SerialNumber = fridgeModel.SerialNumber,
+                    Model = fridgeModel.Model,
+                    FridgeStatus = fridgeModel.Status.ToString(),
 
-                    // Use the Customer from the Allocation table
-                    CustomerBusinessName = customer?.BusinessName ?? "N/A",
-                    CustomerAddress = customer?.PhysicalAddress ?? fridge.Location?.Description,
-                    // Find the closest upcoming schedule
-                    NextScheduledVisit = fridge.MaintenanceSchedules
-                        .Where(ms => ms.ScheduledDate >= DateTime.Today)
-                        .OrderBy(ms => ms.ScheduledDate)
-                        .FirstOrDefault()
-                        ?.ScheduledDate
+                    CustomerBusinessName = $"{fridgeUnits.Count} Units in Circulation",
+                    CustomerAddress = $"Stock Location: {fridgeModel.Location?.Description}",
+
+                    NextScheduledVisit = fridgeModel.MaintenanceSchedules
+                         .Where(ms => ms.ScheduledDate >= DateTime.Today)
+                         .OrderBy(ms => ms.ScheduledDate)
+                         .FirstOrDefault()
+                         ?.ScheduledDate
                 },
 
-                // 2. Map the History Data (This fixes the empty sections)
-                FaultHistory = fridge.Faults.ToList(), // Already ordered by Include
+                // 🚨 CRITICAL FIX: The ViewModel should display the details for ALL units.
+                UnitDetails = fridgeUnits.Select(u => new UnitDetailViewModel
+                {
+                    UnitId = u.Id,
+                    SerialNumber = u.SerialNumber,
+                    Condition = u.Condition.ToString(),
+                    UnitStatus = u.Status.ToString(),
+                    CurrentCustomer = u.Customer?.BusinessName ?? "In Stock",
+                    AssignedTechnician = u.Technician?.FullName ?? "N/A",
 
-                ServiceHistory = fridge.ServiceRecords.ToList(), // Already ordered by Include
+                    // NOTE: Unit-level history would be loaded here if the ViewModel allowed it, 
+                    // e.g., FaultHistory = _context.FridgeFaults.Where(f => f.FridgeUnitId == u.Id).ToList() 
+                }).ToList(),
 
-                // Filter upcoming schedules to only show future dates
-                UpcomingSchedules = fridge.MaintenanceSchedules
-                    .Where(ms => ms.ScheduledDate >= DateTime.Today)
-                    .OrderBy(ms => ms.ScheduledDate)
-                    .ToList()
+                // 2. Map the History Data for the *Model* (Now supported by FIX 1)
+                FaultHistory = fridgeModel.Faults.ToList(),
+                ServiceHistory = fridgeModel.ServiceRecords.ToList(),
+
+                // Filter upcoming schedules linked to the MODEL
+                UpcomingSchedules = fridgeModel.MaintenanceSchedules
+                     .Where(ms => ms.ScheduledDate >= DateTime.Today)
+                     .OrderBy(ms => ms.ScheduledDate)
+                     .ToList()
             };
 
             return View(viewModel);

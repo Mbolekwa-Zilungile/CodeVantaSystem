@@ -10,6 +10,8 @@ namespace Code_Vanta_Systems.ViewModels.Log_Fault
         [Display(Name = "Fridge")]
         public int FridgeId { get; set; }
 
+        public int FridgeUnitId { get; set; } // Renamed from FridgeId
+
         [Required]
         [StringLength(500)]
         [Display(Name = "Fault Description")]

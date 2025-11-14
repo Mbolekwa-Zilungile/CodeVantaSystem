@@ -31,5 +31,6 @@ namespace Code_Vanta_Systems.Models
         [Required]
         [MaxLength(20)]
         public string Status { get; set; }
+
     }
 }

@@ -12,6 +12,9 @@ namespace Code_Vanta_Systems.Models
         public int FridgeId { get; set; }
         public virtual Fridge Fridge { get; set; }
 
+        public int FridgeUnitId { get; set; }
+        public FridgeUnit FridgeUnit { get; set; }
+
         [Required]
         public string ReportedByUserId { get; set; }
         public virtual ApplicationUser ReportedBy { get; set; }

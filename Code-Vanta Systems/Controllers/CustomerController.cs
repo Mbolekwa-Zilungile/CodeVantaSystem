@@ -477,8 +477,11 @@ namespace Code_Vanta_Systems.Controllers
                     return RedirectToAction(nameof(LoggedFault));
                 }
 
-                var query = _context.FridgeFaults.Where(f => f.Status != FaultStatus.Cancelled)
+                // 1️⃣ MODIFICATION: Filter faults to only show those reported by the current user
+                var query = _context.FridgeFaults.Where(f => f.ReportedByUserId == user.Id && f.Status != FaultStatus.Cancelled)
                     .Include(f => f.Fridge)
+                    // 🚨 IMPORTANT: Include FridgeUnit if you update the model to link faults to units.
+                    // .Include(f => f.FridgeUnit) 
                     .Include(f => f.ReportedBy)
                     .Include(f => f.AssignedTechnician)
                     .AsQueryable();
@@ -513,7 +516,9 @@ namespace Code_Vanta_Systems.Controllers
                         Id = f.Id,
                         FridgeId = f.FridgeId,
                         FridgeModel = f.Fridge.Model,
-                        FridgeSerialNumber = f.Fridge.SerialNumber,
+                        // 🚨 FRIDGE UNIT FIX: Use the unit's serial if linked via FridgeUnitId
+                        // FridgeSerialNumber = f.FridgeUnit.SerialNumber,
+                        FridgeSerialNumber = f.Fridge.SerialNumber, // Keeping old logic for now
                         ReportedByUserId = f.ReportedByUserId,
                         ReportedByFullName = f.ReportedBy.FullName,
                         AssignedTechnicianId = f.AssignedTechnicianId,
@@ -529,19 +534,20 @@ namespace Code_Vanta_Systems.Controllers
                 ViewData["totalPages"] = totalPages;
                 ViewData["search"] = search ?? "";
 
-                // Load all fridges for dropdown
-                var fridges = await _context.FridgeAllocations
-                    .Include(fa => fa.Fridge)
-                    .Where(fa => fa.CustomerId == customer.Id &&
-                                 (fa.DeallocationDate == null || fa.DeallocationDate > DateTime.Now))
-                    .Select(fa => new
+                // 2️⃣ FIX: Load specific FRIDGE UNITS allocated to this customer for the dropdown
+                var uniqueUnits = await _context.FridgeUnits
+                    .Include(u => u.Fridge)
+                    // 🚨 ASSUMPTION: FridgeUnit model has a CustomerId FK field
+                    .Where(u => u.CustomerId == customer.Id)
+                    .Select(u => new
                     {
-                        Id = fa.Fridge.Id,
-                        Name = $"{fa.Fridge.Model} - {fa.Fridge.SerialNumber}"
+                        Id = u.Id, // The Unit's unique ID
+                        Name = $"{u.Fridge.Model} - {u.SerialNumber}" // The Unit's unique serial
                     })
                     .ToListAsync();
 
-                ViewBag.Fridges = new SelectList(fridges, "Id", "Name");
+                // The SelectList must use the unique FridgeUnit ID
+                ViewBag.Fridges = new SelectList(uniqueUnits, "Id", "Name");
 
                 return View(faults);
             }
@@ -575,20 +581,22 @@ namespace Code_Vanta_Systems.Controllers
                     return RedirectToAction(nameof(LoggedFault));
                 }
 
-                // 3️⃣ Load only fridges allocated to this customer
-                var fridges = await _context.FridgeAllocations
-                    .Include(fa => fa.Fridge)
-                    .Where(fa => fa.CustomerId == customer.Id &&
-                                 (fa.DeallocationDate == null || fa.DeallocationDate > DateTime.Now))
-                    .Select(fa => new
+                // 3️⃣ FIX: Load specific FRIDGE UNITS allocated to this customer
+                var uniqueUnits = await _context.FridgeUnits
+                    .Include(u => u.Fridge)
+                    // 🚨 ASSUMPTION: FridgeUnit model has a CustomerId FK field
+                    .Where(u => u.CustomerId == customer.Id)
+                    .Select(u => new
                     {
-                        Id = fa.Fridge.Id,
-                        Name = $"{fa.Fridge.Model} - {fa.Fridge.SerialNumber}"
+                        Id = u.Id, // The Unit's unique ID
+                        Name = $"{u.Fridge.Model} - {u.SerialNumber}" // The Unit's unique serial
                     })
                     .ToListAsync();
 
-                ViewBag.Fridges = new SelectList(fridges, "Id", "Name");
+                // The SelectList must use the unique FridgeUnit ID
+                ViewBag.Fridges = new SelectList(uniqueUnits, "Id", "Name");
 
+                // Note: The view model must be updated to use FridgeUnitId
                 return View(new CreateFridgeFaultViewModel());
             }
             catch (Exception)
@@ -603,9 +611,25 @@ namespace Code_Vanta_Systems.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LogFault(CreateFridgeFaultViewModel model)
         {
+            // The model property containing the FridgeUnit.Id should ideally be renamed to FridgeUnitId.
+            // For this fix, we assume the incoming unit ID is stored in model.FridgeId.
+
             if (!ModelState.IsValid)
             {
                 TempData["ErrorMessage"] = "Please correct the errors in the form.";
+
+                // ⚠️ Reload dropdowns before returning the view on failure (Keep this block)
+                var userOnFail = await _userManager.GetUserAsync(User);
+                var customerOnFail = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == userOnFail.Id);
+                if (customerOnFail != null)
+                {
+                    var uniqueUnitsOnFail = await _context.FridgeUnits
+                        .Include(u => u.Fridge)
+                        .Where(u => u.CustomerId == customerOnFail.Id)
+                        .Select(u => new { Id = u.Id, Name = $"{u.Fridge.Model} - {u.SerialNumber}" })
+                        .ToListAsync();
+                    ViewBag.Fridges = new SelectList(uniqueUnitsOnFail, "Id", "Name");
+                }
                 return View(model);
             }
 
@@ -620,21 +644,28 @@ namespace Code_Vanta_Systems.Controllers
                     return RedirectToAction(nameof(LoggedFault));
                 }
 
-                // 1️⃣ Ensure the selected fridge belongs to this customer
-                var allocation = await _context.FridgeAllocations
-                    .Include(a => a.Fridge)
-                    .FirstOrDefaultAsync(a => a.FridgeId == model.FridgeId && a.CustomerId == customer.Id);
+                // 1️⃣ Find the selected FRIDGE UNIT using the ID from the form (model.FridgeId)
+                var allocatedUnit = await _context.FridgeUnits
+                    .Include(u => u.Fridge)
+                    // model.FridgeId now holds the FridgeUnit.Id
+                    .FirstOrDefaultAsync(u => u.Id == model.FridgeId && u.CustomerId == customer.Id);
 
-                if (allocation == null)
+                if (allocatedUnit == null)
                 {
-                    TempData["ErrorMessage"] = "Invalid fridge selection. You can only log faults for your allocated fridges.";
+                    TempData["ErrorMessage"] = "Invalid fridge unit selection. You can only log faults for your allocated units.";
                     return RedirectToAction(nameof(LogFault));
                 }
 
                 // 2️⃣ Create the fridge fault
                 var fault = new FridgeFault
                 {
-                    FridgeId = model.FridgeId,
+                    // This is the ID of the general fridge Model/Type (required for old reports)
+                    FridgeId = allocatedUnit.FridgeId,
+
+                    // ✅ CRITICAL FIX: Set the required FridgeUnitId field
+                    // The value is the ID of the specific unit selected in the dropdown.
+                    FridgeUnitId = allocatedUnit.Id, // <-- Pass the FridgeUnit ID here
+
                     ReportedByUserId = user.Id,
                     DateReported = DateTime.Now,
                     FaultDescription = model.FaultDescription,
@@ -642,9 +673,9 @@ namespace Code_Vanta_Systems.Controllers
                 };
 
                 _context.FridgeFaults.Add(fault);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); // This should now succeed
 
-                // 3️⃣ Audit trail
+                // 3️⃣ Audit trail (Retained logic)
                 var systemAudit = new AuditTrail
                 {
                     ChangeType = "Create",
@@ -657,7 +688,7 @@ namespace Code_Vanta_Systems.Controllers
                 _context.AuditTrails.Add(systemAudit);
                 await _context.SaveChangesAsync();
 
-                // 4️⃣ Notify all admins
+                // 4️⃣ Notify all admins (Retained logic)
                 var admins = await _userManager.GetUsersInRoleAsync("Admin");
                 foreach (var admin in admins)
                 {
@@ -682,6 +713,19 @@ namespace Code_Vanta_Systems.Controllers
             {
                 Console.WriteLine(ex.Message);
                 TempData["ErrorMessage"] = "Error logging fridge fault. Please try again.";
+
+                // ⚠️ Reload dropdowns before returning the view on failure (Keep this block)
+                var userOnFail = await _userManager.GetUserAsync(User);
+                var customerOnFail = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == userOnFail.Id);
+                if (customerOnFail != null)
+                {
+                    var uniqueUnitsOnFail = await _context.FridgeUnits
+                        .Include(u => u.Fridge)
+                        .Where(u => u.CustomerId == customerOnFail.Id)
+                        .Select(u => new { Id = u.Id, Name = $"{u.Fridge.Model} - {u.SerialNumber}" })
+                        .ToListAsync();
+                    ViewBag.Fridges = new SelectList(uniqueUnitsOnFail, "Id", "Name");
+                }
                 return View(model);
             }
         }

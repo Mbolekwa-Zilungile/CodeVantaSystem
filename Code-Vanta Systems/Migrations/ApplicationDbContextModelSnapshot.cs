@@ -546,6 +546,9 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<int>("FridgeId")
                         .HasColumnType("int");
 
+                    b.Property<int>("FridgeUnitId")
+                        .HasColumnType("int");
+
                     b.Property<string>("PartsUsed")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -573,6 +576,8 @@ namespace Code_Vanta_Systems.Migrations
                     b.HasIndex("AssignedTechnicianId");
 
                     b.HasIndex("FridgeId");
+
+                    b.HasIndex("FridgeUnitId");
 
                     b.HasIndex("ReportedByUserId");
 
@@ -866,6 +871,9 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<int>("FridgeId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("FridgeUnitId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("ScheduledDate")
                         .HasColumnType("datetime2");
 
@@ -881,6 +889,8 @@ namespace Code_Vanta_Systems.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("FridgeId");
+
+                    b.HasIndex("FridgeUnitId");
 
                     b.HasIndex("TechnicianId");
 
@@ -1859,6 +1869,12 @@ namespace Code_Vanta_Systems.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Code_Vanta_Systems.Models.FridgeUnit", "FridgeUnit")
+                        .WithMany()
+                        .HasForeignKey("FridgeUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "ReportedBy")
                         .WithMany("ReportedFaults")
                         .HasForeignKey("ReportedByUserId")
@@ -1868,6 +1884,8 @@ namespace Code_Vanta_Systems.Migrations
                     b.Navigation("AssignedTechnician");
 
                     b.Navigation("Fridge");
+
+                    b.Navigation("FridgeUnit");
 
                     b.Navigation("ReportedBy");
                 });
@@ -2003,6 +2021,10 @@ namespace Code_Vanta_Systems.Migrations
                         .HasForeignKey("FridgeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Code_Vanta_Systems.Models.FridgeUnit", null)
+                        .WithMany("MaintenanceSchedules")
+                        .HasForeignKey("FridgeUnitId");
 
                     b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "Technician")
                         .WithMany()
@@ -2410,6 +2432,11 @@ namespace Code_Vanta_Systems.Migrations
                     b.Navigation("ServiceRecords");
 
                     b.Navigation("UsageLogs");
+                });
+
+            modelBuilder.Entity("Code_Vanta_Systems.Models.FridgeUnit", b =>
+                {
+                    b.Navigation("MaintenanceSchedules");
                 });
 
             modelBuilder.Entity("Code_Vanta_Systems.Models.InventoryItem", b =>

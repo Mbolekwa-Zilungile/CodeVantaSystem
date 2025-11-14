@@ -40,5 +40,8 @@ namespace Code_Vanta_Systems.Models
 
         [StringLength(500)]
         public string? Notes { get; set; }
+
+        // Maintenance Schedules linked directly to this unit
+        public virtual ICollection<MaintenanceSchedule>? MaintenanceSchedules { get; set; }
     }
 }
