@@ -4,15 +4,15 @@
 @inject UserManager<ApplicationUser> UserManager
 
 @{
-    // Get current controller and action for sidebar link highlighting
-    string currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    // Get current controller and action for sidebar link highlighting
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
 
-    // Adopted Admin Palette
-    const string PrimaryColor = "#009688"; // ACCENT: Teal (Highlight)
-    const string SecondaryColor = "#2C3E50"; // PRIMARY BASE: Deep Navy (Sidebar/Navbar)
-    const string SecondaryAccent = "#FFC107"; // Secondary Accent color (e.g., brand text)
-    const string BgColor = "#F8F9FA";
+    // Adopted Admin Palette
+    const string PrimaryColor = "#009688"; // ACCENT: Teal (Highlight)
+    const string SecondaryColor = "#2C3E50"; // PRIMARY BASE: Deep Navy (Sidebar/Navbar)
+    const string SecondaryAccent = "#FFC107"; // Secondary Accent color (e.g., brand text)
+    const string BgColor = "#F8F9FA";
 }
 
 <!DOCTYPE html>
@@ -26,76 +26,86 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        body {
-            background-color: @BgColor;
-            font-family: 'Poppins', sans-serif;
+                body {
+                        background-color: @BgColor;
+                        font-family: 'Poppins', sans-serif;
+
         }
 
-        #sidebar {
-            height: 100vh;
-            width: 280px; /* Wider sidebar */
-            position: fixed;
-            top: 66px; /* Adjusted for navbar height */
-            left: 0;
-            background-color: @SecondaryColor;
-            color: #fff;
-            padding-top: 20px;
-            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
-            z-index: 1020;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
+                #sidebar {
+                        height: 100vh;
+                        width: 280px; /* Wider sidebar */
+                        position: fixed;
+                        top: 66px; /* Adjusted for navbar height */
+                        left: 0;
+                        background-color: @SecondaryColor;
+                        color: #fff;
+                        padding-top: 20px;
+                        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
+                        transition: all 0.3s ease;
+                        z-index: 1020;
+                        display: flex;
+                        flex-direction: column;
+                        overflow-y: auto;
+
         }
 
-            #sidebar .sidebar-link {
-                padding: 12px 15px;
-                display: flex;
-                align-items: center;
-                font-size: 1.0rem;
-                color: #C0C0C0; /* Light text */
-                text-decoration: none;
-                font-weight: 500;
-                transition: background-color 0.2s, color 0.2s;
-            }
+                    #sidebar .sidebar-link {
+                            padding: 12px 15px;
+                            display: flex;
+                            align-items: center;
+                            font-size: 1.0rem;
+                            color: #C0C0C0; /* Light text */
+                            text-decoration: none;
+                            font-weight: 500;
+                            transition: background-color 0.2s, color 0.2s;
 
-                #sidebar .sidebar-link:hover,
-                #sidebar .sidebar-link.active {
-                    background-color: @PrimaryColor; /* Teal highlight */
-                    color: #fff;
-                    border-radius: 8px;
-                    padding-left: 20px;
-                    transform: translateX(2px);
-                }
-
-                #sidebar .sidebar-link i {
-                    margin-right: 12px;
-                    font-size: 1.2rem;
-                }
-
-        #main-content {
-            margin-left: 280px; /* Adjusted margin */
-            padding-top: 86px; /* Adjusted padding for fixed navbar */
-            transition: margin-left 0.3s ease;
-            width: calc(100% - 280px);
         }
 
-        #top-navbar {
-            height: 66px; /* Slightly taller navbar */
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1030;
-            background-color: @SecondaryColor !important;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                        #sidebar .sidebar-link:hover,
+                        #sidebar .sidebar-link.active {
+                                background-color: @PrimaryColor; /* Teal highlight */
+                                color: #fff;
+                                border-radius: 8px;
+                                padding-left: 20px;
+                                transform: translateX(2px);
+
         }
 
-        .nav-title {
-            color: #A0A0A0;
-            font-weight: 700;
-            letter-spacing: 1px;
-            font-size: 0.8rem;
+                        #sidebar .sidebar-link i {
+                                margin-right: 12px;
+                                font-size: 1.2rem;
+
         }
+
+                #main-content {
+                        margin-left: 280px; /* Adjusted margin */
+                        padding-top: 86px; /* Adjusted padding for fixed navbar */
+                        transition: margin-left 0.3s ease;
+                        width: calc(100% - 280px);
+
+        }
+
+                #top-navbar {
+                        height: 66px; /* Slightly taller navbar */
+                        position: fixed;
+                        top: 0;
+                        width: 100%;
+                        z-index: 1030;
+                        background-color: @SecondaryColor !important;
+                        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+
+        }
+
+                .nav-title {
+                        color: #A0A0A0;
+                        font-weight: 700;
+                        letter-spacing: 1px;
+                        font-size: 0.8rem;
+
+        }
+
+
     </style>
 </head>
 <body>
@@ -110,9 +120,31 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 </ul>
-                <div class="d-flex">
-                    <partial name="_LoginPartial" />
-                </div>
+
+                @* START OF USER DROPDOWN SECTION (FINAL FIX) *@
+                @if (SignInManager.IsSignedIn(User))
+                {
+                    <div class="d-flex">
+                        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                            <li class="nav-item dropdown d-flex align-items-center">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#"
+                                   id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle me-2" style="font-size: 1.4rem; color: @PrimaryColor;"></i> @User.Identity.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="navbarDropdown">
+                                    <li><a class="dropdown-item" href="#">Profile Settings</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" asp-controller="Account" asp-action="Logout">
+                                            <button type="submit" class="dropdown-item text-danger">Logout <i class="bi bi-box-arrow-right ms-2"></i></button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                }
+                @* END OF USER DROPDOWN SECTION *@
             </div>
         </div>
     </nav>
@@ -121,41 +153,46 @@
         <h6 class="nav-title px-4 mt-2 mb-3">Core Tasks</h6>
 
         <a class="sidebar-link @(currentAction == "Index" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="Index">
+                 asp-controller="MaintenanceTechnician" asp-action="Index">
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
 
         <a class="sidebar-link @(currentAction == "MaintenanceSchedules" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="MaintenanceSchedules">
+                 asp-controller="MaintenanceTechnician" asp-action="MaintenanceSchedules">
             <i class="bi bi-calendar-check"></i> My Schedules
         </a>
 
         <a class="sidebar-link @(currentAction == "CreateServiceRecord" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="CreateServiceRecord">
+                 asp-controller="MaintenanceTechnician" asp-action="CreateServiceRecord">
             <i class="bi bi-wrench"></i> Log Quick Service
         </a>
 
         <h6 class="nav-title px-4 mt-4 mb-3">Asset Oversight (Units)</h6>
 
         <a class="sidebar-link @(currentAction == "AllocatedFridges" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="AllocatedFridges">
+                 asp-controller="MaintenanceTechnician" asp-action="AllocatedFridges">
             <i class="bi bi-box-seam-fill"></i> My Allocated Units
         </a>
 
         <a class="sidebar-link @(currentAction == "AllFridges" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="AllFridges">
+                 asp-controller="MaintenanceTechnician" asp-action="AllFridges">
             <i class="bi bi-list-columns-reverse"></i> All Fridge Units
         </a>
 
         <a class="sidebar-link @(currentAction == "FaultReports" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="FaultReports">
+                 asp-controller="MaintenanceTechnician" asp-action="FaultReports">
             <i class="bi bi-exclamation-triangle"></i> My Faults
+        </a>
+
+        <a class="sidebar-link @(currentAction == "ViewSpareParts" ? "active" : "")"
+                 asp-controller="MaintenanceTechnician" asp-action="ViewSpareParts">
+            <i class="bi bi-gear-wide-connected"></i> Spare Parts Inventory
         </a>
 
         <h6 class="nav-title px-4 mt-4 mb-3">Reporting</h6>
 
         <a class="sidebar-link @(currentAction == "Reports" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="Reports">
+                 asp-controller="MaintenanceTechnician" asp-action="Reports">
             <i class="bi bi-bar-chart-line"></i> Performance Reports
         </a>
 
@@ -170,6 +207,7 @@
             @RenderBody()
         </main>
     </div>
+
 
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
