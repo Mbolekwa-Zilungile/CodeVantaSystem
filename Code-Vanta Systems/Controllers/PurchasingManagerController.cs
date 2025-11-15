@@ -1579,12 +1579,12 @@ namespace Code_Vanta_Systems.Controllers
                         FridgeId = fridge.Id,
                         SerialNumber = $"{fridge.SerialNumber}-{currentNumber:D3}",
                         Condition = fridge.Condition,
-                        Status = fridge.Status,
+                        Status = FridgeStatus.Available,
                     };
                     context.FridgeUnits.Add(unit);
                 }
             }
-        
+
 
             // 4. Notify Inventory Liaisons
             var liaisons = await userManager.GetUsersInRoleAsync("InventoryLiaison");
@@ -1630,7 +1630,8 @@ namespace Code_Vanta_Systems.Controllers
         }
 
 
-      
+
+
         #endregion
     }
 

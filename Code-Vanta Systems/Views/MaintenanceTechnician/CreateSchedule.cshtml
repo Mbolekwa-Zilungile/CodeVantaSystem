@@ -64,7 +64,7 @@
 
                 <div class="d-flex justify-content-between mt-4">
                     <a asp-action="@(isListSelectMode ? "AllocatedFridges" : "FridgeDetails")"
-                       @* CRITICAL FIX: Use FridgeUnitId for back button *@
+                     
                        asp-route-id="@Model.FridgeUnitId" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Cancel
                     </a>
