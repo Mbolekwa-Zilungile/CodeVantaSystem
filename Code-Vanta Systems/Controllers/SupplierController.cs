@@ -685,7 +685,7 @@ namespace Code_Vanta_Systems.Controllers
             await context.SaveChangesAsync(); // Save all changes at once
 
             TempData["SuccessMessage"] = $"Purchase Order {purchaseOrder.PONumber} has been successfully approved.";
-            return RedirectToAction("AllPurchaseOrders");
+            return RedirectToAction("PurchaseOrderDetails", new { id = id });
         }
 
    
