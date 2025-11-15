@@ -6,8 +6,16 @@
 }
 
 <div class="container py-4">
-    <h2 class="mb-4 text-primary"><i class="bi bi-calendar-check"></i> Upcoming Maintenance Schedules</h2>
-    <p class="text-muted">List of all maintenance visits assigned to you, excluding completed ones.</p>
+    <h2 class="mb-4 text-primary"><i class="bi bi-calendar-check me-2"></i> Upcoming Maintenance Schedules</h2>
+    <p class="text-muted">List of all scheduled maintenance visits assigned to you. Monitor the customer's response before dispatching.</p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     @if (Model != null && Model.Any())
     {
@@ -18,37 +26,86 @@
                     <th>Unit S/N</th>
                     <th>Customer</th>
                     <th>Description</th>
-                    <th>Status</th>
+                    <th>Schedule Status</th>
+                    <th>Customer Confirmation</th> @* <--- NEW COLUMN *@
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in Model)
                 {
+                    
+                        // Determine status badge colors
+                        string statusBadge = item.Status == "Scheduled" ? "bg-warning text-dark" : item.Status == "Cancelled" ? "bg-secondary" : "bg-info";
+                        string confirmBadge = item.CustomerConfirmation switch
+                        {
+                            "Confirmed" => "bg-success",
+                            "Declined" => "bg-danger",
+                            _ => "bg-secondary"
+                        };
+
+                        // Determine if the Log Service button should be highlighted/available
+                        bool isConfirmed = item.CustomerConfirmation == "Confirmed";
+                    
                     <tr>
-                        <td>@item.ScheduledDate.ToString("yyyy-MM-dd HH:mm")</td>
-                        @* CRITICAL FIX: Use FridgeUnit and link to FridgeUnitId *@
+                        <td class="fw-bold">@item.ScheduledDate.ToString("dd MMM yyyy @ HH:mm")</td>
                         <td>
                             <a asp-action="FridgeDetails" asp-route-id="@item.FridgeUnitId" class="text-primary">
-                                @item.FridgeUnit.SerialNumber @* Assumes FridgeUnit navigation is available *@
+                                @item.FridgeUnit.SerialNumber 
                             </a>
                         </td>
-                        <td>@item.FridgeUnit.Customer?.BusinessName @* Assumes Customer navigation is available on FridgeUnit *@</td>
+                        <td>@item.FridgeUnit.Customer?.BusinessName</td>
                         <td>@item.Description</td>
+                        
+                        <td><span class="badge @statusBadge">@item.Status</span></td>
+                        
+                        {{-- Display Customer Confirmation Status --}}
+                        <td><span class="badge @confirmBadge">@item.CustomerConfirmation</span></td>
+                        
                         <td>
-                            <span class="badge bg-info">@item.Status</span>
-                        </td>
-                        <td>
-                            @* CRITICAL FIX: Changed route parameter to unitId *@
-                            <a asp-action="CreateServiceRecord" asp-route-unitId="@item.FridgeUnitId" class="btn btn-sm btn-outline-success me-2">
-                                <i class="bi bi-tools"></i> Service
+                            @* Action 1: Log Service/Completion - Highlighted if confirmed *@
+                            <a asp-action="CreateServiceRecord" asp-route-unitId="@item.FridgeUnitId" 
+                               class="btn btn-sm @(isConfirmed ? "btn-success" : "btn-outline-success") me-2" 
+                               title="Log Service Completion">
+                                <i class="bi bi-patch-check"></i> Log Service
                             </a>
-                            @* CRITICAL FIX: Changed route parameter to id *@
-                            <a asp-action="FridgeDetails" asp-route-id="@item.FridgeUnitId" class="btn btn-sm btn-outline-info">
+                            
+                            @* Action 2: Schedule Cancellation/Management *@
+                            @if (item.Status != "Completed" && item.Status != "Cancelled")
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-danger me-2" data-bs-toggle="modal" data-bs-target="#cancelModal-@item.Id">
+                                    <i class="bi bi-x-circle"></i> Cancel
+                                </button>
+                            }
+                            
+                            <a asp-action="FridgeDetails" asp-route-id="@item.FridgeUnitId" class="btn btn-sm btn-outline-info" title="View Unit Details">
                                 <i class="bi bi-info-circle"></i> Details
                             </a>
                         </td>
                     </tr>
+                    
+                    @* Cancellation Modal (Remains the same) *@
+                    <div class="modal fade" id="cancelModal-@item.Id" tabindex="-1" aria-labelledby="cancelModalLabel-@item.Id" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form asp-action="CancelSchedule" method="post">
+                                    <div class="modal-header bg-danger text-white">
+                                        <h5 class="modal-title" id="cancelModalLabel-@item.Id">Confirm Cancellation</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <p>Are you sure you want to cancel the visit scheduled for <strong>@item.ScheduledDate.ToString("dd MMM @ HH:mm")</strong> for unit <strong>@item.FridgeUnit.SerialNumber</strong>?</p>
+                                        <p class="text-danger">This will set the status to 'Cancelled'.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Schedule</button>
+                                        <button type="submit" class="btn btn-danger">Yes, Cancel Visit</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 }
             </tbody>
         </table>
@@ -60,3 +117,9 @@
         </div>
     }
 </div>
+
+@section Scripts {
+    <script>
+        // Optional client-side scripting area
+    </script>
+}

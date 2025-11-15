@@ -1117,11 +1117,11 @@ namespace Code_Vanta_Systems.Controllers
         // MAINTENANCE OVERSIGHT (GET)
         //=========================================================
 
-        [HttpGet]
-        public async Task<IActionResult> MaintenanceOversight()
-        {
-            // Assume roleManager and userManager are injected and available
+        // Inside AdminController.cs
 
+        [HttpGet]
+        public async Task<IActionResult> MaintenanceOversight(int? locationId, string? technicianId)
+        {
             // 1. Get all Maintenance Technicians for the dropdown (No Change)
             var maintenanceRole = await roleManager.FindByNameAsync("Maintenance Technician");
             var maintenanceTechnicians = await userManager.GetUsersInRoleAsync(maintenanceRole.Name);
@@ -1134,32 +1134,53 @@ namespace Code_Vanta_Systems.Controllers
                 })
                 .ToList();
 
-            // 2. Query for ALL FRIDGE UNITS that require maintenance AND are unassigned.
-            var unitsNeedingAssignment = await context.FridgeUnits
+            // Also need all locations for the filter dropdown
+            ViewBag.Locations = await context.Locations
+                .Select(l => new SelectListItem
+                {
+                    Value = l.Id.ToString(),
+                    Text = $"{l.Description} ({l.City})"
+                })
+                .ToListAsync();
+
+            // 2. Base Query for Oversight Units
+            var query = context.FridgeUnits
                 .Include(u => u.Fridge)
                 .Include(u => u.Customer)
                     .ThenInclude(c => c.Location)
                 .Include(u => u.Technician)
                 .Where(u =>
-                    // 🚩 1. PRIMARY FILTER: Unit must be flagged for maintenance condition
-                    u.Condition == FridgeCondition.RequireMaintenance &&
+                    // Include units flagged for maintenance (unassigned) OR units that are work in progress (assigned)
+                    (u.Condition == FridgeCondition.RequireMaintenance && (u.TechnicianUserId == null || u.TechnicianUserId == "")) ||
+                    (u.TechnicianUserId != null && u.TechnicianUserId != "")
+                )
+                .AsQueryable();
 
-                    // 🚩 2. ALLOCATION FILTER: Unit must be allocated to a customer (CustomerId is not null)
-                    u.CustomerId.HasValue &&
+            // 3. APPLY FILTERS based on user input
 
-                    // 🔥 3. CRITICAL FIX: Must be unassigned (TechnicianUserId is null OR empty string)
-                    (u.TechnicianUserId == null || u.TechnicianUserId == "")) // <-- Check for both null and empty string
+            // Filter by Location/Region (Requires joining through Customer)
+            if (locationId.HasValue && locationId.Value > 0)
+            {
+                query = query.Where(u => u.Customer.LocationId == locationId.Value);
+                ViewBag.SelectedLocationId = locationId.Value;
+            }
+
+            // Filter by Assigned Technician (Filtering on TechnicianUserId)
+            if (!string.IsNullOrEmpty(technicianId))
+            {
+                query = query.Where(u => u.TechnicianUserId == technicianId);
+                ViewBag.SelectedTechnicianId = technicianId;
+            }
+
+            // 4. Execute the Query and Map to ViewModel
+            var unitsForOversight = await query
                 .Select(u => new MaintenanceAssignmentViewModel
                 {
-                    // Using Unit ID as the key for assignment
                     FridgeId = u.Id,
                     SerialNumber = u.SerialNumber,
                     Model = u.Fridge.Model,
-
-                    // Fetch customer details from the linked Customer object
                     CustomerBusinessName = u.Customer != null ? u.Customer.BusinessName : "N/A",
                     CustomerAddress = u.Customer != null ? u.Customer.PhysicalAddress : "N/A",
-
                     Condition = u.Condition.ToString(),
                     AllocatedTechnicianId = u.TechnicianUserId,
                     AllocatedTechnicianName = u.Technician != null ? u.Technician.FullName : "Unassigned"
@@ -1167,7 +1188,8 @@ namespace Code_Vanta_Systems.Controllers
                 .OrderBy(u => u.CustomerBusinessName)
                 .ToListAsync();
 
-            return View(unitsNeedingAssignment);
+            ViewData["Title"] = "Maintenance Oversight";
+            return View(unitsForOversight);
         }
 
         //=========================================================
@@ -1177,7 +1199,7 @@ namespace Code_Vanta_Systems.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AssignMaintenanceTechnician(int fridgeId, string technicianId)
         {
-            // 1. Fetch the specific FridgeUnit (since MaintenanceOversight passed the Unit ID)
+            // 1. Fetch the specific FridgeUnit (using the Unit ID passed as fridgeId)
             var unit = await context.FridgeUnits
                 .Include(u => u.Fridge)
                 .FirstOrDefaultAsync(u => u.Id == fridgeId && u.Condition == FridgeCondition.RequireMaintenance);
@@ -1188,8 +1210,9 @@ namespace Code_Vanta_Systems.Controllers
                 return RedirectToAction(nameof(MaintenanceOversight));
             }
 
-            // 2. Get current user for Audit Trail
-            var currentUser = await userManager.GetUserAsync(User); // Assuming userManager is available
+            // 2. Get current user for Audit Trail and the assigned technician for notification
+            var currentUser = await userManager.GetUserAsync(User);
+            var assignedTechnician = await userManager.FindByIdAsync(technicianId);
 
             // 3. Assign the technician to the FridgeUnit
             var oldTechnicianId = unit.TechnicianUserId;
@@ -1199,20 +1222,48 @@ namespace Code_Vanta_Systems.Controllers
             {
                 context.Update(unit);
 
-                // Add Audit Trail for the assignment
+                // 4. CRITICAL ADDITION: Create an immediate Maintenance Schedule Record
+                var schedule = new MaintenanceSchedule
+                {
+                    FridgeId = unit.FridgeId, // General model ID
+                    FridgeUnitId = unit.Id,   // Specific unit ID
+                    TechnicianId = technicianId,
+                    ScheduledDate = DateTime.Now, // Schedule for NOW (immediate action)
+                    Description = $"Unscheduled maintenance required after fault diagnosis (Admin assigned). Unit Condition: {unit.Condition}.",
+                    Status = "Assigned"
+                };
+                context.MaintenanceSchedules.Add(schedule);
+
+                // 5. Add Audit Trail for the assignment
                 var audit = new AuditTrail
                 {
                     EntityName = "FridgeUnit",
                     EntityId = unit.Id,
-                    ChangeType = "Assign Technician",
-                    ChangeDetails = $"Maintenance Technician assigned to unit {unit.SerialNumber}. From {oldTechnicianId ?? "Unassigned"} to {technicianId}.",
+                    ChangeType = "Assign Maintenance",
+                    ChangeDetails = $"Maintenance Technician assigned to unit {unit.SerialNumber}. From {oldTechnicianId ?? "Unassigned"} to {assignedTechnician?.FullName}.",
                     ChangeDate = DateTime.Now,
                     ChangedByUserId = currentUser?.Id ?? "System"
                 };
                 context.AuditTrails.Add(audit);
 
+                // 6. CRITICAL ADDITION: Send Notification to the technician
+                if (assignedTechnician != null)
+                {
+                    var notification = new Notification
+                    {
+                        RecipientUserId = assignedTechnician.Id,
+                        Title = "New Maintenance Assignment",
+                        Message = $"Unit {unit.SerialNumber} ({unit.Fridge.Model}) has been assigned to you for required maintenance (Fault Follow-up).",
+                        CreatedAt = DateTime.Now,
+                        IsRead = false,
+                        TargetController = "MaintenanceTechnician",
+                        TargetAction = "MaintenanceSchedules"
+                    };
+                    context.Notifications.Add(notification);
+                }
+
                 await context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"Unit {unit.SerialNumber} ({unit.Fridge.Model}) successfully assigned to technician.";
+                TempData["SuccessMessage"] = $"Unit {unit.SerialNumber} ({unit.Fridge.Model}) successfully assigned and scheduled for follow-up maintenance.";
             }
             catch (Exception ex)
             {
@@ -1223,5 +1274,6 @@ namespace Code_Vanta_Systems.Controllers
 
             return RedirectToAction(nameof(MaintenanceOversight));
         }
+
     }
 }

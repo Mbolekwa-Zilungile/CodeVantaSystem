@@ -38,5 +38,8 @@ namespace Code_Vanta_Systems.Models
         [MaxLength(20)]
         public string Status { get; set; }
 
+        // 🛠️ NEW: Field to track customer confirmation status
+        [MaxLength(20)]
+        public string CustomerConfirmation { get; set; } = "Pending"; // Values: Pending, Confirmed, Declined
     }
 }

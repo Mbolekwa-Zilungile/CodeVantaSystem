@@ -7,6 +7,16 @@
 
 <div class="container py-4">
     <h2 class="mb-4 text-primary"><i class="bi bi-calendar-check me-2"></i> Upcoming Maintenance Visits</h2>
+    <p class="text-muted">Review and confirm your availability for scheduled service visits on your allocated units.</p>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">@TempData["InfoMessage"]</div>
+    }
 
     @if (Model != null && Model.Any())
     {
@@ -17,16 +27,49 @@
                     <th>Unit Serial Number</th>
                     <th>Fridge Model</th>
                     <th>Description</th>
+                    <th>Your Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td>@item.ScheduledDate.ToString("dd MMM yyyy @ HH:mm")</td>
+                        <td class="fw-bold">@item.ScheduledDate.ToString("dd MMM yyyy @ HH:mm")</td>
                         <td>@item.FridgeUnit.SerialNumber</td>
                         <td>@item.FridgeUnit.Fridge.Model</td>
                         <td>@item.Description</td>
+
+                        @* Customer Confirmation Status *@
+                        <td>
+                            @{
+                                string badgeClass = item.CustomerConfirmation switch
+                                {
+                                    "Confirmed" => "bg-success",
+                                    "Declined" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+                            }
+                            <span class="badge @badgeClass">@item.CustomerConfirmation</span>
+                        </td>
+
+                        @* Actions *@
+                        <td>
+                            @if (item.CustomerConfirmation == "Pending")
+                            {
+                                <a asp-action="ConfirmMaintenance" asp-route-scheduleId="@item.Id" class="btn btn-sm btn-success me-2" title="Confirm Availability">
+                                    Confirm
+                                </a>
+                            }
+                            else if (item.CustomerConfirmation == "Declined")
+                            {
+                                <span class="text-danger fw-bold">Awaiting Reschedule</span>
+                            }
+                            else
+                            {
+                                <span class="text-success fw-bold">Confirmed</span>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -35,7 +78,7 @@
     else
     {
         <div class="alert alert-success text-center mt-5" role="alert">
-            <i class="bi bi-check-circle-fill"></i> You have no upcoming maintenance visits scheduled for your units.
+            <i class="bi bi-check-circle-fill"></i> You have no upcoming maintenance visits scheduled.
         </div>
     }
 </div>

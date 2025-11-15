@@ -195,17 +195,13 @@ namespace Code_Vanta_Systems.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ProcessRepair(ProcessRepairViewModel model)
         {
+            // ... (User and validation checks) ...
             var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
-            {
-                TempData["ErrorMessage"] = "User not found. Please login again.";
-                return RedirectToAction(nameof(Index));
-            }
 
             // 1. Fetch the fault, related fridge, AND the specific FridgeUnit
             var fault = await _context.FridgeFaults
                 .Include(f => f.Fridge)
-                .Include(f => f.FridgeUnit)
+                .Include(f => f.FridgeUnit) // <-- CRITICAL: Include the FridgeUnit
                 .FirstOrDefaultAsync(f => f.Id == model.FaultId && f.AssignedTechnicianId == currentUser.Id);
 
             if (fault == null || fault.FridgeUnit == null)

@@ -5,6 +5,12 @@
     bool isAllFridgesAction = ViewContext.RouteData.Values["action"]?.ToString() == "AllFridges";
     ViewData["Title"] = isAllFridgesAction ? "All Fridge Units in System" : "My Allocated Fridge Units";
     Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
+
+    // Safely retrieve assignment status from ViewBag
+    bool? isAllocated = ViewBag.IsAllocated;
+
+    // Safely retrieve location ID for persistence
+    int? currentLocationId = ViewBag.CurrentLocationId;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -20,31 +26,47 @@
 }
 
 @* ========================================================= *@
-@* LOCATION FILTER SECTION (Only displayed for the AllFridges action) *@
+@* FILTER SECTION (Only displayed for the AllFridges action) *@
 @* ========================================================= *@
 @if (isAllFridgesAction)
 {
     <div class="row mb-4">
-        <div class="col-md-5 col-lg-4">
+        <div class="col-md-12">
             <form asp-controller="MaintenanceTechnician" asp-action="AllFridges" method="get" class="d-flex align-items-center bg-light p-3 rounded shadow-sm border">
-                <label for="locationId" class="me-2 text-nowrap fw-bold text-secondary">Filter by Location:</label>
-                <select name="locationId" id="locationId" class="form-select form-select-sm" onchange="this.form.submit()">
-                    @* ViewBag.Locations is populated in the AllFridges Controller action *@
-                    @if (ViewBag.Locations != null)
-                    {
-                        foreach (var location in ViewBag.Locations)
+
+                @* Filter by Location (Existing) *@
+                <div class="me-4">
+                    <label for="locationId" class="me-2 text-nowrap fw-bold text-secondary">Location:</label>
+                    <select name="locationId" id="locationId" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">-- All Locations --</option>
+                        @* Preserve other filter state *@
+                        @if (ViewBag.Locations != null)
                         {
-                            <option value="@location.Value"
-                                    selected="@(ViewBag.CurrentLocationId != null && location.Value == ViewBag.CurrentLocationId.ToString())">
-                                @location.Text
-                            </option>
+                            foreach (var location in ViewBag.Locations)
+                            {
+                                <option value="@location.Value"
+                                        selected="@(location.Value == currentLocationId?.ToString())">
+                                    @location.Text
+                                </option>
+                            }
                         }
-                    }
-                </select>
+                    </select>
+                </div>
+
+                @* NEW FILTER: Filter by Allocation Status *@
+                <div class="me-4">
+                    <label for="isAllocated" class="me-2 text-nowrap fw-bold text-secondary">Assignment:</label>
+                    <select name="isAllocated" id="isAllocated" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">-- Allocation Status --</option>
+                        <option value="true" selected="@(isAllocated == true)">Assigned to Customer</option>
+                        <option value="false" selected="@(isAllocated == false)">In Warehouse Stock</option>
+                    </select>
+                </div>
+
+                @* Submit button if user didn't auto-submit (useful for clear button/manual submit) *@
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Apply Filters</button>
+
             </form>
-        </div>
-        <div class="col-md-7 col-lg-8 d-flex align-items-center">
-            @* Additional controls (e.g., search) can go here *@
         </div>
     </div>
 }
@@ -84,7 +106,7 @@
                         {
                             <tr>
                                 <td class="align-middle fw-bold">
-                                    @* CRITICAL FIX: FridgeId is now UnitId, link to FridgeDetails *@
+                                    @* FridgeId holds the Unit ID *@
                                     <a asp-action="FridgeDetails" asp-route-id="@item.FridgeId" class="text-primary">@item.SerialNumber</a>
                                 </td>
                                 <td class="align-middle">@item.Model</td>
@@ -114,7 +136,6 @@
                                     }
                                 </td>
                                 <td class="align-middle text-nowrap">
-                                    @* CRITICAL FIX: All actions use 'id' or 'unitId' route parameter with FridgeId (UnitId) *@
                                     <a asp-action="FridgeDetails" asp-route-id="@item.FridgeId" class="btn btn-sm btn-outline-info me-2" title="View Details">
                                         <i class="bi bi-info-circle"></i> Details
                                     </a>

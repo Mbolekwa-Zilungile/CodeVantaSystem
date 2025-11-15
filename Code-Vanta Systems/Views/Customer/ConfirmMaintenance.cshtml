@@ -1,0 +1,78 @@
+﻿@model Code_Vanta_Systems.Models.MaintenanceSchedule
+
+@{
+    ViewData["Title"] = "Confirm Maintenance Visit";
+    Layout = "~/Views/Shared/_CustomerLayout.cshtml";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4 text-primary"><i class="bi bi-calendar-check me-2"></i> Confirm Your Availability</h2>
+
+    <div class="card shadow-lg">
+        <div class="card-body">
+            <h4 class="card-title">Visit Scheduled:</h4>
+            <p class="fs-4 fw-bold text-success">@Model.ScheduledDate.ToString("dd MMMM yyyy @ HH:mm")</p>
+
+            <dl class="row">
+                <dt class="col-sm-3">Unit Serial:</dt>
+                <dd class="col-sm-9">@Model.FridgeUnit.SerialNumber</dd>
+                <dt class="col-sm-3">Reason:</dt>
+                <dd class="col-sm-9">@Model.Description</dd>
+            </dl>
+
+            @if (Model.CustomerConfirmation == "Pending")
+            {
+                <h5 class="mt-4">Are you available for this scheduled visit?</h5>
+
+                <form asp-action="ConfirmMaintenanceResponse" method="post" id="rescheduleForm">
+                    <input type="hidden" name="scheduleId" value="@Model.Id" />
+
+                    {{-- NEW: Notes Field (Initially Hidden) --}}
+                    <div id="rescheduleNotesContainer" class="mb-3 mt-4" style="display:none;">
+                        <label for="rescheduleNotes" class="form-label text-danger">Suggested Reschedule Time/Notes:</label>
+                        <textarea name="rescheduleNotes" id="rescheduleNotes" class="form-control" rows="3" placeholder="Please indicate days/times you ARE available (e.g., 'Mondays after 2 PM' or 'Next Wednesday morning')."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-start mt-4">
+                        <button type="submit" name="response" value="Confirm" class="btn btn-success btn-lg me-3">
+                            <i class="bi bi-check-circle"></i> Yes, I am available
+                        </button>
+
+                        <button type="button" id="declineButton" class="btn btn-outline-danger btn-lg">
+                            <i class="bi bi-calendar-x"></i> No, I Need to Reschedule
+                        </button>
+
+                        {{-- New hidden submit button for the reschedule process --}}
+                        <button type="submit" name="response" value="Decline" id="finalRescheduleSubmit" class="btn btn-danger btn-lg ms-3" style="display:none;">
+                            Submit Reschedule Request
+                        </button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <div class="alert alert-info mt-4">
+                    Your response has already been recorded as **@Model.CustomerConfirmation**.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const declineButton = document.getElementById('declineButton');
+            const notesContainer = document.getElementById('rescheduleNotesContainer');
+            const finalSubmitButton = document.getElementById('finalRescheduleSubmit');
+
+            declineButton.addEventListener('click', function() {
+                // Show the notes container and change buttons
+                notesContainer.style.display = 'block';
+                declineButton.style.display = 'none';
+                document.querySelector('button[value="Confirm"]').style.display = 'none';
+                finalSubmitButton.style.display = 'inline-block';
+            });
+        });
+    </script>
+}

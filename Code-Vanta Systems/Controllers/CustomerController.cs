@@ -870,9 +870,97 @@ namespace Code_Vanta_Systems.Controllers
 
             return RedirectToAction(nameof(LoggedFault));
         }
-#endregion
+        #endregion
 
+        #region Maintenance Confirmation
 
+        [HttpGet]
+        public async Task<IActionResult> ConfirmMaintenance(int scheduleId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            // 1. Fetch the schedule and VERIFY ownership, INCLUDING navigation properties
+            var schedule = await _context.MaintenanceSchedules
+                .Include(ms => ms.FridgeUnit) // REQUIRED for SerialNumber in the view
+                    .ThenInclude(u => u.Customer)
+                .FirstOrDefaultAsync(ms => ms.Id == scheduleId && ms.FridgeUnit.Customer.UserId == user.Id);
+
+            if (schedule == null)
+            {
+                TempData["ErrorMessage"] = "Scheduled visit not found or does not belong to your account.";
+                return RedirectToAction(nameof(UpcomingMaintenance));
+            }
+
+            ViewData["Title"] = "Confirm Maintenance Visit";
+            return View(schedule);
+        }
+
+        // Inside CustomerController.cs
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmMaintenanceResponse(int scheduleId, string response, string? rescheduleNotes)
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            // 1. Fetch the schedule (ensure all necessary inclusions are present)
+            var schedule = await _context.MaintenanceSchedules
+                .Include(ms => ms.FridgeUnit)
+                    .ThenInclude(u => u.Customer)
+                .FirstOrDefaultAsync(ms => ms.Id == scheduleId && ms.FridgeUnit.Customer.UserId == user.Id);
+
+            if (schedule == null)
+            {
+                TempData["ErrorMessage"] = "Scheduled visit not found.";
+                return RedirectToAction(nameof(UpcomingMaintenance));
+            }
+
+            // 2. Validation Check (for valid button value)
+            if (response != "Confirm" && response != "Decline")
+            {
+                TempData["ErrorMessage"] = "Invalid confirmation response.";
+                return RedirectToAction(nameof(ConfirmMaintenance), new { scheduleId = scheduleId });
+            }
+
+            // 3. Update the CustomerConfirmation status and schedule status
+            if (response == "Confirm")
+            {
+                schedule.CustomerConfirmation = "Confirmed";
+                // Status remains 'Scheduled'
+                TempData["SuccessMessage"] = "Visit confirmed! Thank you for your availability.";
+            }
+            else // response == "Decline" (Reschedule Requested)
+            {
+                schedule.CustomerConfirmation = "Declined";
+                schedule.Status = "Reschedule Needed"; // Flag for Admin/Maintenance Tech review
+
+                // Append Reschedule Notes to the Description field
+                string noteDetail = string.IsNullOrEmpty(rescheduleNotes) ?
+                                    "Customer declined and provided no alternative time." :
+                                    $"Customer request: {rescheduleNotes}";
+
+                schedule.Description += $" | RESCHEDULE FLAG: {noteDetail}";
+
+                TempData["InfoMessage"] = $"Visit declined. The Maintenance team will contact you to reschedule based on your notes.";
+            }
+
+            // 4. Save changes within a try/catch block
+            try
+            {
+                _context.MaintenanceSchedules.Update(schedule);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                // On database error, store the error and redirect back to the GET view.
+                TempData["ErrorMessage"] = $"A database error occurred while saving your response.";
+                return RedirectToAction(nameof(ConfirmMaintenance), new { scheduleId = scheduleId });
+            }
+
+            // 5. Redirect back to the list view (on success)
+            return RedirectToAction(nameof(UpcomingMaintenance));
+        }
+        #endregion
 
         #region Checkout Logic
         [HttpPost]

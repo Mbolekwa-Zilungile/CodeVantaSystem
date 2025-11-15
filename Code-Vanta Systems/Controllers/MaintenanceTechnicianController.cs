@@ -110,7 +110,7 @@ namespace Code_Vanta_Systems.Controllers
 
         // New: GET: MaintenanceTechnician/AllFridges (List of ALL fridges in the system - UNITS)
         [HttpGet]
-        public async Task<IActionResult> AllFridges(int? locationId)
+        public async Task<IActionResult> AllFridges(int? locationId, bool? isAllocated)
         {
             // 1. Start query for ALL *UNITS* (excluding deleted)
             var query = _context.FridgeUnits
@@ -131,9 +131,17 @@ namespace Code_Vanta_Systems.Controllers
                 ViewBag.CurrentLocationId = locationId.Value;
             }
 
+            // 3. APPLY NEW FILTER: Filter by assignment status to a customer
+            if (isAllocated.HasValue)
+            {
+                query = query.Where(u => u.IsRented == isAllocated.Value);
+                ViewBag.IsAllocated = isAllocated.Value;
+            }
+
+
             var allUnits = await query.ToListAsync();
 
-            // 3. Map the Fridge UNITS to your MaintenanceFridgeListViewModel
+            // 4. Map the Fridge UNITS to your MaintenanceFridgeListViewModel
             var viewModel = allUnits.Select(u =>
             {
                 var customer = u.Customer;
@@ -158,7 +166,7 @@ namespace Code_Vanta_Systems.Controllers
                 };
             }).OrderBy(vm => vm.CustomerBusinessName).ToList();
 
-            // 4. Populate Locations for Filter Dropdown
+            // 5. Populate Locations for Filter Dropdown
             var allLocations = await _context.Locations
                 .OrderBy(l => l.Description)
                 .Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Description })
@@ -167,7 +175,7 @@ namespace Code_Vanta_Systems.Controllers
             allLocations.Insert(0, new SelectListItem { Value = "", Text = "All Locations" });
             ViewBag.Locations = allLocations;
 
-            // 5. Reuse the existing view (AllocatedFridges.cshtml) to display the full list
+            // 6. Reuse the existing view (AllocatedFridges.cshtml) to display the full list
             ViewData["Title"] = "All Fridge Units";
             return View("AllocatedFridges", viewModel);
         }
@@ -378,23 +386,37 @@ namespace Code_Vanta_Systems.Controllers
                 }
             }
 
-            // Fetch all currently active (unresolved) faults for the specific fridge UNIT
-            var faults = await _context.FridgeFaults
-                .Where(f => f.FridgeUnitId == viewModel.FridgeUnitId.Value &&
-                            (f.Status == FaultStatus.Reported || f.Status == FaultStatus.Assigned || f.Status == FaultStatus.InProgress))
-                .OrderByDescending(f => f.DateReported)
-                .ToListAsync();
+            // 2. Populate Maintenance Types (Placeholder Solution - Correctly populates AvailableMaintenanceTypes)
+            var maintenanceTypes = new List<SelectListItem>
+    {
+        new SelectListItem { Value = "1", Text = "Routine Coil Cleaning" },
+        new SelectListItem { Value = "2", Text = "Refrigerant Pressure Check" },
+        new SelectListItem { Value = "3", Text = "Electrical System Inspection" },
+        new SelectListItem { Value = "4", Text = "Door Seal and Hinge Replacement" },
+        new SelectListItem { Value = "5", Text = "Diagnostic Repair (General)" },
+        new SelectListItem { Value = "6", Text = "Emergency Callout" }
+    };
 
-            viewModel.AvailableFaults = faults.Select(f => new SelectListItem
+            viewModel.AvailableMaintenanceTypes = maintenanceTypes;
+
+
+            // 3. RESTORED LOGIC: Fault fetching for the 'Resolved Fault' dropdown
+            if (viewModel.FridgeUnitId.HasValue)
             {
-                Value = f.Id.ToString(),
-                // Display both ID, Date, and a snippet of the description
-                Text = $"Fault {f.Id} ({f.DateReported.ToString("yyyy-MM-dd")}): {f.FaultDescription.Substring(0, Math.Min(50, f.FaultDescription.Length))}..."
-            }).ToList();
+                // Fetch all currently active (unresolved) faults for the specific fridge UNIT
+                var faults = await _context.FridgeFaults
+                    .Where(f => f.FridgeUnitId == viewModel.FridgeUnitId.Value &&
+                                (f.Status == FaultStatus.Reported || f.Status == FaultStatus.Assigned || f.Status == FaultStatus.InProgress))
+                    .OrderByDescending(f => f.DateReported)
+                    .ToListAsync();
 
-            // Populate Maintenance Type options (assuming an MType model/enum exists)
-            // Example:
-            // viewModel.AvailableMaintenanceTypes = await _context.MaintenanceTypes.Select(t => new SelectListItem { Value = t.Id.ToString(), Text = t.Name }).ToListAsync();
+                viewModel.AvailableFaults = faults.Select(f => new SelectListItem
+                {
+                    Value = f.Id.ToString(),
+                    // Display both ID, Date, and a snippet of the description
+                    Text = $"Fault {f.Id} ({f.DateReported.ToString("yyyy-MM-dd")}): {f.FaultDescription.Substring(0, Math.Min(50, f.FaultDescription.Length))}..."
+                }).ToList();
+            }
         }
 
         // GET: MaintenanceTechnician/CreateServiceRecord?unitId=5 (New GET method signature)
@@ -433,76 +455,102 @@ namespace Code_Vanta_Systems.Controllers
 
 
         // POST: MaintenanceTechnician/CreateServiceRecord
+        // Inside MaintenanceTechnicianController.cs
+
+        // POST: MaintenanceTechnician/CreateServiceRecord
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateServiceRecord(CreateServiceRecordViewModel viewModel)
         {
-            if (ModelState.IsValid)
+            // --- 1. PRE-VALIDATION CHECK ---
+            if (!ModelState.IsValid)
             {
-                var technicianId = _userManager.GetUserId(User);
+                // CRITICAL FIX: Re-populate dynamic data and context on failure
+                await PopulateCreateServiceRecordViewModel(viewModel);
+                return View(viewModel);
+            }
 
-                var serviceRecord = new ServiceRecord
+            var technicianId = _userManager.GetUserId(User);
+
+            // --- 2. FETCH AND PREPARE DATA ---
+            var unitToUpdate = await _context.FridgeUnits.FindAsync(viewModel.FridgeUnitId.Value);
+
+            if (unitToUpdate == null)
+            {
+                TempData["ErrorMessage"] = "Error: Fridge Unit not found.";
+                return RedirectToAction(nameof(AllocatedFridges));
+            }
+
+            // --- 3. CREATE SERVICE RECORD ---
+            var serviceRecord = new ServiceRecord
+            {
+                FridgeUnitId = viewModel.FridgeUnitId.Value,
+                FridgeId = viewModel.FridgeId.Value,
+                DateOfService = viewModel.DateOfService,
+                TechnicianUserId = technicianId,
+                ServiceDetails = viewModel.Description, // Maps ViewModel.Description to Model.ServiceDetails
+                PartsUsed = viewModel.PartsUsed,
+                FaultId = viewModel.FaultId,
+                MaintenanceTypeId = viewModel.MaintenanceTypeId,
+                Cost = viewModel.Cost,
+            };
+
+            _context.ServiceRecords.Add(serviceRecord);
+
+            // --- 4. HANDLE SCHEDULE COMPLETION (Maintenance System Action) ---
+            // Automatically find and close the oldest non-completed schedule for this unit on this date.
+            var matchingSchedule = await _context.MaintenanceSchedules
+                .FirstOrDefaultAsync(ms =>
+                    ms.FridgeUnitId == viewModel.FridgeUnitId.Value &&
+                    ms.Status != "Completed" &&
+                    ms.ScheduledDate.Date == viewModel.DateOfService.Date);
+
+            // --- 5. HANDLE FAULT RESOLUTION ---
+            // If a fault ID was selected, update its status to Repaired
+            if (viewModel.FaultId.HasValue)
+            {
+                var fault = await _context.FridgeFaults.FindAsync(viewModel.FaultId.Value);
+                if (fault != null)
                 {
-                    // CRITICAL FIX: Map to FridgeUnitId
-                    FridgeUnitId = viewModel.FridgeUnitId.Value,
-                    // Map FridgeModel ID
-                    FridgeId = viewModel.FridgeId.Value,
-                    DateOfService = viewModel.DateOfService,
-
-                    // FIX: Changed TechnicianId to TechnicianUserId
-                    TechnicianUserId = technicianId,
-
-                    // FIX: Changed Description to ServiceDetails
-                    ServiceDetails = viewModel.Description,
-
-                    PartsUsed = viewModel.PartsUsed,
-                    FaultId = viewModel.FaultId, // Nullable
-
-                    // FIX: Added missing properties
-                    MaintenanceTypeId = viewModel.MaintenanceTypeId,
-                    Cost = viewModel.Cost,
-                };
-
-                _context.ServiceRecords.Add(serviceRecord);
-
-                // Optional: Update the associated Fault Status if a fault was selected
-                if (viewModel.FaultId.HasValue)
-                {
-                    var fault = await _context.FridgeFaults.FindAsync(viewModel.FaultId.Value);
-                    if (fault != null)
-                    {
-                        // Set the fault to repaired (new status)
-                        fault.Status = FaultStatus.Repaired;
-                        fault.ResolutionDate = DateTime.Now;
-                        _context.FridgeFaults.Update(fault);
-                    }
+                    fault.Status = FaultStatus.Repaired;
+                    fault.ResolutionDate = DateTime.Now;
+                    _context.FridgeFaults.Update(fault);
                 }
+            }
 
-                // Optional: Update the unit condition 
-                var unitToUpdate = await _context.FridgeUnits.FindAsync(viewModel.FridgeUnitId.Value);
-                if (unitToUpdate != null)
+            // --- 6. UPDATE UNIT STATUS & CONDITION (Proactive Maintenance) ---
+            // The technician's final action on the physical unit.
+            if (unitToUpdate != null)
+            {
+                unitToUpdate.Condition = viewModel.NewCondition;
+                unitToUpdate.Status = FridgeStatus.Operational; // Assume service makes it operational
+                unitToUpdate.UpdatedAt = DateTime.Now;
+                // The TechnicianUserId is NOT cleared here, as the Maintenance Technician is the oversight.
+            }
+
+            // --- 7. SAVE ALL CHANGES ---
+            try
+            {
+                if (matchingSchedule != null)
                 {
-                    // Assuming NewCondition property exists on ViewModel
-                    unitToUpdate.Condition = viewModel.NewCondition;
-                    unitToUpdate.Status = FridgeStatus.Operational;
-                    unitToUpdate.UpdatedAt = DateTime.Now;
-                    _context.FridgeUnits.Update(unitToUpdate);
+                    matchingSchedule.Status = "Completed";
+                    _context.MaintenanceSchedules.Update(matchingSchedule);
+                    TempData["Info"] = $"Scheduled visit {matchingSchedule.Id} marked as Completed.";
                 }
-
 
                 await _context.SaveChangesAsync();
 
-                TempData["Success"] = "Service record created successfully.";
-                // CRITICAL: Redirect back to the Fridge Unit Details page for context
-                return RedirectToAction(nameof(FridgeDetails), new { id = viewModel.FridgeUnitId.Value });
+                TempData["SuccessMessage"] = "Service record created successfully.";
+            }
+            catch (Exception ex)
+            {
+                // Log exception and return detailed error
+                ModelState.AddModelError("", "Unable to save service record. Check server logs.");
+                await PopulateCreateServiceRecordViewModel(viewModel);
+                return View(viewModel);
             }
 
-            // If validation fails (ModelState.IsValid is false):
-            // CRITICAL FIX: Re-populate dynamic data and context
-            await PopulateCreateServiceRecordViewModel(viewModel);
-
-            // Return the view with the model to show validation errors
-            return View(viewModel);
+            return RedirectToAction(nameof(FridgeDetails), new { id = viewModel.FridgeUnitId.Value });
         }
 
         //=========================================================
@@ -624,6 +672,31 @@ namespace Code_Vanta_Systems.Controllers
             await PopulateCreateScheduleViewModel(viewModel);
 
             return View(viewModel);
+        }
+
+        // Inside MaintenanceTechnicianController.cs
+
+        // POST: MaintenanceTechnician/CancelSchedule/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelSchedule(int id)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var schedule = await _context.MaintenanceSchedules
+                .FirstOrDefaultAsync(ms => ms.Id == id && ms.TechnicianId == currentUserId);
+
+            if (schedule == null)
+            {
+                TempData["ErrorMessage"] = "Schedule not found or you are not authorized to cancel it.";
+                return RedirectToAction(nameof(MaintenanceSchedules));
+            }
+
+            schedule.Status = "Cancelled";
+            _context.MaintenanceSchedules.Update(schedule);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"Scheduled visit for unit {schedule.FridgeUnitId} has been cancelled.";
+            return RedirectToAction(nameof(MaintenanceSchedules));
         }
 
         //=========================================================

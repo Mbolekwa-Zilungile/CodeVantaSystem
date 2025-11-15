@@ -39,5 +39,10 @@ namespace Code_Vanta_Systems.ViewModels
         // Note: The actual form post uses simple types (int fridgeId, string technicianId),
         // but this property can be useful if you were to use this VM for the POST as well.
         public string? TechnicianId { get; set; }
+
+        // --- NEW FIELDS FOR ADVANTAGEOUS OVERSIGHT ---
+        public int DaysAssigned { get; set; } // Time waiting/in progress
+        public int FaultCountYTD { get; set; } // High-cost unit identification
+        public int ServiceCountYTD { get; set; } // High-cost unit identification
     }
 }
