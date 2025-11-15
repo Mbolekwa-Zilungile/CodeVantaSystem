@@ -1,33 +1,38 @@
 ﻿@model Code_Vanta_Systems.ViewModels.MaintenanceFridgeDetailsViewModel
 
 @{
-    ViewData["Title"] = $"Details for Fridge: {Model.FridgeSummary.SerialNumber}";
+    ViewData["Title"] = $"Details for Unit: {Model.FridgeSummary.SerialNumber}";
     Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
+
+    // CRITICAL: ViewBag.UnitId should be set by the controller to be used in action links.
+    int currentUnitId = Model.FridgeSummary.FridgeId;
 }
 
 <div class="container py-4">
+    @* HEADING IS NOW UNIT-CENTRIC *@
     <h2 class="mb-4 text-primary">
-        <i class="bi bi-box-seam"></i> Fridge Model Details: @Model.FridgeSummary.Model
+        <i class="bi bi-box-seam"></i> Fridge Unit Details: @Model.FridgeSummary.SerialNumber
     </h2>
 
-    @* --- MODEL SUMMARY CARD --- *@
+    @* --- UNIT SUMMARY CARD --- *@
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-light">
-            <h5 class="mb-0">Stock Overview for: @Model.FridgeSummary.Model</h5>
+            <h5 class="mb-0">Physical Unit Overview</h5>
         </div>
         <div class="card-body">
             <div class="row">
-
                 <div class="col-md-6">
-                    <p><strong>Stock Model #:</strong> @Model.FridgeSummary.SerialNumber</p>
-                    <p><strong>Stock Status:</strong> <span class="badge bg-success">@Model.FridgeSummary.FridgeStatus</span></p>
-                    <p><strong>Total Units Deployed:</strong> @Model.UnitDetails.Count</p> @* Use UnitDetails count *@
+                    <p><strong>Unit Serial #:</strong> @Model.FridgeSummary.SerialNumber</p>
+                    @* Display the Unit's specific Status/Condition *@
+                    <p><strong>Unit Status:</strong> <span class="badge bg-success">@Model.FridgeSummary.FridgeStatus</span></p>
+                    <p><strong>Model:</strong> @Model.FridgeSummary.Model</p>
                 </div>
 
                 <div class="col-md-6">
-                    <p><strong>Warehouse Location:</strong> @Model.FridgeSummary.CustomerAddress</p> @* This is the Model's stock location *@
+                    @* Customer/Location is the source of truth for the Unit *@
+                    <p><strong>Customer/Location:</strong> @Model.FridgeSummary.CustomerBusinessName - @Model.FridgeSummary.CustomerAddress</p>
                     <p>
-                        <strong>Next Scheduled Visit (Model):</strong>
+                        <strong>Next Scheduled Visit:</strong>
                         @if (Model.FridgeSummary.NextScheduledVisit.HasValue)
                         {
                             <span class="text-success fw-bold">@Model.FridgeSummary.NextScheduledVisit.Value.ToString("dd MMMM yyyy")</span>
@@ -40,91 +45,52 @@
                 </div>
             </div>
 
-            @* Action buttons remain the same, linking to the model's ID *@
+            @* Action buttons use 'unitId' and the current Unit ID *@
             <div class="mt-4 text-end">
+                @* CRITICAL FIX: Changed route parameter to unitId *@
                 <a asp-action="CreateSchedule"
-                   asp-route-fridgeId="@Model.FridgeSummary.FridgeId"
+                   asp-route-unitId="@currentUnitId"
                    class="btn btn-success me-2">
-                    <i class="bi bi-calendar-plus"></i> Schedule New Visit (Model)
+                    <i class="bi bi-calendar-plus"></i> Schedule New Visit
                 </a>
 
+                @* CRITICAL FIX: Changed route parameter to unitId *@
                 <a asp-action="CreateServiceRecord"
-                   asp-route-fridgeId="@Model.FridgeSummary.FridgeId"
+                   asp-route-unitId="@currentUnitId"
                    class="btn btn-primary me-2">
-                    <i class="bi bi-check-circle"></i> Log Model Service
+                    <i class="bi bi-check-circle"></i> Log Unit Service
                 </a>
 
+                @* CRITICAL FIX: Changed route parameter to unitId *@
                 <a asp-action="CreateFaultReport"
-                   asp-route-fridgeId="@Model.FridgeSummary.FridgeId"
+                   asp-route-unitId="@currentUnitId"
                    class="btn btn-danger">
-                    <i class="bi bi-exclamation-triangle"></i> Report Model Fault
+                    <i class="bi bi-exclamation-triangle"></i> Report Unit Fault
                 </a>
             </div>
 
         </div>
     </div>
 
-    @* --- TAB NAVIGATION (Updated to include Unit Inventory) --- *@
+    @* --- TAB NAVIGATION --- *@
     <ul class="nav nav-tabs" id="historyTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="unit-inventory-tab" data-bs-toggle="tab" data-bs-target="#unit-inventory" type="button" role="tab">Unit Inventory (@Model.UnitDetails.Count)</button>
+            @* UnitDetails is not applicable here as the view is already focused on ONE unit. Remove or repurpose. Reverting to Model Details for simplicity.*@
+            <button class="nav-link active" id="fault-history-tab" data-bs-toggle="tab" data-bs-target="#fault-history" type="button" role="tab">Fault History (@Model.FaultHistory.Count)</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="fault-history-tab" data-bs-toggle="tab" data-bs-target="#fault-history" type="button" role="tab">Model Faults (@Model.FaultHistory.Count)</button>
+            <button class="nav-link" id="service-history-tab" data-bs-toggle="tab" data-bs-target="#service-history" type="button" role="tab">Service History (@Model.ServiceHistory.Count)</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="service-history-tab" data-bs-toggle="tab" data-bs-target="#service-history" type="button" role="tab">Model Services (@Model.ServiceHistory.Count)</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="upcoming-schedules-tab" data-bs-toggle="tab" data-bs-target="#upcoming-schedules" type="button" role="tab">Model Schedules (@Model.UpcomingSchedules.Count)</button>
+            <button class="nav-link" id="upcoming-schedules-tab" data-bs-toggle="tab" data-bs-target="#upcoming-schedules" type="button" role="tab">Upcoming Schedules (@Model.UpcomingSchedules.Count)</button>
         </li>
     </ul>
 
     @* --- TAB CONTENT (Panels) --- *@
     <div class="tab-content border border-top-0 p-3" id="historyTabsContent">
 
-        @* UNIT INVENTORY TAB (NEW) *@
-        <div class="tab-pane fade show active" id="unit-inventory" role="tabpanel">
-            @if (Model.UnitDetails != null && Model.UnitDetails.Any())
-            {
-                <table class="table table-hover table-sm">
-                    <thead>
-                        <tr>
-                            <th>Serial Number</th>
-                            <th>Status</th>
-                            <th>Customer</th>
-                            <th>Tech Assigned</th>
-                            <th>Condition</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var unit in Model.UnitDetails)
-                        {
-                            <tr>
-                                <td class="fw-bold">@unit.SerialNumber</td>
-                                <td><span class="badge @(unit.UnitStatus == "Allocated" ? "bg-primary" : "bg-secondary")">@unit.UnitStatus</span></td>
-                                <td>@unit.CurrentCustomer</td>
-                                <td>@unit.AssignedTechnician</td>
-                                <td>@unit.Condition</td>
-                                <td>
-                                    <a asp-action="UnitDetailView" asp-route-id="@unit.UnitId" class="btn btn-sm btn-outline-info">View Unit</a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
-            else
-            {
-                <div class="alert alert-warning">No physical units of this model are currently tracked.</div>
-            }
-        </div>
-
-
-        @* FAULT HISTORY TAB (EXISTING, renamed to Model Faults) *@
-        <div class="tab-pane fade" id="fault-history" role="tabpanel">
-            @* ... (Existing Fault History loop remains here) ... *@
+        @* FAULT HISTORY TAB (Now shows UNIT-LEVEL faults) *@
+        <div class="tab-pane fade show active" id="fault-history" role="tabpanel">
             @if (Model.FaultHistory != null && Model.FaultHistory.Any())
             {
                 <ul class="list-group">
@@ -142,13 +108,12 @@
             }
             else
             {
-                <div class="alert alert-secondary">No model-level fault history found.</div>
+                <div class="alert alert-secondary">No fault history found for this unit.</div>
             }
         </div>
 
-        @* SERVICE HISTORY TAB (EXISTING, renamed to Model Services) *@
+        @* SERVICE HISTORY TAB (Now shows UNIT-LEVEL services) *@
         <div class="tab-pane fade" id="service-history" role="tabpanel">
-            @* ... (Existing Service History loop remains here) ... *@
             @if (Model.ServiceHistory != null && Model.ServiceHistory.Any())
             {
                 <ul class="list-group">
@@ -159,7 +124,6 @@
                                 <div class="fw-bold">Completed: @service.DateOfService.ToShortDateString()</div>
                                 **Action Taken:** @service.ServiceDetails
                             </div>
-                            @* Assuming Technician navigation property exists on ServiceRecord *@
                             <span class="badge bg-info">Tech: @(service.Technician?.FullName ?? "N/A")</span>
                         </li>
                     }
@@ -167,13 +131,12 @@
             }
             else
             {
-                <div class="alert alert-secondary">No model-level service history found.</div>
+                <div class="alert alert-secondary">No service history found for this unit.</div>
             }
         </div>
 
-        @* UPCOMING SCHEDULES TAB (EXISTING) *@
+        @* UPCOMING SCHEDULES TAB (Now shows UNIT-LEVEL schedules) *@
         <div class="tab-pane fade" id="upcoming-schedules" role="tabpanel">
-            @* ... (Existing Schedules loop remains here) ... *@
             @if (Model.UpcomingSchedules != null && Model.UpcomingSchedules.Any())
             {
                 <ul class="list-group">
@@ -191,7 +154,7 @@
             }
             else
             {
-                <div class="alert alert-success">No upcoming model-level maintenance schedules found.</div>
+                <div class="alert alert-success">No upcoming maintenance schedules found for this unit.</div>
             }
         </div>
     </div>
@@ -208,7 +171,6 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
-    @* Explicitly initialize the Bootstrap tab component *@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Get all tab triggers by their class

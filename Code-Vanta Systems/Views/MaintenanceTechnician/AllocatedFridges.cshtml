@@ -3,7 +3,7 @@
 @{
     // The view title dynamically changes based on the controller action
     bool isAllFridgesAction = ViewContext.RouteData.Values["action"]?.ToString() == "AllFridges";
-    ViewData["Title"] = isAllFridgesAction ? "All Fridges in System" : "My Allocated Fridges";
+    ViewData["Title"] = isAllFridgesAction ? "All Fridge Units in System" : "My Allocated Fridge Units";
     Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
 }
 
@@ -56,11 +56,11 @@
             <div class="alert alert-info m-3" role="alert">
                 @if (isAllFridgesAction)
                 {
-                    <span>No fridges found matching the current filter.</span>
+                    <span>No fridge units found matching the current filter.</span>
                 }
                 else
                 {
-                    <span>You are not currently allocated any fridges for maintenance.</span>
+                    <span>You are not currently allocated any fridge units for maintenance.</span>
                 }
             </div>
         }
@@ -84,6 +84,7 @@
                         {
                             <tr>
                                 <td class="align-middle fw-bold">
+                                    @* CRITICAL FIX: FridgeId is now UnitId, link to FridgeDetails *@
                                     <a asp-action="FridgeDetails" asp-route-id="@item.FridgeId" class="text-primary">@item.SerialNumber</a>
                                 </td>
                                 <td class="align-middle">@item.Model</td>
@@ -113,13 +114,14 @@
                                     }
                                 </td>
                                 <td class="align-middle text-nowrap">
+                                    @* CRITICAL FIX: All actions use 'id' or 'unitId' route parameter with FridgeId (UnitId) *@
                                     <a asp-action="FridgeDetails" asp-route-id="@item.FridgeId" class="btn btn-sm btn-outline-info me-2" title="View Details">
                                         <i class="bi bi-info-circle"></i> Details
                                     </a>
-                                    <a asp-action="CreateServiceRecord" asp-route-fridgeId="@item.FridgeId" class="btn btn-sm btn-outline-success me-2" title="Log Service">
+                                    <a asp-action="CreateServiceRecord" asp-route-unitId="@item.FridgeId" class="btn btn-sm btn-outline-success me-2" title="Log Service">
                                         <i class="bi bi-wrench"></i> Log Service
                                     </a>
-                                    <a asp-action="CreateSchedule" asp-route-fridgeId="@item.FridgeId" class="btn btn-sm btn-outline-warning" title="Schedule Visit">
+                                    <a asp-action="CreateSchedule" asp-route-unitId="@item.FridgeId" class="btn btn-sm btn-outline-warning" title="Schedule Visit">
                                         <i class="bi bi-calendar-plus"></i> Schedule
                                     </a>
                                 </td>

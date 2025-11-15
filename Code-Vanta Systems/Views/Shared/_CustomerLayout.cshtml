@@ -203,7 +203,10 @@
         <a asp-controller="Customer" asp-action="MyRentalRequests"><i class="bi bi-card-list"></i><span>Rental Requests</span></a>
         <a asp-controller="Customer" asp-action="MyRentedFridges"><i class="bi bi-snow"></i><span>My Fridges</span></a>
         <a asp-controller="Customer" asp-action="LoggedFault"><i class="bi bi-bug"></i><span>Logged Faults</span></a>
-       
+
+        <hr class="text-white opacity-25 mt-3 mb-2" />
+
+        <a asp-controller="Customer" asp-action="UpcomingMaintenance" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "UpcomingMaintenance" ? "active" : "")"><i class="bi bi-calendar-check"></i><span>Upcoming Maint.</span></a>
     </div>
 
     <!-- Main content -->

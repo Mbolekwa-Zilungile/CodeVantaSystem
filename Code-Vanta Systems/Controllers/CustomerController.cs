@@ -349,43 +349,50 @@ namespace Code_Vanta_Systems.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
 
-            // Rentals (Approved & Paid)
-            var rentalFridges = await _context.RentalRequests
-                .Include(r => r.Fridge)
-                .Where(r => r.RequestedByUserId == user.Id && r.Status == "Approved" && r.IsPaid)
-                .Select(r => new FridgeAllocationDisplayViewModel
-                {
-                    FridgeModel = r.Fridge.Model,
-                    ImageUrl = r.Fridge.ImageUrl,
-                    Quantity = r.Quantity,
-                    AllocatedOn = r.UpdatedAt ?? r.CreatedAt,
-                    Source = "Rental",
-                    RentalId = r.Id
-                })
-                .ToListAsync();
+            // Load the customer record linked to this user
+            var customer = await _context.Customers
+                .FirstOrDefaultAsync(c => c.UserId == user.Id);
 
-            // Manual allocations
-            var manualAllocations = await _context.FridgeAllocations
-                .Include(a => a.Fridge)
-                .Include(a => a.Customer)
-                .Where(a => a.Customer.UserId == user.Id)
-                .Select(a => new FridgeAllocationDisplayViewModel
+            if (customer == null)
+            {
+                TempData["ErrorMessage"] = "Customer profile not found.";
+                return RedirectToAction(nameof(MyProfile));
+            }
+
+            // CRITICAL FIX: Query the FridgeUnits directly, as they are the source of truth for allocated physical assets.
+            var allocatedUnits = await _context.FridgeUnits
+                .Include(u => u.Fridge)
+                // Filter only for units allocated to this specific customer
+                .Where(u => u.CustomerId == customer.Id)
+                .Select(u => new FridgeAllocationDisplayViewModel
                 {
-                    FridgeModel = a.Fridge.Model,
-                    ImageUrl = a.Fridge.ImageUrl,
-                    Quantity = a.Quantity,
-                    AllocatedOn = a.AllocationDate,
-                    Source = "Manual",
+                    // ✅ Map critical Unit ID
+                    UnitId = u.Id,
+
+                    // ✅ Map Unit's unique Serial Number
+                    SerialNumber = u.SerialNumber,
+
+                    // Map display properties from the parent model
+                    FridgeModel = u.Fridge.Model,
+                    ImageUrl = u.Fridge.ImageUrl,
+
+                    // ✅ Map Unit's current condition
+                    Condition = u.Condition.ToString(),
+
+                    // Use Unit's creation date as the allocation date placeholder
+                    AllocatedOn = u.CreatedAt,
+
+                    // Determine source/status type
+                    Source = u.IsRented ? "Rented/Allocated" : "N/A",
+
+                    // Placeholder for original RentalRequest ID (if needed)
                     RentalId = null
                 })
+                .OrderByDescending(x => x.AllocatedOn)
                 .ToListAsync();
 
-            // ✅ Merge both safely
-            var combined = rentalFridges.Concat(manualAllocations)
-                .OrderByDescending(x => x.AllocatedOn)
-                .ToList();
-
-            return View(combined);
+            // The list now contains one ViewModel instance per allocated physical unit.
+            return View(allocatedUnits);
         }
 
         #endregion
@@ -480,19 +487,19 @@ namespace Code_Vanta_Systems.Controllers
                 // 1️⃣ MODIFICATION: Filter faults to only show those reported by the current user
                 var query = _context.FridgeFaults.Where(f => f.ReportedByUserId == user.Id && f.Status != FaultStatus.Cancelled)
                     .Include(f => f.Fridge)
-                    // 🚨 IMPORTANT: Include FridgeUnit if you update the model to link faults to units.
-                    // .Include(f => f.FridgeUnit) 
+                    // ✅ CRITICAL FIX: Include the FridgeUnit for serial number and unit ID
+                    .Include(f => f.FridgeUnit)
                     .Include(f => f.ReportedBy)
                     .Include(f => f.AssignedTechnician)
                     .AsQueryable();
 
-                // Search by Fridge Model, SerialNumber, or Fault Description
+                // Search by Unit SerialNumber or Fault Description
                 if (!string.IsNullOrEmpty(search))
                 {
                     search = search.ToLower();
                     query = query.Where(f =>
-                        f.Fridge.Model.ToLower().Contains(search) ||
-                        f.Fridge.SerialNumber.ToLower().Contains(search) ||
+                        // Search using the Unit's Serial Number
+                        f.FridgeUnit.SerialNumber.ToLower().Contains(search) ||
                         f.FaultDescription.ToLower().Contains(search) ||
                         f.ReportedBy.FullName.ToLower().Contains(search) ||
                         (f.AssignedTechnician != null && f.AssignedTechnician.FullName.ToLower().Contains(search))
@@ -515,10 +522,14 @@ namespace Code_Vanta_Systems.Controllers
                     {
                         Id = f.Id,
                         FridgeId = f.FridgeId,
+
+                        // ✅ CRITICAL FIX: Set the FridgeUnitId
+                        FridgeUnitId = f.FridgeUnitId,
+
                         FridgeModel = f.Fridge.Model,
-                        // 🚨 FRIDGE UNIT FIX: Use the unit's serial if linked via FridgeUnitId
-                        // FridgeSerialNumber = f.FridgeUnit.SerialNumber,
-                        FridgeSerialNumber = f.Fridge.SerialNumber, // Keeping old logic for now
+                        // ✅ CRITICAL FIX: Use the unit's serial number
+                        FridgeSerialNumber = f.FridgeUnit.SerialNumber,
+
                         ReportedByUserId = f.ReportedByUserId,
                         ReportedByFullName = f.ReportedBy.FullName,
                         AssignedTechnicianId = f.AssignedTechnicianId,
@@ -861,6 +872,8 @@ namespace Code_Vanta_Systems.Controllers
         }
 #endregion
 
+
+
         #region Checkout Logic
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1082,6 +1095,132 @@ namespace Code_Vanta_Systems.Controllers
         }
         #endregion
 
+        #region Fault & Maintenance History
+        [HttpGet]
+        public async Task<IActionResult> UpcomingMaintenance()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == user.Id);
+
+            if (customer == null)
+            {
+                TempData["ErrorMessage"] = "Customer profile not found.";
+                return RedirectToAction(nameof(MyProfile));
+            }
+
+            // 1. Find all units currently allocated to this customer
+            var allocatedUnitIds = await _context.FridgeUnits
+                .Where(u => u.CustomerId == customer.Id)
+                .Select(u => u.Id)
+                .ToListAsync();
+
+            // 2. Fetch upcoming, non-completed maintenance schedules for these units
+            var schedules = await _context.MaintenanceSchedules
+                .Include(ms => ms.FridgeUnit) // Include unit for context
+                    .ThenInclude(u => u.Fridge)
+                .Where(ms => allocatedUnitIds.Contains(ms.FridgeUnitId) &&
+                             ms.Status != "Completed" &&
+                             ms.ScheduledDate >= DateTime.Today)
+                .OrderBy(ms => ms.ScheduledDate)
+                .ToListAsync();
+
+            return View(schedules);
+        }
+
+        // --- NEW ACTION: View Detailed Fridge History (Faults & Services) ---
+        // This acts as a single landing page for the history of all their units.
+        [HttpGet]
+        public async Task<IActionResult> FridgeHistory()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == user.Id);
+
+            if (customer == null)
+            {
+                TempData["ErrorMessage"] = "Customer profile not found.";
+                return RedirectToAction(nameof(MyProfile));
+            }
+
+            // 1. Get all unit IDs for this customer
+            var allocatedUnitIds = await _context.FridgeUnits
+                .Where(u => u.CustomerId == customer.Id)
+                .Select(u => u.Id)
+                .ToListAsync();
+
+            // 2. Fetch all service records for these units
+            var serviceHistory = await _context.ServiceRecords
+                .Include(sr => sr.FridgeUnit)
+                    .ThenInclude(u => u.Fridge)
+                .Include(sr => sr.Technician)
+                .Where(sr => allocatedUnitIds.Contains(sr.FridgeUnitId))
+                .OrderByDescending(sr => sr.DateOfService)
+                .Take(20) // Limit to 20 most recent
+                .ToListAsync();
+
+            // 3. Fetch all fault history for these units (only need status and description)
+            // Note: Faults reported by the user are already listed in LoggedFaults, this is for completeness.
+            var faultHistory = await _context.FridgeFaults
+                .Include(ff => ff.FridgeUnit)
+                    .ThenInclude(u => u.Fridge)
+                .Include(ff => ff.AssignedTechnician)
+                .Where(ff => allocatedUnitIds.Contains(ff.FridgeUnitId))
+                .OrderByDescending(ff => ff.DateReported)
+                .Take(20) // Limit to 20 most recent
+                .ToListAsync();
+
+            // Use a dynamic Tuple or a dedicated ViewModel to pass combined data
+            var viewModel = new Tuple<List<ServiceRecord>, List<FridgeFault>>(serviceHistory, faultHistory);
+
+            return View(viewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> UnitHistory(int id) // 'id' is FridgeUnitId
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.UserId == user.Id);
+
+            if (customer == null)
+            {
+                TempData["ErrorMessage"] = "Customer profile not found.";
+                return RedirectToAction(nameof(MyProfile));
+            }
+
+            // 1. Fetch the specific unit, ensuring it belongs to the customer
+            var unit = await _context.FridgeUnits
+                .Include(u => u.Fridge)
+                .FirstOrDefaultAsync(u => u.Id == id && u.CustomerId == customer.Id);
+
+            if (unit == null)
+            {
+                TempData["ErrorMessage"] = "Fridge unit not found or is not allocated to your account.";
+                return RedirectToAction(nameof(MyRentedFridges));
+            }
+
+            // 2. Fetch all service records for this unit
+            var serviceHistory = await _context.ServiceRecords
+                .Include(sr => sr.Technician)
+                .Where(sr => sr.FridgeUnitId == id)
+                .OrderByDescending(sr => sr.DateOfService)
+                .ToListAsync();
+
+            // 3. Fetch all fault history for this unit
+            var faultHistory = await _context.FridgeFaults
+                .Include(ff => ff.AssignedTechnician)
+                .Where(ff => ff.FridgeUnitId == id)
+                .OrderByDescending(ff => ff.DateReported)
+                .ToListAsync();
+
+            // Pass the unit details and history
+            ViewData["UnitModel"] = unit.Fridge.Model;
+            ViewData["UnitSerial"] = unit.SerialNumber;
+            ViewData["UnitId"] = unit.Id;
+
+            var viewModel = new Tuple<List<ServiceRecord>, List<FridgeFault>>(serviceHistory, faultHistory);
+
+            return View(viewModel);
+        }
+        #endregion
 
         #region Fridge more info
         public async Task<IActionResult> FridgeMoreInfo(int id)

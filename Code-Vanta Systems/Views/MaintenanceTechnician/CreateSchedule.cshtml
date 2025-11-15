@@ -4,9 +4,11 @@
     ViewData["Title"] = "Create Maintenance Schedule";
     Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
 
-    bool isListSelectMode = !Model.FridgeId.HasValue;
+    // CRITICAL FIX: Check FridgeUnitId for list select mode
+    bool isListSelectMode = !Model.FridgeUnitId.HasValue;
     // This line is now safe because FridgeDisplay is preserved by the hidden field
-    string heading = isListSelectMode ? "Schedule New Maintenance Visit" : $"Schedule Visit for: {Model.FridgeDisplay}";
+    string heading = isListSelectMode ?
+    "Schedule New Maintenance Visit" : $"Schedule Visit for Unit: {Model.FridgeDisplay}";
 }
 
 <div class="container py-4">
@@ -25,21 +27,23 @@
                 @if (isListSelectMode)
                 {
                     <div class="mb-3">
-                        <label asp-for="FridgeId" class="form-label"></label>
-                        <select asp-for="FridgeId"
+                        @* CRITICAL FIX: Use FridgeUnitId and AvailableFridges *@
+                        <label asp-for="FridgeUnitId" class="form-label"></label>
+                        <select asp-for="FridgeUnitId"
                                 asp-items="Model.AvailableFridges"
                                 class="form-select">
-                            <option value="">-- Select Fridge --</option>
+                            <option value="">-- Select Fridge Unit --</option>
                         </select>
-                        <span asp-validation-for="FridgeId" class="text-danger"></span>
+                        <span asp-validation-for="FridgeUnitId" class="text-danger"></span>
                     </div>
                 }
                 else
                 {
                     @* If a fridge is pre-selected, use a hidden field for the ID *@
-                    <input type="hidden" asp-for="FridgeId" />
+                    @* CRITICAL FIX: Use FridgeUnitId *@
+                    <input type="hidden" asp-for="FridgeUnitId" />
                     <div class="mb-3">
-                        <label class="form-label">Selected Fridge</label>
+                        <label class="form-label">Selected Fridge Unit</label>
                         <p class="form-control-static fw-bold">@Model.FridgeDisplay</p>
                     </div>
                 }
@@ -60,7 +64,8 @@
 
                 <div class="d-flex justify-content-between mt-4">
                     <a asp-action="@(isListSelectMode ? "AllocatedFridges" : "FridgeDetails")"
-                       asp-route-id="@Model.FridgeId" class="btn btn-secondary">
+                       @* CRITICAL FIX: Use FridgeUnitId for back button *@
+                       asp-route-id="@Model.FridgeUnitId" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Cancel
                     </a>
                     <button type="submit" class="btn btn-success">

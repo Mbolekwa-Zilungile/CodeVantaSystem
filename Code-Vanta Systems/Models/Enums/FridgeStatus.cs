@@ -8,7 +8,8 @@
         Operational,
         ReturnedToStock,
         InRepair,
-        Retired
+        Retired,
+        Scrapped
     }
 }
 

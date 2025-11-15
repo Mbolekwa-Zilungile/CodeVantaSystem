@@ -9,6 +9,7 @@
             InProgress,
             Cancelled,
             Scrapped,
-            Resolved
+            Resolved,
+            Repaired
     }
 }

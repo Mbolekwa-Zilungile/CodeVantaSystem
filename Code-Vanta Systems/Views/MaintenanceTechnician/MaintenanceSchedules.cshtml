@@ -15,7 +15,7 @@
             <thead class="table-dark">
                 <tr>
                     <th>Scheduled Date</th>
-                    <th>Serial Number</th>
+                    <th>Unit S/N</th>
                     <th>Customer</th>
                     <th>Description</th>
                     <th>Status</th>
@@ -27,17 +27,24 @@
                 {
                     <tr>
                         <td>@item.ScheduledDate.ToString("yyyy-MM-dd HH:mm")</td>
-                        <td>@item.Fridge.SerialNumber</td>
-                        <td>@item.Fridge.Customer?.BusinessName</td>
+                        @* CRITICAL FIX: Use FridgeUnit and link to FridgeUnitId *@
+                        <td>
+                            <a asp-action="FridgeDetails" asp-route-id="@item.FridgeUnitId" class="text-primary">
+                                @item.FridgeUnit.SerialNumber @* Assumes FridgeUnit navigation is available *@
+                            </a>
+                        </td>
+                        <td>@item.FridgeUnit.Customer?.BusinessName @* Assumes Customer navigation is available on FridgeUnit *@</td>
                         <td>@item.Description</td>
                         <td>
                             <span class="badge bg-info">@item.Status</span>
                         </td>
                         <td>
-                            <a asp-action="CreateServiceRecord" asp-route-fridgeId="@item.FridgeId" class="btn btn-sm btn-outline-success me-2">
+                            @* CRITICAL FIX: Changed route parameter to unitId *@
+                            <a asp-action="CreateServiceRecord" asp-route-unitId="@item.FridgeUnitId" class="btn btn-sm btn-outline-success me-2">
                                 <i class="bi bi-tools"></i> Service
                             </a>
-                            <a asp-action="FridgeDetails" asp-route-id="@item.FridgeId" class="btn btn-sm btn-outline-info">
+                            @* CRITICAL FIX: Changed route parameter to id *@
+                            <a asp-action="FridgeDetails" asp-route-id="@item.FridgeUnitId" class="btn btn-sm btn-outline-info">
                                 <i class="bi bi-info-circle"></i> Details
                             </a>
                         </td>

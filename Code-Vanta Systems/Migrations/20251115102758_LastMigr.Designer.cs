@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Code_Vanta_Systems.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251114124041_CreateDb")]
-    partial class CreateDb
+    [Migration("20251115102758_LastMigr")]
+    partial class LastMigr
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -874,7 +874,7 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<int>("FridgeId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("FridgeUnitId")
+                    b.Property<int>("FridgeUnitId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("ScheduledDate")
@@ -1416,16 +1416,22 @@ namespace Code_Vanta_Systems.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("Cost")
+                        .HasColumnType("decimal(10, 2)");
+
                     b.Property<DateTime>("DateOfService")
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("FaultId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("FridgeId")
+                    b.Property<int>("FridgeId")
                         .HasColumnType("int");
 
                     b.Property<int>("FridgeUnitId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MaintenanceTypeId")
                         .HasColumnType("int");
 
                     b.Property<string>("PartsUsed")
@@ -2030,17 +2036,21 @@ namespace Code_Vanta_Systems.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Code_Vanta_Systems.Models.FridgeUnit", null)
+                    b.HasOne("Code_Vanta_Systems.Models.FridgeUnit", "FridgeUnit")
                         .WithMany("MaintenanceSchedules")
-                        .HasForeignKey("FridgeUnitId");
+                        .HasForeignKey("FridgeUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "Technician")
-                        .WithMany()
+                        .WithMany("MaintenanceSchedules")
                         .HasForeignKey("TechnicianId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Fridge");
+
+                    b.Navigation("FridgeUnit");
 
                     b.Navigation("Technician");
                 });
@@ -2279,9 +2289,11 @@ namespace Code_Vanta_Systems.Migrations
                         .HasForeignKey("FaultId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Code_Vanta_Systems.Models.Fridge", null)
+                    b.HasOne("Code_Vanta_Systems.Models.Fridge", "Fridge")
                         .WithMany("ServiceRecords")
-                        .HasForeignKey("FridgeId");
+                        .HasForeignKey("FridgeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Code_Vanta_Systems.Models.FridgeUnit", "FridgeUnit")
                         .WithMany("ServiceRecords")
@@ -2296,6 +2308,8 @@ namespace Code_Vanta_Systems.Migrations
                         .IsRequired();
 
                     b.Navigation("Fault");
+
+                    b.Navigation("Fridge");
 
                     b.Navigation("FridgeUnit");
 
@@ -2407,6 +2421,8 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.Navigation("EmployeeProfile")
                         .IsRequired();
+
+                    b.Navigation("MaintenanceSchedules");
 
                     b.Navigation("PlacedOrders");
 

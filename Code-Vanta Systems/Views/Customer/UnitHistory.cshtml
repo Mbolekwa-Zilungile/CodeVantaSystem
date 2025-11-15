@@ -1,0 +1,96 @@
+﻿@model Tuple<List<Code_Vanta_Systems.Models.ServiceRecord>, List<Code_Vanta_Systems.Models.FridgeFault>>
+
+@{
+    Layout = "~/Views/Shared/_CustomerLayout.cshtml";
+    ViewData["Title"] = $"History: {ViewData["UnitSerial"]} ({ViewData["UnitModel"]})";
+
+    var serviceHistory = Model.Item1;
+    var faultHistory = Model.Item2;
+}
+
+<div class="container py-4">
+    <h2 class="mb-4 text-primary">
+        <i class="bi bi-clock-history me-2"></i> Unit History
+    </h2>
+    <h4 class="text-secondary">@ViewData["UnitSerial"] (@ViewData["UnitModel"])</h4>
+    <hr />
+
+    <ul class="nav nav-tabs" id="unitHistoryTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="fault-tab" data-bs-toggle="tab" data-bs-target="#fault-history" type="button" role="tab">Faults (@faultHistory.Count)</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="service-tab" data-bs-toggle="tab" data-bs-target="#service-history" type="button" role="tab">Services (@serviceHistory.Count)</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link text-danger" asp-action="LogFault" asp-route-id="@ViewData["UnitId"]">
+                <i class="bi bi-bug"></i> Report New Fault
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content border border-top-0 p-3" id="unitHistoryTabsContent">
+
+        @* --- FAULT HISTORY TAB --- *@
+        <div class="tab-pane fade show active" id="fault-history" role="tabpanel">
+            @if (faultHistory.Any())
+            {
+                <table class="table table-striped table-sm">
+                    <thead class="table-light">
+                        <tr><th>Date</th><th>Description</th><th>Status</th><th>Technician</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var fault in faultHistory)
+                        {
+                            <tr>
+                                <td>@fault.DateReported.ToString("dd MMM yyyy")</td>
+                                <td>@fault.FaultDescription</td>
+                                <td><span class="badge bg-secondary">@fault.Status</span></td>
+                                <td>@(fault.AssignedTechnician?.FullName ?? "N/A")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+
+                <div class="alert alert-secondary">No fault history found for this unit.</div>
+            }
+        </div>
+
+        @* --- SERVICE HISTORY TAB --- *@
+        <div class="tab-pane fade" id="service-history" role="tabpanel">
+            @if (serviceHistory.Any())
+            {
+                <table class="table table-striped table-sm">
+                    <thead class="table-light">
+                        <tr><th>Date</th><th>Details</th><th>Technician</th><th>Parts Used</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var service in serviceHistory)
+                        {
+                            <tr>
+                                <td>@service.DateOfService.ToString("dd MMM yyyy")</td>
+                                <td>@service.ServiceDetails</td>
+                                <td>@service.Technician.FullName</td>
+                                <td>@(string.IsNullOrEmpty(service.PartsUsed) ? "-" : service.PartsUsed)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+
+                <div class="alert alert-secondary">No service records found for this unit.</div>
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-action="MyRentedFridges" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to My Units
+        </a>
+    </div>
+</div>

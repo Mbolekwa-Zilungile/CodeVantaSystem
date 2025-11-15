@@ -7,7 +7,7 @@
 
 <div class="container py-4">
     <h2 class="mb-4 text-danger"><i class="bi bi-exclamation-octagon"></i> Open Fault Reports</h2>
-    <p class="text-muted">Fault reports reported for the fridges allocated to your customers.</p>
+    <p class="text-muted">Fault reports reported for the fridge units allocated to your customers.</p>
 
     @if (Model.Any())
     {
@@ -15,7 +15,7 @@
             <thead class="table-dark">
                 <tr>
                     <th style="width:15%">Report Date</th>
-                    <th style="width:15%">Fridge S/N</th>
+                    <th style="width:15%">Unit S/N</th>
                     <th style="width:10%">Severity</th>
                     <th style="width:10%">Status</th>
                     <th style="width:30%">Description</th>
@@ -29,8 +29,9 @@
                     <tr>
                         <td>@fault.DateReported.ToString("yyyy-MM-dd HH:mm")</td>
                         <td>
-                            <a asp-action="FridgeDetails" asp-route-id="@fault.FridgeId" class="text-primary">
-                                @fault.Fridge.SerialNumber
+                            @* CRITICAL FIX: Use FridgeUnitId for linking to details *@
+                            <a asp-action="FridgeDetails" asp-route-id="@fault.FridgeUnitId" class="text-primary">
+                                @fault.FridgeUnit.SerialNumber @* Assuming FridgeUnit navigation property is available *@
                             </a>
                         </td>
                         <td>
@@ -44,7 +45,8 @@
                         <td>@fault.FaultDescription</td>
                         <td>@fault.ReportedBy.FullName</td>
                         <td>
-                            <a asp-action="FridgeDetails" asp-route-id="@fault.FridgeId" class="btn btn-sm btn-outline-primary">
+                            @* CRITICAL FIX: Use FridgeUnitId for linking to details *@
+                            <a asp-action="FridgeDetails" asp-route-id="@fault.FridgeUnitId" class="btn btn-sm btn-outline-primary">
                                 View
                             </a>
                         </td>

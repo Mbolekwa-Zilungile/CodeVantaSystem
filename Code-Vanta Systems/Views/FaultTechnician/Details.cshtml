@@ -1,9 +1,11 @@
 ﻿@model Code_Vanta_Systems.Models.FridgeFault
-@using Code_Vanta_Systems.Models.Enums // Assuming this is needed for FaultStatus
+@using Code_Vanta_Systems.Models.Enums
 
 @{
-    Layout = "~/Views/Shared/_TechnicianDashboard.cshtml"; // Use your Fault Technician Layout
+    Layout = "~/Views/Shared/_TechnicianDashboard.cshtml";
     ViewData["Title"] = "Fridge Fault Details";
+    // Check if the fault is in a final state
+    bool isFinalized = Model.Status == FaultStatus.Repaired || Model.Status == FaultStatus.Scrapped || Model.Status == FaultStatus.Resolved;
 }
 
 <h2 class="text-center mb-5 display-5">Fridge Fault Details</h2>
@@ -29,8 +31,15 @@
     </div>
     <div class="card-body">
         <dl class="row">
-            <dt class="col-sm-3">Fridge Serial</dt>
-            <dd class="col-sm-9">@Model.Fridge.SerialNumber</dd>
+            @* FIX: Use FridgeUnit for Serial and Model *@
+            <dt class="col-sm-3">Unit Serial</dt>
+            <dd class="col-sm-9">@Model.FridgeUnit.SerialNumber (@Model.FridgeUnit.Fridge.Model)</dd>
+
+            <dt class="col-sm-3">Customer</dt>
+            <dd class="col-sm-9">@Model.FridgeUnit.Customer?.BusinessName</dd>
+
+            <dt class="col-sm-3">Unit Condition (Current)</dt>
+            <dd class="col-sm-9">@Model.FridgeUnit.Condition</dd> @* FIX: Display current Unit Condition *@
 
             <dt class="col-sm-3">Reported By</dt>
             <dd class="col-sm-9">@Model.ReportedBy.FullName</dd>
@@ -44,6 +53,17 @@
             <dt class="col-sm-3">Description</dt>
             <dd class="col-sm-9">@Model.FaultDescription</dd>
 
+            @* Display Repair Notes if available (Only visible after resolution) *@
+            @if (isFinalized)
+            {
+                <dt class="col-sm-3">Repair Description</dt>
+                <dd class="col-sm-9">@Model.RepairDescription</dd>
+
+                <dt class="col-sm-3">Parts Used</dt>
+                <dd class="col-sm-9">@Model.PartsUsed</dd>
+            }
+
+
             <dt class="col-sm-3">Severity</dt>
             <dd class="col-sm-9">
                 <span class="badge @(Model.Severity.ToString() == "High" ? "bg-danger" : Model.Severity.ToString() == "Medium" ? "bg-warning text-dark" : "bg-info")">
@@ -54,48 +74,62 @@
             <dt class="col-sm-3">Status</dt>
             <dd class="col-sm-9">
                 <span class="badge bg-secondary">@Model.Status</span>
-                @if (Model.Status == FaultStatus.Resolved)
+                @if (Model.Status == FaultStatus.Repaired)
                 {
-                    <span class="text-success ms-2 fw-bold">(Resolved on @Model.ResolutionDate?.ToString("yyyy-MM-dd HH:mm"))</span>
+                    <span class="text-success ms-2 fw-bold">(Repaired on @Model.ResolutionDate?.ToString("yyyy-MM-dd HH:mm"))</span>
                 }
             </dd>
         </dl>
     </div>
 </div>
 
-
-@if (Model.Status != FaultStatus.Resolved && Model.Status != FaultStatus.Scrapped)
+@* CRITICAL FIX: Replace ResolveFault with ProcessRepair form *@
+@if (!isFinalized)
 {
     <div class="card mb-4 border-success shadow">
         <div class="card-header bg-success text-white">
-            <h5 class="mb-0"><i class="bi bi-check2-circle me-2"></i> Resolve Fault</h5>
+            <h5 class="mb-0"><i class="bi bi-tools me-2"></i> Process Repair & Update Unit Condition</h5>
         </div>
         <div class="card-body">
-            <form asp-controller="FaultTechnician" asp-action="ResolveFault" method="post">
-                <input type="hidden" name="faultId" value="@Model.Id" />
+            @* Assumes ProcessRepairViewModel is available for binding, but using direct form fields for simplicity *@
+            <form asp-controller="FaultTechnician" asp-action="ProcessRepair" method="post">
+                <input type="hidden" name="FaultId" value="@Model.Id" />
 
+                @* Repair Details *@
                 <div class="mb-3">
-                    <label for="resolutionNotes" class="form-label">Resolution Notes</label>
-                    <textarea name="resolutionNotes" id="resolutionNotes" rows="4" class="form-control"
+                    <label for="RepairDescription" class="form-label">Repair Description/Actions Taken</label>
+                    <textarea name="RepairDescription" id="RepairDescription" rows="4" class="form-control"
                           placeholder="Describe the steps taken to fix the fault." required></textarea>
                 </div>
 
-                <div class="form-check mb-4">
-                    <input class="form-check-input" type="checkbox" name="requiresMaintenance" id="requiresMaintenance" value="true">
-                    <label class="form-check-label text-danger fw-bold" for="requiresMaintenance">
-                        Fridge Requires Scheduled Maintenance (Flag for Admin Oversight)
-                    </label>
+                <div class="mb-3">
+                    <label for="PartsUsed" class="form-label">Parts Used (e.g., Compressor, Fan, Door Seal)</label>
+                    <input type="text" name="PartsUsed" id="PartsUsed" class="form-control" placeholder="List parts separated by commas (Optional)" />
                 </div>
+
+                @* New Condition *@
+                <div class="mb-4">
+                    <label for="NewFridgeCondition" class="form-label fw-bold">Final Unit Condition</label>
+                    <select name="NewFridgeCondition" id="NewFridgeCondition" class="form-select" required>
+                        @* Assuming FridgeCondition enum exists and is correctly registered *@
+                        <option value="">-- Select Final Condition --</option>
+                        <option value="@FridgeCondition.Operational">Operational (Repaired, ready for use)</option>
+                        <option value="@FridgeCondition.Scrap" class="text-danger">Scrap (Beyond economical repair)</option>
+                        <option value="@FridgeCondition.RequireMaintenance" class="text-warning">Requires Maintenance (Beyond my scope, requires scheduled service)</option>
+                    </select>
+                </div>
+
 
                 <div class="d-grid">
                     <button type="submit" class="btn btn-success btn-lg">
-                        <i class="bi bi-patch-check me-2"></i> Finalize Resolution
+                        <i class="bi bi-patch-check me-2"></i> Mark as Repaired
                     </button>
                 </div>
             </form>
         </div>
     </div>
 }
+@* End of Process Repair form *@
 
 
 @if (ViewData["Audits"] is List<Code_Vanta_Systems.Models.AuditTrail> audits && audits.Any())

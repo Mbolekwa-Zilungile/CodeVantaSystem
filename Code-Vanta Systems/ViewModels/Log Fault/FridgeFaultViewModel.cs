@@ -10,6 +10,8 @@ namespace Code_Vanta_Systems.ViewModels.Log_Fault
         // Fridge Info
         public int FridgeId { get; set; }
         public string FridgeModel { get; set; }
+        // CRITICAL FIX: Add FridgeUnitId for history links
+        public int FridgeUnitId { get; set; }
         public string FridgeSerialNumber { get; set; }
 
         // Reporter Info

@@ -1,32 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Collections.Generic;
 
 namespace Code_Vanta_Systems.ViewModels
 {
     public class CreateScheduleViewModel
     {
-        // Context/Hidden Fields
-        [Display(Name = "Fridge")]
-        [Required(ErrorMessage = "Please select a fridge.")]
-        public int? FridgeId { get; set; }
+        // FIX: Replaced FridgeId with FridgeUnitId
+        [Required(ErrorMessage = "A fridge unit must be selected.")]
+        [Display(Name = "Fridge Unit")]
+        public int? FridgeUnitId { get; set; }
 
-        // For display in the View's title/heading (e.g., "ZBD300 (N/A Customer)")
-        public string? FridgeDisplay { get; set; }
-
-        [Required(ErrorMessage = "Scheduled Date and Time are required.")]
-        // Using DateTime to capture the time slot for the visit
+        [Required(ErrorMessage = "Scheduled date is required.")]
         [DataType(DataType.DateTime)]
-        [Display(Name = "Scheduled Date and Time")]
-        public DateTime ScheduledDate { get; set; } = DateTime.Now.Date.AddHours(9).AddDays(7); // Default to 9:00 AM next week
+        [Display(Name = "Scheduled Date & Time")]
+        public DateTime ScheduledDate { get; set; }
 
-        [Required(ErrorMessage = "Description of maintenance is required.")]
-        [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
-        [DataType(DataType.MultilineText)]
+        [Required(ErrorMessage = "Description is required.")]
+        [MaxLength(500)]
         public string Description { get; set; }
 
-        // Property to hold the list of available fridges for the dropdown/select list 
+        // Used to store the selected fridge unit's display name for success messages
+        public string? FridgeDisplay { get; set; }
+
+        // Used by the Controller to populate the unit dropdown list
         public IEnumerable<SelectListItem> AvailableFridges { get; set; } = new List<SelectListItem>();
     }
 }

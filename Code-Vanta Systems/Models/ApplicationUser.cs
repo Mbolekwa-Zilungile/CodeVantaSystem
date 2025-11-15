@@ -18,6 +18,8 @@ namespace Code_Vanta_Systems.Models
         public virtual ICollection<FridgeFault> AssignedFaults { get; set; } // Technician role
         public virtual ICollection<FridgeFault> ReportedFaults { get; set; } // User/Customer role
         public virtual ICollection<FridgeMaintenance> AssignedMaintenances { get; set; }
+        // FIX: Add the missing MaintenanceSchedules collection
+        public virtual ICollection<MaintenanceSchedule> MaintenanceSchedules { get; set; }
 
         // Purchasing & Scheduling Audit Trails
         public virtual ICollection<PurchaseRequest> PurchaseRequests { get; set; }
@@ -31,6 +33,8 @@ namespace Code_Vanta_Systems.Models
             AssignedFaults = new HashSet<FridgeFault>();
             ReportedFaults = new HashSet<FridgeFault>();
             AssignedMaintenances = new HashSet<FridgeMaintenance>();
+            // FIX: Initialize the new collection
+            MaintenanceSchedules = new HashSet<MaintenanceSchedule>();
             PurchaseRequests = new HashSet<PurchaseRequest>();
             TechnicianSchedules = new HashSet<TechnicianSchedule>();
             PlacedOrders = new HashSet<PurchaseOrder>();
