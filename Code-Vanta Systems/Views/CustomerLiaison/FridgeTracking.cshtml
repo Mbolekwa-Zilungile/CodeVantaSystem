@@ -5,7 +5,6 @@
     Layout = "~/Views/Shared/_CustomerLiaisonLayout.cshtml";
 }
 
-<!-- 🧭 Fridge Tracking -->
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-warning">
@@ -24,15 +23,13 @@
     }
 
     <div class="table-responsive shadow-sm rounded-3">
-        <table class="table table-hover align-middle">
-            <thead class="table-dark text-center">
+        <table class="table table-hover align-middle text-start">
+            <thead class="table-dark">
                 <tr>
                     <th>Fridge Model</th>
+                    <th>Unit Serial</th>
                     <th>Customer</th>
                     <th>Address (Click to View)</th>
-                    <th>Quantity</th>
-                    <th>Allocated By</th>
-                    <th>Allocation Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -41,30 +38,25 @@
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td class="fw-bold text-primary">@item.FridgeModel</td>
+                            <td>@item.FridgeModel</td>
+                            <td>@item.UnitSerialNumber</td>
                             <td>@item.CustomerName</td>
-
-                            <!-- Clickable Address -->
                             <td>
-                                <a href="#" class="text-decoration-none text-info fw-semibold address-link"
-                                   data-address="@item.CustomerAddress"
-                                   data-bs-toggle="modal"
-                                   data-bs-target="#mapModal">
+                                <a class="text-decoration-none text-primary fw-semibold"
+                                   href="https://www.google.com/maps/search/?api=1&query=@Uri.EscapeDataString(item.CustomerAddress)"
+                                   target="_blank">
                                     <i class="bi bi-geo-alt-fill me-1"></i>@item.CustomerAddress
                                 </a>
                             </td>
-
-                            <td>@item.Quantity</td>
-                            <td>@item.AllocatedBy</td>
-                            <td>@item.AllocationDate.ToLocalTime().ToString("g")</td>
+                 
                         </tr>
                     }
                 }
                 else
                 {
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">
-                            <i class="bi bi-info-circle me-2"></i>No fridge allocations found.
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="bi bi-info-circle me-2"></i>No assigned fridge units found.
                         </td>
                     </tr>
                 }
@@ -79,7 +71,7 @@
         <div class="modal-content shadow-lg">
             <div class="modal-header bg-dark text-white">
                 <h5 class="modal-title" id="mapModalLabel">
-                    <i class="bi bi-geo-alt-fill me-2"></i>Customer Location
+                    <i class="bi bi-geo-alt-fill me-2"></i> Customer Location
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -91,7 +83,7 @@
 </div>
 
 @section Scripts {
-    <!-- 🗺️ Leaflet.js (OpenStreetMap) -->
+    <!-- Leaflet.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -109,15 +101,12 @@
                     e.preventDefault();
                     const address = this.dataset.address.trim();
 
-                    // Update modal title
                     mapLabel.innerHTML = `<i class="bi bi-geo-alt-fill me-2"></i> Location: ${address}`;
 
-                    // Geocode the address (convert text → coordinates)
                     const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
                     const response = await fetch(geoUrl);
                     const data = await response.json();
 
-                    // Fallback if location not found
                     if (!data || data.length === 0) {
                         alert("Couldn't find this address on the map.");
                         return;
@@ -126,7 +115,6 @@
                     const lat = parseFloat(data[0].lat);
                     const lon = parseFloat(data[0].lon);
 
-                    // Initialize map if not already done
                     setTimeout(() => {
                         if (!map) {
                             map = L.map('map').setView([lat, lon], 14);
@@ -137,10 +125,8 @@
                             map.setView([lat, lon], 14);
                         }
 
-                        // Remove old marker if exists
                         if (marker) marker.remove();
 
-                        // Add new marker
                         marker = L.marker([lat, lon]).addTo(map)
                             .bindPopup(`<b>${address}</b>`)
                             .openPopup();
@@ -148,7 +134,6 @@
                 });
             });
 
-            // Clear map when modal closes
             mapModal.addEventListener('hidden.bs.modal', function () {
                 if (marker) marker.remove();
             });
@@ -166,11 +151,6 @@
     .table tbody tr:hover {
         background-color: rgba(255, 215, 0, 0.1);
         transition: 0.3s ease;
-    }
-
-    .address-link:hover {
-        text-decoration: underline;
-        color: #0d6efd !important;
     }
 
     .table td, .table th {

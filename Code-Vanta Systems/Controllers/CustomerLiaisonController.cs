@@ -634,26 +634,30 @@ namespace Code_Vanta_Systems.Controllers
         public async Task<IActionResult> FridgeTracking()
         {
             try
-            { 
-                var trackedFridges = await _context.FridgeAllocations
-                    .Include(a => a.Fridge)
-                    .Include(a => a.Customer)
-                    .Include(a => a.CreatedBy)
-                    .OrderByDescending(a => a.AllocationDate)
-                    .Select(a => new FridgeTrackingViewModel
+            {
+
+                var trackedFridges = await _context.FridgeUnits
+                    .Where(fu => fu.CustomerId != null && !fu.IsDeleted)
+                    .Include(fu => fu.Fridge)             // Fridge info
+                    .Include(fu => fu.Customer)           // Customer info
+                        .ThenInclude(c => c.Location)     // Customer's location
+                    .Include(fu => fu.Customer)           // for allocated by if needed
+                    .OrderByDescending(fu => fu.CreatedAt)
+                    .Select(fu => new FridgeTrackingViewModel
                     {
-                        FridgeModel = a.Fridge.Model,
-                        CustomerName = a.Customer.BusinessName,
-                        CustomerAddress = a.Customer.PhysicalAddress ?? "Address not provided",
-                        Quantity = a.Quantity,
-                        AllocatedBy = a.CreatedBy != null ? a.CreatedBy.UserName : "System",
-                        AllocationDate = a.AllocationDate
+                        FridgeModel = fu.Fridge.Model,
+                        UnitSerialNumber = fu.SerialNumber,
+                        CustomerName = fu.Customer.BusinessName,
+                        CustomerAddress = fu.Customer.PhysicalAddress ?? "Address not provided",
+                        Status = fu.Status.ToString(),
+                        Condition = fu.Condition.ToString(),
+                        AllocatedAt = fu.UpdatedAt ?? fu.CreatedAt
                     })
                     .ToListAsync();
 
                 if (!trackedFridges.Any())
                 {
-                    TempData["InfoMessage"] = "No fridge allocations found.";
+                    TempData["InfoMessage"] = "No assigned fridge units found.";
                 }
 
                 return View(trackedFridges);
@@ -664,6 +668,7 @@ namespace Code_Vanta_Systems.Controllers
                 return View(new List<FridgeTrackingViewModel>());
             }
         }
+
 
 
 
