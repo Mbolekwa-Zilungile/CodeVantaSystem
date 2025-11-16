@@ -23,26 +23,22 @@
             <div class="card h-100 shadow-sm">
                 <img src="@item.ImageUrl" class="card-img-top" style="height:200px; object-fit:cover;" />
                 <div class="card-body">
-                    <h5 class="card-title">@item.FridgeModel</h5>
-                    <p><strong>Quantity:</strong> @item.Quantity</p>
-                    <p><strong>Allocated On:</strong> @item.AllocatedOn.ToLocalTime().ToString("dd/MM/yyyy")</p>
-                    <p><span class="badge @(item.Source == "Rental" ? "bg-primary" : "bg-success")">@item.Source</span></p>
+                    <h5 class="card-title fw-bold">@item.FridgeModel</h5>
 
-                    @if (item.Source == "Rental" && item.RentalId != null)
-                    {
-                        <a asp-controller="Customer" asp-action="LogFault" asp-route-id="@item.RentalId" class="btn btn-warning btn-sm">
-                            Report Issue
-                        </a>
-                    }
-                    else
-                    {
-                        <button class="btn btn-secondary btn-sm" disabled>
-                            Manual Allocation
-                        </button>
-                        <a asp-controller="Customer" asp-action="LogFault" asp-route-id="@item.RentalId" class="btn btn-warning btn-sm">
-                            Report Issue
-                        </a>
-                    }
+                    @* NEW: Display Unit Serial and Current Condition *@
+                    <p><strong>Unit Serial:</strong> <span class="fw-bold text-primary">@item.SerialNumber</span></p>
+                    <p><strong>Condition:</strong> <span class="badge bg-@(@item.Condition == "Operational" ? "success" : @item.Condition == "RequireMaintenance" ? "warning" : "danger")">@item.Condition</span></p>
+
+                    <p><strong>Allocated On:</strong> @item.AllocatedOn.ToLocalTime().ToString("dd/MM/yyyy")</p>
+
+                    @* Action Buttons for the Specific Unit *@
+                    <a asp-action="UnitHistory" asp-route-id="@item.UnitId" class="btn btn-sm btn-info me-2">
+                        <i class="bi bi-clock-history"></i> View History
+                    </a>
+
+                    <a asp-action="LogFault" asp-route-id="@item.UnitId" class="btn btn-warning btn-sm">
+                        <i class="bi bi-bug"></i> Report Issue
+                    </a>
                 </div>
             </div>
         </div>

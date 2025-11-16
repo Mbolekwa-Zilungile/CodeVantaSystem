@@ -8,6 +8,7 @@
         Operational,
         RequireMaintenance,
         Scrapped,
+        Scrap,
         ReturnedToStock
     }
 }

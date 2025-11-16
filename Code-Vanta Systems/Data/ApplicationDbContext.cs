@@ -39,7 +39,7 @@ namespace Code_Vanta_Systems.Data
         public DbSet<Employee> Employees { get; set; }
         public DbSet<ItemCatalog> ItemCatalogs { get; set; }
         public DbSet<PurchaseRequestItem> PurchaseRequestItems { get; set; }
-
+        public DbSet<FridgeUnit> FridgeUnits { get; set; }
         public DbSet<RentalOrder> RentalOrders { get; set; }
         public DbSet<RentalRequest> RentalRequests { get; set; }
         public DbSet<RentedFridge> RentedFridges { get; set; }

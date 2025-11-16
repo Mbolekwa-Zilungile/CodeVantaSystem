@@ -111,16 +111,30 @@
 
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="sidebar-link @(currentController == "CustomerDashboard" ? "active" : "")"
+                <a class="sidebar-link @(currentAction == "Dashboard" ? "active" : "")"
                    asp-controller="Customer" asp-action="Dashboard">
                     <i class="bi bi-speedometer2 me-2"></i>Dashboard
                 </a>
             </li>
 
             <li class="nav-item">
-                <a class="sidebar-link @(currentController == "Customer" && currentAction == "LoggedFault" ? "active" : "")"
+                <a class="sidebar-link @(currentAction == "LoggedFault" ? "active" : "")"
                    asp-controller="Customer" asp-action="LoggedFault">
-                    <i class="bi bi-file-earmark-plus me-2"></i>Log Fault
+                    <i class="bi bi-bug me-2"></i>Logged Faults
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="sidebar-link @(currentAction == "UpcomingMaintenance" ? "active" : "")"
+                   asp-controller="Customer" asp-action="UpcomingMaintenance">
+                    <i class="bi bi-calendar-check me-2"></i>Upcoming Maint.
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="sidebar-link @(currentAction == "FridgeHistory" ? "active" : "")"
+                   asp-controller="Customer" asp-action="FridgeHistory">
+                    <i class="bi bi-clock-history me-2"></i>Unit History
                 </a>
             </li>
 
@@ -134,7 +148,7 @@
             <li class="nav-item">
                 <a class="sidebar-link @(currentController == "Maintenance" && currentAction == "CustomerSchedules" ? "active" : "")"
                    asp-controller="Maintenance" asp-action="CustomerSchedules">
-                    <i class="bi bi-tools me-2"></i>Scheduled Maintenance
+                    <i class="bi bi-tools me-2"></i>Scheduled Maintenance (Legacy)
                 </a>
             </li>
         </ul>

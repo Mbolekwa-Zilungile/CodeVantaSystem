@@ -62,7 +62,7 @@
         </div>
 
         <div class="col-6 col-sm-4 col-md-2">
-            <div class="card text-white bg-danger h-100">
+            <div class="card text-white bg-secondary h-100">
                 <div class="card-body text-center py-2">
                     <i class="bi bi-trash-fill mb-1" style="font-size: 1.2rem;"></i>
                     <h6 class="mb-1">Deleted Fridges</h6>
@@ -72,27 +72,7 @@
         </div>
 
         <div class="col-6 col-sm-4 col-md-2">
-            <div class="card text-white bg-warning h-100">
-                <div class="card-body text-center py-2">
-                    <i class="bi bi-tools mb-1" style="font-size: 1.2rem;"></i>
-                    <h6 class="mb-1">In Repair Stock</h6>
-                    <h4 class="mb-0">@ViewBag.InRepairStock</h4>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-6 col-sm-4 col-md-2">
-            <div class="card text-white bg-secondary h-100">
-                <div class="card-body text-center py-2">
-                    <i class="bi bi-slash-circle mb-1" style="font-size: 1.2rem;"></i>
-                    <h6 class="mb-1">Retired Stock</h6>
-                    <h4 class="mb-0">@ViewBag.RetiredStock</h4>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-6 col-sm-4 col-md-2">
-            <div class="card text-white bg-dark h-100">
+            <div class="card text-white bg-danger h-100">
                 <div class="card-body text-center py-2">
                     <i class="bi bi-exclamation-triangle mb-1" style="font-size: 1.2rem;"></i>
                     <h6 class="mb-1">Out of Stock</h6>
@@ -102,7 +82,7 @@
         </div>
 
         <div class="col-6 col-sm-4 col-md-2">
-            <div class="card text-white bg-info h-100">
+            <div class="card text-dark bg-warning h-100">
                 <div class="card-body text-center py-2">
                     <i class="bi bi-person-lines-fill mb-1" style="font-size: 1.2rem;"></i>
                     <h6 class="mb-1">Suppliers</h6>
@@ -119,7 +99,6 @@
                 <tr>
                     <th>Image</th>
                     <th>Model</th>
-                    <th>Serial #</th>
                     <th>Category</th>
                     <th>Status</th>
                     <th>Supplier</th>
@@ -160,12 +139,11 @@
                                      class="img-thumbnail" style="max-height:120px;" alt="Fridge Image" />
                             </td>
                             <td>@fridge.Model</td>
-                            <td>@fridge.SerialNumber</td>
                             <td>@fridge.Category</td>
                             <td>@fridge.Status</td>
                             <td>@suppliers.FirstOrDefault(s => s.Value == fridge.SupplierId.ToString())?.Text</td>
-                            
-                            <td>@fridge.RentalPricePerMonth.ToString("C")</td>
+
+                            <td>@fridge.RentalPricePerMonth.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA"))</td>
                             <td>@fridge.StockQuantity</td>
                             <td class="@levelClass">@levelText</td>
                             <td>
@@ -178,6 +156,10 @@
                                 <a asp-action="Create" asp-route-fridgeId="@fridge.Id" class="btn btn-sm btn-primary mb-1">
                                     <i class="bi bi-envelope"></i> Create PR
                                 </a>
+                                <a asp-action="FridgeUnits" asp-route-id="@fridge.Id" class="btn btn-sm btn-secondary mb-1">
+                                    <i class="bi bi-box-seam"></i>Units
+                                </a>
+
                             </td>
                         </tr>
                     }

@@ -6,8 +6,10 @@ namespace Code_Vanta_Systems.ViewModels
 {
     public class CreateFaultReportViewModel
     {
-        [Required(ErrorMessage = "Please select the fridge reporting the fault.")]
-        public int? FridgeId { get; set; }
+        // FIX: Replaced FridgeId with FridgeUnitId
+        [Required(ErrorMessage = "Please select the fridge unit reporting the fault.")]
+        [Display(Name = "Fridge Unit")]
+        public int? FridgeUnitId { get; set; }
 
         public string? SerialNumber { get; set; }
 

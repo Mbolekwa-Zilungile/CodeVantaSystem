@@ -6,7 +6,7 @@
 }
 
 <div class="container py-4">
-    <h2 class="mb-4 text-primary"><i class="bi bi-gear"></i> Log Service for Fridge: @Model.SerialNumber</h2>
+    <h2 class="mb-4 text-primary"><i class="bi bi-gear"></i> Log Service for Unit: @Model.SerialNumber</h2>
 
     <div class="card shadow-sm">
         <div class="card-body">
@@ -14,9 +14,10 @@
 
                 <div asp-validation-summary="All" class="text-danger"></div>
 
-                @* Hidden fields to preserve context (FridgeId is mandatory for POST) *@
-                <input type="hidden" asp-for="FridgeId" />
+                @* Hidden fields to preserve context (FridgeUnitId is mandatory for POST) *@
+                <input type="hidden" asp-for="FridgeUnitId" />
                 <input type="hidden" asp-for="SerialNumber" />
+                <input type="hidden" asp-for="FridgeId" /> @* Ensure FridgeId is passed if needed by controller logic *@
 
                 @* Date of Service *@
                 <div class="mb-3">
@@ -25,11 +26,12 @@
                     <span asp-validation-for="DateOfService" class="text-danger"></span>
                 </div>
 
-                @* Service Details *@
+                @* Service Details (Field that caused the validation error) *@
                 <div class="mb-3">
-                    <label asp-for="ServiceDetails" class="form-label"></label>
-                    <textarea asp-for="ServiceDetails" rows="6" class="form-control" placeholder="Describe the service performed, parts replaced, and any findings."></textarea>
-                    <span asp-validation-for="ServiceDetails" class="text-danger"></span>
+                    @* CRITICAL FIX: The label and textarea now correctly use the ViewModel's 'Description' property. *@
+                    <label asp-for="Description" class="form-label">Service Details/Actions Taken</label>
+                    <textarea asp-for="Description" rows="6" class="form-control" placeholder="Describe the service performed, parts replaced, and any findings." required></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
                 </div>
 
                 @* Resolved Fault (Optional Dropdown populated by the Controller) *@
@@ -40,12 +42,39 @@
                             class="form-select">
                         <option value="">-- Select Fault (Optional) --</option>
                     </select>
-                    <small class="form-text text-muted">Select an active fault this service has resolved. This will mark the fault as Resolved.</small>
+                    <small class="form-text text-muted">Select an active fault this service has resolved. This will mark the fault as Repaired.</small>
                     <span asp-validation-for="FaultId" class="text-danger"></span>
                 </div>
 
+                @* Add New Condition, Parts Used, Cost, and Maintenance Type fields here *@
+                <div class="mb-3">
+                    <label asp-for="NewCondition" class="form-label"></label>
+                    <select asp-for="NewCondition" asp-items="Html.GetEnumSelectList<Code_Vanta_Systems.Models.Enums.FridgeCondition>()" class="form-select"></select>
+                    <span asp-validation-for="NewCondition" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PartsUsed" class="form-label"></label>
+                    <input asp-for="PartsUsed" class="form-control" placeholder="List parts used (e.g., Compressor, Door Seal, Fan Motor)" />
+                    <span asp-validation-for="PartsUsed" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Cost" class="form-label"></label>
+                    <input asp-for="Cost" type="number" step="0.01" class="form-control" placeholder="0.00" />
+                    <span asp-validation-for="Cost" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="MaintenanceTypeId" class="form-label"></label>
+                    <select asp-for="MaintenanceTypeId" asp-items="Model.AvailableMaintenanceTypes" class="form-select">
+                        <option value="">-- Select Type (Optional) --</option>
+                    </select>
+                    <span asp-validation-for="MaintenanceTypeId" class="text-danger"></span>
+                </div>
+
                 <div class="d-flex justify-content-between mt-4">
-                    <a asp-action="FridgeDetails" asp-route-id="@Model.FridgeId" class="btn btn-secondary">
+                    <a asp-action="FridgeDetails" asp-route-id="@Model.FridgeUnitId" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Cancel
                     </a>
                     <button type="submit" class="btn btn-primary">

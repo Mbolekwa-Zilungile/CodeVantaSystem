@@ -1,4 +1,4 @@
-﻿@model Code_Vanta_Systems.Models.PurchaseOrder
+﻿@model Code_Vanta_Systems.ViewModels.RFQDetailViewModel
 @using System.Globalization
 
 @{
@@ -14,25 +14,24 @@
         <h5 class="mb-0">Supplier Information</h5>
     </div>
     <div class="card-body">
-        <p><strong>Name:</strong> @Model.Supplier?.Name</p>
-        <p><strong>Email:</strong> <a href="mailto:@Model.Supplier?.User?.Email">@Model.Supplier?.User?.Email</a></p>
-        <p><strong>Phone:</strong> @Model.Supplier?.Phone</p>
-        <p><strong>Address:</strong> @Model.Supplier?.Address</p>
+        <p><strong>Name:</strong> @Model.SupplierName</p>
+        <p><strong>Email:</strong> <a href="mailto:@Model.SupplierEmail">@Model.SupplierEmail</a></p>
+        <p><strong>Phone:</strong> @Model.SupplierPhone</p>
+        <p><strong>Address:</strong> @Model.SupplierAddress</p>
     </div>
 </div>
 
-<!-- Purchase Order Info Card -->
+<!-- Purchase Order / RFQ Info Card -->
 <div class="card mb-4 shadow-sm">
     <div class="card-header bg-info text-white">
-        <h5 class="mb-0">Purchase Order Information</h5>
+        <h5 class="mb-0">Purchase Order / RFQ Information</h5>
     </div>
     <div class="card-body">
-        <p><strong>PO Number:</strong> @Model.PONumber</p>
-        <p><strong>Order Date:</strong> @Model.OrderDate.ToString("dd MMM yyyy")</p>
-        <p><strong>Expected Delivery Date:</strong> @(Model.ExpectedDeliveryDate.HasValue ? Model.ExpectedDeliveryDate.Value.ToString("dd MMM yyyy") : "Not specified")</p>
-        <p><strong>Delivery Address:</strong> @Model.DeliveryAddress</p>
-        <p><strong>Delivery Terms:</strong> @Model.DeliveryTerms</p>
-        <p><strong>Payment Terms:</strong> @Model.PaymentTerms</p>
+        <p><strong>RFQ / PO Number:</strong> @Model.RFQId</p>
+        <p><strong>Request Date:</strong> @Model.RequestDate.ToString("dd MMM yyyy")</p>
+        <p><strong>Expected Delivery Date:</strong> @(Model.ExpectedDate.HasValue ? Model.ExpectedDate.Value.ToString("dd MMM yyyy") : "Not specified")</p>
+        <p><strong>Issued By:</strong> @Model.IssuedByName</p>
+        <p><strong>Notes:</strong> @Model.Notes</p>
     </div>
 </div>
 
@@ -50,34 +49,24 @@
                         <th>#</th>
                         <th>Fridge Model</th>
                         <th>Quantity</th>
-                        <th>Unit Price (ZAR)</th>
-                        <th>Total (ZAR)</th>
                     </tr>
                 </thead>
                 <tbody>
                     @for (int i = 0; i < Model.Items.Count; i++)
                     {
-                        var item = Model.Items.ElementAt(i);
+                        var item = Model.Items[i];
                         <tr>
                             <td>@(i + 1)</td>
-                            <td>@item.Fridge?.Model ?? "Unknown"</td>
+                            <td>@item.FridgeModel</td>
                             <td>@item.Quantity</td>
-                            <td>@item.UnitPrice.ToString("C", CultureInfo.CreateSpecificCulture("en-ZA"))</td>
-                            <td>@(item.Quantity * item.UnitPrice).ToString("C", CultureInfo.CreateSpecificCulture("en-ZA"))</td>
                         </tr>
                     }
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <th colspan="4" class="text-end">Grand Total:</th>
-                        <th>@Model.Items.Sum(i => i.Quantity * i.UnitPrice).ToString("C", CultureInfo.CreateSpecificCulture("en-ZA"))</th>
-                    </tr>
-                </tfoot>
             </table>
         }
         else
         {
-            <p class="p-3 text-muted">No items in this purchase order.</p>
+            <p class="p-3 text-muted">No items in this RFQ / PO.</p>
         }
     </div>
 </div>

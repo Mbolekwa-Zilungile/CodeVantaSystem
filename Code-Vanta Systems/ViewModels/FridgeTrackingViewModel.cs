@@ -2,15 +2,13 @@
 {
     public class FridgeTrackingViewModel
     {
-        public string FridgeModel { get; set; }
-        public string? SerialNumber { get; set; }
-        public string? CustomerName { get; set; }
-        public string? PhysicalAddress { get; set; }
-        public string CustomerAddress { get; set; }
-        public int Quantity { get; set; }
-        public string Status { get; set; } // "Approved Request" or "Allocated"
-        public string? AllocatedBy { get; set; }
-        public DateTime AllocationDate { get; set; }
-        public DateTime? Date { get; set; }
+        public string FridgeModel { get; set; }             // Fridge model
+        public string? UnitSerialNumber { get; set; }       // Fridge unit serial
+        public string? CustomerName { get; set; }           // Customer business name
+        public string? CustomerAddress { get; set; }        // Customer physical address
+        public string? CustomerLocation { get; set; }       // Customer location name
+        public string? Status { get; set; }                 // e.g., "Allocated", "Approved Request"
+        public string? Condition { get; set; }              // Fridge unit condition
+        public DateTime AllocatedAt { get; set; }
     }
 }

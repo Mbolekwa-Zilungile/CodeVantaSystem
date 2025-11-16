@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using static Azure.Core.HttpHeader;
 
 namespace Code_Vanta_Systems.Models
 {
@@ -14,6 +13,13 @@ namespace Code_Vanta_Systems.Models
 
         // This property now relies entirely on MaintenanceScheduleConfiguration.cs
         public Fridge Fridge { get; set; }
+
+        // FIX: Added FridgeUnitId and navigation property
+        [Required]
+        public int FridgeUnitId { get; set; }
+
+        [ForeignKey(nameof(FridgeUnitId))]
+        public virtual FridgeUnit FridgeUnit { get; set; }
 
         [Required]
         public DateTime ScheduledDate { get; set; }
@@ -31,5 +37,9 @@ namespace Code_Vanta_Systems.Models
         [Required]
         [MaxLength(20)]
         public string Status { get; set; }
+
+        // 🛠️ NEW: Field to track customer confirmation status
+        [MaxLength(20)]
+        public string CustomerConfirmation { get; set; } = "Pending"; // Values: Pending, Confirmed, Declined
     }
 }

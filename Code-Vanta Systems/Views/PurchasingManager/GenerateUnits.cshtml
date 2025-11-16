@@ -1,0 +1,19 @@
+﻿@model Code_Vanta_Systems.Models.Fridge
+@{
+    Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
+    ViewData["Title"] = "Generate Fridge Units";
+}
+
+<h2>Generate Fridge Units for @Model.Model</h2>
+
+<p>
+    <strong>Model:</strong> @Model.Model<br />
+    <strong>Serial Number:</strong> @Model.SerialNumber<br />
+    <strong>Quantity:</strong> @Model.StockQuantity
+</p>
+
+<form asp-action="GenerateUnitsConfirmed" method="post">
+    <input type="hidden" name="fridgeId" value="@Model.Id" />
+    <button type="submit" class="btn btn-primary">Generate @Model.StockQuantity Units</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

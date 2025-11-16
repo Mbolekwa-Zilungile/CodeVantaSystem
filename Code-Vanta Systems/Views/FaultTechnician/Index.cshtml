@@ -4,12 +4,12 @@
 @{
     Layout = "~/Views/Shared/_TechnicianDashboard.cshtml";
     ViewData["Title"] = "My Assigned Fridge Faults";
-    // *** FIX: Initialize counter here to be available in the loop ***
-    int counter = 1; // Start counter at 1, or use the pagination logic if available
 
-    // Using the original pagination logic for a more accurate counter:
+    // Re-initialize counter based on pagination context
+    int counter = 1;
     if (ViewData["currentPage"] != null)
     {
+        // Assuming pageSize is 10 (as defined in the controller)
         counter = ((int)ViewData["currentPage"] - 1) * 10 + 1;
     }
 }
@@ -36,11 +36,11 @@
         <tr>
             <th>#</th>
             <th>Fault ID</th>
-            <th>Fridge Serial</th>
+            <th>Unit Serial</th> @* FIX: Changed to Unit Serial *@
+            <th>Customer</th> @* FIX: Added Customer context *@
             <th>Date Reported</th>
             <th>Severity</th>
             <th>Status</th>
-            <th>Resolution Date</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -52,7 +52,11 @@
                 <tr>
                     <td>@counter</td>
                     <td>@fault.Id</td>
-                    <td>@fault.Fridge.SerialNumber</td>
+                    @* FIX: Use FridgeUnit.SerialNumber and FridgeUnitId for details link *@
+                    <td>
+                        <a asp-action="Details" asp-route-id="@fault.Id">@fault.FridgeUnit.SerialNumber</a>
+                    </td>
+                    <td>@fault.FridgeUnit.Customer?.BusinessName</td> @* FIX: Use FridgeUnit for Customer *@
                     <td>@fault.DateReported.ToString("yyyy-MM-dd")</td>
                     <td>@fault.Severity.ToString()</td>
                     <td>
@@ -61,8 +65,9 @@
                             <select name="newStatus" class="form-select form-select-sm me-2">
                                 @foreach (var s in Enum.GetValues(typeof(FaultStatus)).Cast<FaultStatus>())
                                 {
-                                    // Prevent quick update to final states (Resolved/Scrapped)
-                                    if (s != FaultStatus.Resolved && s != FaultStatus.Scrapped)
+                                    // Prevent quick update to final states (Repaired/Scrapped/Resolved)
+                                    // Using Repaired as the final state for technician.
+                                    if (s != FaultStatus.Repaired && s != FaultStatus.Scrapped && s != FaultStatus.Resolved)
                                     {
                                         <option value="@s" selected="@(fault.Status == s)">@s</option>
                                     }
@@ -72,19 +77,20 @@
                                         <option value="@fault.Status" selected disabled>@fault.Status</option>
                                     }
                                 }
-                            </select>
+                    </select>
 
-                            <button type="submit" class="btn btn-sm btn-success"
-                                    @(fault.Status == FaultStatus.Resolved || fault.Status == FaultStatus.Scrapped ? "disabled" : "")>
-                                Update
-                            </button>
-                        </form>
-                    </td>
-                    <td>@(fault.ResolutionDate.HasValue? fault.ResolutionDate.Value.ToString("yyyy-MM-dd") : "-")</td>
-                    <td>
-                        <a asp-action="Details" asp-route-id="@fault.Id" class="btn btn-sm btn-info">Details</a>
-                    </td>
-                </tr>
+                    <button type="submit" class="btn btn-sm btn-success"
+                            @(fault.Status == FaultStatus.Repaired ||
+                                                        fault.Status == FaultStatus.Scrapped ||
+                                                        fault.Status == FaultStatus.Resolved ? "disabled" : "")>
+                        Update
+                    </button>
+                </form>
+            </td>
+            <td>
+                <a asp-action="Details" asp-route-id="@fault.Id" class="btn btn-sm btn-info">Details</a>
+            </td>
+        </tr>
                 counter++;
             }
         }

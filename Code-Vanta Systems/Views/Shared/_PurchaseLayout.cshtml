@@ -6,173 +6,203 @@
 @inject ApplicationDbContext _context
 
 @{
-    // Get the currently logged-in user (if signed in)
     var currentUser = SignInManager.IsSignedIn(User) ? await UserManager.GetUserAsync(User) : null;
 
-    // Count unread notifications for the current user
     var unread = currentUser != null
         ? _context.Notifications.Count(n => n.RecipientUserId == currentUser.Id && !n.IsRead)
         : 0;
+
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+
+    // Professional palette
+    const string PrimaryColor = "#009688";   // Teal accent
+    const string SecondaryColor = "#2C3E50"; // Deep Navy
+    const string BgColor = "#F8F9FA";        // Soft light background
 }
 
 <!DOCTYPE html>
-
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Admin Portal</title>
+    <title>@ViewData["Title"] - Purchase Manager Portal</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     <style>
-        /* Custom Styles for Admin Layout */
         body {
-            background-color: #f8f9fa; /* Light gray background */
+            font-family: 'Poppins', sans-serif;
+            background-color: @BgColor;
         }
 
+        /* Navbar */
+        nav.navbar {
+            background-color: @SecondaryColor;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+            nav.navbar .navbar-brand i {
+                color: @PrimaryColor !important;
+            }
+
+        /* Sidebar */
         #sidebar {
             height: 100vh;
-            width: 250px;
+            width: 280px;
             position: fixed;
-            top: 56px; /* Below the navbar */
+            top: 66px;
             left: 0;
-            background-color: #343a40; /* Dark sidebar */
+            background-color: @SecondaryColor;
             color: #fff;
             padding-top: 20px;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.3);
             transition: all 0.3s;
         }
 
         #main-content {
-            margin-left: 250px;
+            margin-left: 280px;
             padding: 20px;
-            padding-top: 80px; /* Space for fixed navbar */
+            padding-top: 86px;
+            transition: all 0.3s;
         }
 
         .sidebar-link {
-            padding: 10px 15px;
-            display: block;
-            color: #adb5bd;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            color: #C0C0C0;
             text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
         }
 
-            .sidebar-link:hover, .sidebar-link.active {
-                color: #fff;
-                background-color: #0d6efd; /* Primary blue on hover/active */
-                border-radius: 5px;
+            .sidebar-link i {
+                font-size: 1.1rem;
+                margin-right: 12px;
             }
+
+            .sidebar-link:hover,
+            .sidebar-link.active {
+                color: #fff;
+                background-color: @PrimaryColor;
+                border-radius: 8px;
+                padding-left: 20px;
+                transform: translateX(2px);
+            }
+
+        .nav-title {
+            color: #A0A0A0;
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+            padding-left: 15px;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" asp-controller="Admin" asp-action="Index">
-                <i class="bi bi-gear-fill me-2"></i>Purchase Manager Portal
+            <a class="navbar-brand fw-bold text-white fs-5" asp-controller="Admin" asp-action="Index">
+                <i class="bi bi-person-workspace me-2" style="color:@PrimaryColor !important;"></i>Purchase Manager
             </a>
 
             <div class="collapse navbar-collapse justify-content-end">
+
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
 
-                    <!-- 🔔 Notification Bell -->
                     <li class="nav-item d-flex align-items-center me-3">
-                        <a class="nav-link position-relative d-flex align-items-center"
-                           asp-controller="Notification" asp-action="Index" title="Notifications"
-                           style="font-size: 1rem;">
-                            <i class="bi bi-bell me-1" style="font-size: 1.2rem;"></i>
-
+                        <a class="nav-link position-relative d-flex align-items-center text-white"
+                           asp-controller="Notification" asp-action="Index" title="Notifications">
+                            @* Use Primary Teal for the icon accent *@
+                            <i class="bi bi-bell-fill me-1" style="font-size:1.4rem; color: @PrimaryColor;"></i>
                             <span id="notificationBadge"
                                   class="position-absolute translate-middle badge rounded-pill bg-danger"
-                                  style="top: 0.6rem; right: 0.2rem; font-size:0.65rem; min-width:1.2rem; height:1.2rem; line-height:1.2rem; padding:0;">
+                                  style="top:0.6rem; right:0.2rem; font-size:0.65rem; min-width:1.2rem; height:1.2rem; line-height:1.2rem; padding:0; display:none;">
                             </span>
                         </a>
                     </li>
 
                     <li class="nav-item dropdown d-flex align-items-center">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#"
-                           id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"
-                           style="font-size: 1.2rem;">
-                            <i class="bi bi-person-circle me-1" style="font-size: 1.2rem;"></i>
-                            <span>@User.Identity.Name</span>
+                        <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#"
+                           id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-2"></i> @User.Identity.Name
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <li>
-                                <a class="dropdown-item" asp-controller="EmployeeProfile" asp-action="Index">
-                                    Profile
-                                </a>
-                            </li>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="#">Profile Settings</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="post" asp-controller="Account" asp-action="Logout">
-                                    <button type="submit" class="dropdown-item">Logout</button>
+                                    <button type="submit" class="dropdown-item text-danger">Logout <i class="bi bi-box-arrow-right ms-2"></i></button>
                                 </form>
                             </li>
                         </ul>
                     </li>
-
 
                 </ul>
             </div>
         </div>
     </nav>
 
-
-
-    @{
-        // Get current controller and action for active link highlighting
-        string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
-        string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
-    }
-
+    <!-- Sidebar -->
     <div id="sidebar">
-        <h6 class="text-uppercase text-light px-3 mt-2 mb-3">@User.Identity.Name</h6>
+        <ul class="nav flex-column">
+            <li>
+                <a class="sidebar-link @(currentAction == "Index" ? "active" : "")" asp-controller="PurchasingManager" asp-action="Index">
+                    <i class="bi bi-speedometer2"></i>Dashboard
+                </a>
+            </li>
+            <li>
+                <a class="sidebar-link @(currentAction == "Suppliers" ? "active" : "")" asp-controller="PurchasingManager" asp-action="Suppliers">
+                    <i class="bi bi-person-lines-fill"></i>Suppliers
+                </a>
+            </li>
+            <li>
+                <a class="sidebar-link @(currentAction == "PurchaseRequests" ? "active" : "")" asp-controller="PurchasingManager" asp-action="PurchaseRequests">
+                    <i class="bi bi-receipt"></i>Purchase Request
+                </a>
+            </li>
+            <li>
+                <a class="sidebar-link @(currentAction == "RFQ" ? "active" : "")" asp-controller="PurchasingManager" asp-action="RFQ">
+                    <i class="bi bi-file-earmark-text"></i>RFQs
+                </a>
+            </li>
+            <li>
+                <a class="sidebar-link @(currentAction == "SupplerQuotations" ? "active" : "")" asp-controller="PurchasingManager" asp-action="SupplerQuotations">
+                    <i class="bi bi-file-text"></i>Supplier Quotations
+                </a>
+            </li>
+            <li>
+                <a class="sidebar-link @(currentAction == "AllPurchaseOrders" ? "active" : "")" asp-controller="PurchasingManager" asp-action="AllPurchaseOrders">
+                    <i class="bi bi-receipt"></i>Purchase Orders
+                </a>
+            </li>
+        </ul>
 
-        <a class="sidebar-link @(currentController == "PurchasingManager" && currentAction == "Index" ? "active" : "")"
-           asp-controller="PurchasingManager" asp-action="Index">
-            <i class="bi bi-speedometer2 me-2"></i>Dashboard
-        </a>
-
-        <a class="sidebar-link @(currentController == "PurchasingManager" && (currentAction == "Suppliers" || currentAction == "Create" || currentAction == "Edit" || currentAction == "Delete") ? "active" : "")"
-           asp-controller="PurchasingManager" asp-action="Suppliers">
-            <i class="bi bi-person-lines-fill me-2"></i>Suppliers
-        </a>
-
-        <a class="sidebar-link @(currentController == "PurchasingManager" && currentAction == "PurchaseRequests" ? "active" : "")"
-           asp-controller="PurchasingManager" asp-action="PurchaseRequests">
-            <i class="bi bi-receipt me-2"></i>Purchase Request
-        </a>
-
-        <a class="sidebar-link @(currentController == "PurchasingManager" && (currentAction == "ManageRoles" || currentAction == "EditUserRoles") ? "active" : "")"
-           asp-controller="PurchasingManager" asp-action="RFQ">
-            <i class="bi bi-send me-2"></i>RFQs
-        </a>
-
-        <a class="sidebar-link @(currentController == "PurchasingManager" && currentAction == "MyQuotations" ? "active" : "")"
-           asp-controller="PurchasingManager" asp-action="SupplerQuotations">
-            <i class="bi bi-send me-2"></i>Supplier Quotations
-        </a>
-
-        <a class="sidebar-link @(currentController == "PurchasingManager" && currentAction == "MyQuotations" ? "active" : "")"
-           asp-controller="PurchasingManager" asp-action="AllPurchaseOrders">
-            <i class="bi bi-send me-2"></i>Purchase Orders
-        </a>
-        <div class="px-3 py-2 mt-auto">
-            <small class="text-muted">FMS v1.0 - Purchase Manager</small>
+        <div class="px-3 py-2 mt-auto text-center">
+            <small class="text-white opacity-50">FMS v1.0 - Purchase Manager</small>
         </div>
     </div>
 
-
+    <!-- Main Content -->
     <div id="main-content">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         async function loadNotificationCount() {
             try {
                 const res = await fetch('/Notification/UnreadCount');
                 const count = await res.json();
-
                 const badge = document.getElementById('notificationBadge');
                 if (count > 0) {
                     badge.innerText = count;
@@ -188,7 +218,6 @@
         loadNotificationCount();
         setInterval(loadNotificationCount, 30000);
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

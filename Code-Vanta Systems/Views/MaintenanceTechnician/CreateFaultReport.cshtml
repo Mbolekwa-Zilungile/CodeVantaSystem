@@ -19,19 +19,20 @@
                 <input type="hidden" asp-for="SerialNumber" />
 
                 <div class="mb-3">
-                    <label asp-for="FridgeId" class="form-label"></label>
-                    <select asp-for="FridgeId"
+                    @* CRITICAL FIX: Changed FridgeId to FridgeUnitId *@
+                    <label asp-for="FridgeUnitId" class="form-label">Fridge Unit</label>
+                    <select asp-for="FridgeUnitId"
                             asp-items="Model.AvailableFridges"
                             class="form-select"
                             data-val="true"
-                            data-val-required="Please select the fridge reporting the fault.">
+                            data-val-required="Please select the fridge unit reporting the fault.">
                         @* Only show blank option if the ID is not pre-selected (via URL) *@
-                        @if (!Model.FridgeId.HasValue)
+                        @if (!Model.FridgeUnitId.HasValue)
                         {
-                            <option value="">-- Select Fridge --</option>
+                            <option value="">-- Select Fridge Unit --</option>
                         }
                     </select>
-                    <span asp-validation-for="FridgeId" class="text-danger"></span>
+                    <span asp-validation-for="FridgeUnitId" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
@@ -49,10 +50,11 @@
                 </div>
 
                 <div class="d-flex justify-content-between">
-                    @if (Model.FridgeId.HasValue)
+                    @* CRITICAL FIX: Use FridgeUnitId for check and routing *@
+                    @if (Model.FridgeUnitId.HasValue)
                     {
-                        <a asp-action="FridgeDetails" asp-route-id="@Model.FridgeId" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Back to Fridge Details
+                        <a asp-action="FridgeDetails" asp-route-id="@Model.FridgeUnitId" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Unit Details
                         </a>
                     }
                     else

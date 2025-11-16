@@ -3,8 +3,14 @@
 @{
     // The view title dynamically changes based on the controller action
     bool isAllFridgesAction = ViewContext.RouteData.Values["action"]?.ToString() == "AllFridges";
-    ViewData["Title"] = isAllFridgesAction ? "All Fridges in System" : "My Allocated Fridges";
+    ViewData["Title"] = isAllFridgesAction ? "All Fridge Units in System" : "My Allocated Fridge Units";
     Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
+
+    // Safely retrieve assignment status from ViewBag
+    bool? isAllocated = ViewBag.IsAllocated;
+
+    // Safely retrieve location ID for persistence
+    int? currentLocationId = ViewBag.CurrentLocationId;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -20,31 +26,47 @@
 }
 
 @* ========================================================= *@
-@* LOCATION FILTER SECTION (Only displayed for the AllFridges action) *@
+@* FILTER SECTION (Only displayed for the AllFridges action) *@
 @* ========================================================= *@
 @if (isAllFridgesAction)
 {
     <div class="row mb-4">
-        <div class="col-md-5 col-lg-4">
+        <div class="col-md-12">
             <form asp-controller="MaintenanceTechnician" asp-action="AllFridges" method="get" class="d-flex align-items-center bg-light p-3 rounded shadow-sm border">
-                <label for="locationId" class="me-2 text-nowrap fw-bold text-secondary">Filter by Location:</label>
-                <select name="locationId" id="locationId" class="form-select form-select-sm" onchange="this.form.submit()">
-                    @* ViewBag.Locations is populated in the AllFridges Controller action *@
-                    @if (ViewBag.Locations != null)
-                    {
-                        foreach (var location in ViewBag.Locations)
+
+                @* Filter by Location (Existing) *@
+                <div class="me-4">
+                    <label for="locationId" class="me-2 text-nowrap fw-bold text-secondary">Location:</label>
+                    <select name="locationId" id="locationId" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">-- All Locations --</option>
+                        @* Preserve other filter state *@
+                        @if (ViewBag.Locations != null)
                         {
-                            <option value="@location.Value"
-                                    selected="@(ViewBag.CurrentLocationId != null && location.Value == ViewBag.CurrentLocationId.ToString())">
-                                @location.Text
-                            </option>
+                            foreach (var location in ViewBag.Locations)
+                            {
+                                <option value="@location.Value"
+                                        selected="@(location.Value == currentLocationId?.ToString())">
+                                    @location.Text
+                                </option>
+                            }
                         }
-                    }
-                </select>
+                    </select>
+                </div>
+
+                @* NEW FILTER: Filter by Allocation Status *@
+                <div class="me-4">
+                    <label for="isAllocated" class="me-2 text-nowrap fw-bold text-secondary">Assignment:</label>
+                    <select name="isAllocated" id="isAllocated" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">-- Allocation Status --</option>
+                        <option value="true" selected="@(isAllocated == true)">Assigned to Customer</option>
+                        <option value="false" selected="@(isAllocated == false)">In Warehouse Stock</option>
+                    </select>
+                </div>
+
+                @* Submit button if user didn't auto-submit (useful for clear button/manual submit) *@
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Apply Filters</button>
+
             </form>
-        </div>
-        <div class="col-md-7 col-lg-8 d-flex align-items-center">
-            @* Additional controls (e.g., search) can go here *@
         </div>
     </div>
 }
@@ -56,11 +78,11 @@
             <div class="alert alert-info m-3" role="alert">
                 @if (isAllFridgesAction)
                 {
-                    <span>No fridges found matching the current filter.</span>
+                    <span>No fridge units found matching the current filter.</span>
                 }
                 else
                 {
-                    <span>You are not currently allocated any fridges for maintenance.</span>
+                    <span>You are not currently allocated any fridge units for maintenance.</span>
                 }
             </div>
         }
@@ -84,6 +106,7 @@
                         {
                             <tr>
                                 <td class="align-middle fw-bold">
+                                    @* FridgeId holds the Unit ID *@
                                     <a asp-action="FridgeDetails" asp-route-id="@item.FridgeId" class="text-primary">@item.SerialNumber</a>
                                 </td>
                                 <td class="align-middle">@item.Model</td>
@@ -116,10 +139,10 @@
                                     <a asp-action="FridgeDetails" asp-route-id="@item.FridgeId" class="btn btn-sm btn-outline-info me-2" title="View Details">
                                         <i class="bi bi-info-circle"></i> Details
                                     </a>
-                                    <a asp-action="CreateServiceRecord" asp-route-fridgeId="@item.FridgeId" class="btn btn-sm btn-outline-success me-2" title="Log Service">
+                                    <a asp-action="CreateServiceRecord" asp-route-unitId="@item.FridgeId" class="btn btn-sm btn-outline-success me-2" title="Log Service">
                                         <i class="bi bi-wrench"></i> Log Service
                                     </a>
-                                    <a asp-action="CreateSchedule" asp-route-fridgeId="@item.FridgeId" class="btn btn-sm btn-outline-warning" title="Schedule Visit">
+                                    <a asp-action="CreateSchedule" asp-route-unitId="@item.FridgeId" class="btn btn-sm btn-outline-warning" title="Schedule Visit">
                                         <i class="bi bi-calendar-plus"></i> Schedule
                                     </a>
                                 </td>

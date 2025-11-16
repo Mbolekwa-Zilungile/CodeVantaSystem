@@ -52,18 +52,7 @@
                     <span asp-validation-for="Category" class="text-danger"></span>
                 </div>
 
-                <div class="mb-3">
-                    <label asp-for="Status" class="form-label"></label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-info-circle"></i></span>
-                        <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<Code_Vanta_Systems.Models.Enums.FridgeStatus>()">
-                            <option value="">-- Select Status --</option>
-                        </select>
-                    </div>
-                    <span asp-validation-for="Status" class="text-danger"></span>
-                </div>
-
-
+ 
                 <div class="mt-3 text-center">
                     <img id="imagePreview"
                          src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/fridges/placeholder.jpg" : Model.ImageUrl)"
@@ -103,11 +92,12 @@
                 <div class="mb-3">
                     <label asp-for="RentalPricePerMonth" class="form-label"></label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-currency-dollar"></i></span>
+                        <span class="input-group-text"><strong>R</strong></span>
                         <input asp-for="RentalPricePerMonth" class="form-control" placeholder="Rental Price per Month" />
                     </div>
                     <span asp-validation-for="RentalPricePerMonth" class="text-danger"></span>
                 </div>
+
 
                 <div class="mb-3">
                     <label asp-for="StockQuantity" class="form-label"></label>

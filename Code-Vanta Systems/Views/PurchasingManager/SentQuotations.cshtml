@@ -127,8 +127,8 @@
                                                     <tr>
                                                         <td>@item.FridgeModel</td>
                                                         <td>@item.QuotedQuantity</td>
-                                                        <td>@String.Format("{0:C}", item.QuotedUnitPrice)</td>
-                                                        <td>@String.Format("{0:C}", item.QuotedQuantity * item.QuotedUnitPrice)</td>
+                                                        <td>@item.QuotedUnitPrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA"))</td>
+                                                        <td>@((item.QuotedQuantity * item.QuotedUnitPrice).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA")))</td>
 
                                                     </tr>
                                                 }

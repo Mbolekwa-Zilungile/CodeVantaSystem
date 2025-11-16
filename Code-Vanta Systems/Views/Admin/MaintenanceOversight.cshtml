@@ -5,11 +5,73 @@
 @{
     ViewData["Title"] = "Maintenance Oversight";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    // Safely retrieve ViewBag data for filters
+    var maintenanceTechnicians = ViewBag.MaintenanceTechnicians as List<SelectListItem> ?? new List<SelectListItem>();
+    var locations = ViewBag.Locations as List<SelectListItem> ?? new List<SelectListItem>(); 
+
+    var selectedLocationId = ViewBag.SelectedLocationId?.ToString();
+    var selectedTechnicianId = ViewBag.SelectedTechnicianId?.ToString();
 }
 
 <div class="container py-4">
     <h2 class="mb-4 text-warning"><i class="bi bi-tools me-2"></i> Maintenance Assignment Oversight</h2>
-    <p class="text-muted">List of all allocated fridges that require maintenance and need a technician assigned for service.</p>
+    <p class="text-muted">List of all allocated fridges that require maintenance or are currently assigned for follow-up. Filter by Region to triage work orders.</p>
+
+    @* --- FILTER FORM SECTION --- *@
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title text-secondary">Filter Oversight List</h5>
+            <form asp-action="MaintenanceOversight" method="get">
+                <div class="row g-3">
+                    
+                    @* Filter by Location/Region (Logistics Filter) *@
+                    <div class="col-md-5">
+                        <label for="locationId" class="form-label small text-muted">Filter by Location:</label>
+                        <select name="locationId" id="locationId" class="form-select form-select-sm">
+                            <option value="">-- All Locations --</option>
+                            @foreach (var loc in locations)
+                            {
+                                <option value="@loc.Value" selected="@(loc.Value == selectedLocationId)">
+                                    @loc.Text
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    @* Filter by Technician Assigned (Work in Progress Monitoring) *@
+                    <div class="col-md-5">
+                        <label for="technicianId" class="form-label small text-muted">Filter by Assigned Technician:</label>
+                        <select name="technicianId" id="technicianId" class="form-select form-select-sm">
+                            <option value="">-- Technicians --</option>
+                            @foreach (var tech in maintenanceTechnicians)
+                            {
+                                <option value="@tech.Value" selected="@(tech.Value == selectedTechnicianId)">
+                                    @tech.Text
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100 me-2"><i class="bi bi-funnel"></i> Filter</button>
+                        <a asp-action="MaintenanceOversight" class="btn btn-outline-secondary w-100"><i class="bi bi-x-circle"></i> Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    @* --- END FILTER FORM SECTION --- *@
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success mt-3">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger mt-3">@TempData["ErrorMessage"]</div>
+    }
+
 
     @if (Model.Any())
     {
@@ -28,30 +90,46 @@
             <tbody>
                 @foreach (var item in Model)
                 {
+                    
+                        // Determine if the unit is already assigned
+                        bool isAssigned = !string.IsNullOrEmpty(item.AllocatedTechnicianId);
+                        // Set the HTML disabled attribute string
+                        string disabledAttr = isAssigned ? "disabled" : "";
+                        // Set the default option's value to the currently assigned tech, or null
+                        string currentTechId = item.AllocatedTechnicianId ?? "";
+                    
                     <tr>
                         <td>@item.SerialNumber</td>
                         <td>@item.Model</td>
                         <td>@item.CustomerBusinessName</td>
                         <td>@item.CustomerAddress</td>
                         <td>
-                            <span class="badge bg-warning text-dark">@item.Condition</span>
+                            @{
+                                string conditionBadge = item.Condition == "RequireMaintenance" ? "bg-danger" : "bg-warning text-dark";
+                            }
+                            <span class="badge @conditionBadge">@item.Condition</span>
                         </td>
                         <td>
                             @(string.IsNullOrEmpty(item.AllocatedTechnicianName) ? "Unassigned" : item.AllocatedTechnicianName)
                         </td>
                         <td>
+                            @* Form handles the assignment POST request *@
                             <form asp-action="AssignMaintenanceTechnician" method="post" class="d-flex">
-                                <input type="hidden" name="fridgeId" value="@item.FridgeId" />
-                                <select name="technicianId" class="form-select form-select-sm me-2" required>
-                                    <option value="">-- Select Technician --</option>
-                                    @foreach (var tech in (List<SelectListItem>)ViewBag.MaintenanceTechnicians)
+                                <input type="hidden" name="fridgeId" value="@item.FridgeId" /> 
+                                
+                                <select name="technicianId" class="form-select form-select-sm me-2" required 
+                                        @Html.Raw(disabledAttr)> @* Apply the 'disabled' attribute here *@
+                                    
+                                    <option value="" disabled selected>-- Assign Now --</option>
+                                    @foreach (var tech in maintenanceTechnicians)
                                     {
-                                        <option value="@tech.Value" selected="@(item.AllocatedTechnicianId == tech.Value)">
+                                        <option value="@tech.Value" selected="@(tech.Value == currentTechId)">
                                             @tech.Text
                                         </option>
                                     }
                                 </select>
-                                <button type="submit" class="btn btn-sm btn-primary">Assign</button>
+                                <button type="submit" class="btn btn-sm btn-primary"
+                                        @Html.Raw(disabledAttr)>Assign</button> @* Apply 'disabled' attribute here *@
                             </form>
                         </td>
                     </tr>
@@ -62,7 +140,7 @@
     else
     {
         <div class="alert alert-success text-center mt-5" role="alert">
-            <i class="bi bi-check-circle-fill"></i> All fridges requiring maintenance are currently assigned.
+            <i class="bi bi-check-circle-fill"></i> All critical maintenance requiring oversight is currently assigned.
         </div>
     }
 </div>

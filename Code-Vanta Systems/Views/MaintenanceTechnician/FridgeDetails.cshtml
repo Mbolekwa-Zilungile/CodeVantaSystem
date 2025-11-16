@@ -1,30 +1,37 @@
 ﻿@model Code_Vanta_Systems.ViewModels.MaintenanceFridgeDetailsViewModel
+@using Code_Vanta_Systems.Models.Enums
 
 @{
-    ViewData["Title"] = $"Details for Fridge: {Model.FridgeSummary.SerialNumber}";
+    ViewData["Title"] = $"Details for Unit: {Model.FridgeSummary.SerialNumber}";
     Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
+
+    // CRITICAL: ViewBag.UnitId should be set by the controller to be used in action links.
+    int currentUnitId = Model.FridgeSummary.FridgeId;
 }
 
 <div class="container py-4">
+    @* HEADING IS NOW UNIT-CENTRIC *@
     <h2 class="mb-4 text-primary">
-        <i class="bi bi-box-seam"></i> Fridge Details
+        <i class="bi bi-box-seam"></i> Fridge Unit Details: @Model.FridgeSummary.SerialNumber
     </h2>
 
+    @* --- UNIT SUMMARY CARD --- *@
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-light">
-            <h5 class="mb-0">Summary for: @Model.FridgeSummary.SerialNumber</h5>
+            <h5 class="mb-0">Physical Unit Overview</h5>
         </div>
         <div class="card-body">
             <div class="row">
-
                 <div class="col-md-6">
+                    <p><strong>Unit Serial #:</strong> @Model.FridgeSummary.SerialNumber</p>
+                    @* Display the Unit's specific Status/Condition *@
+                    <p><strong>Unit Status:</strong> <span class="badge bg-success">@Model.FridgeSummary.FridgeStatus</span></p>
                     <p><strong>Model:</strong> @Model.FridgeSummary.Model</p>
-                    <p><strong>Status:</strong> <span class="badge bg-success">@Model.FridgeSummary.FridgeStatus</span></p>
-                    <p><strong>Customer:</strong> @Model.FridgeSummary.CustomerBusinessName</p>
                 </div>
 
                 <div class="col-md-6">
-                    <p><strong>Location Address:</strong> @Model.FridgeSummary.CustomerAddress</p>
+                    @* Customer/Location is the source of truth for the Unit *@
+                    <p><strong>Customer/Location:</strong> @Model.FridgeSummary.CustomerBusinessName - @Model.FridgeSummary.CustomerAddress</p>
                     <p>
                         <strong>Next Scheduled Visit:</strong>
                         @if (Model.FridgeSummary.NextScheduledVisit.HasValue)
@@ -39,30 +46,34 @@
                 </div>
             </div>
 
+            @* Action buttons use 'unitId' and the current Unit ID *@
             <div class="mt-4 text-end">
+                @* CRITICAL FIX: Changed route parameter to unitId *@
                 <a asp-action="CreateSchedule"
-                   asp-route-fridgeId="@Model.FridgeSummary.FridgeId"
+                   asp-route-unitId="@currentUnitId"
                    class="btn btn-success me-2">
                     <i class="bi bi-calendar-plus"></i> Schedule New Visit
                 </a>
 
+                @* CRITICAL FIX: Changed route parameter to unitId *@
                 <a asp-action="CreateServiceRecord"
-                   asp-route-fridgeId="@Model.FridgeSummary.FridgeId"
+                   asp-route-unitId="@currentUnitId"
                    class="btn btn-primary me-2">
-                    <i class="bi bi-check-circle"></i> Log Service
+                    <i class="bi bi-check-circle"></i> Log Unit Service
                 </a>
 
+                @* CRITICAL FIX: Changed route parameter to unitId *@
                 <a asp-action="CreateFaultReport"
-                   asp-route-fridgeId="@Model.FridgeSummary.FridgeId"
+                   asp-route-unitId="@currentUnitId"
                    class="btn btn-danger">
-                    <i class="bi bi-exclamation-triangle"></i> Report Fault
+                    <i class="bi bi-exclamation-triangle"></i> Report Unit Fault
                 </a>
             </div>
 
         </div>
     </div>
 
-    @* TAB NAVIGATION (Buttons) *@
+    @* --- TAB NAVIGATION --- *@
     <ul class="nav nav-tabs" id="historyTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="fault-history-tab" data-bs-toggle="tab" data-bs-target="#fault-history" type="button" role="tab">Fault History (@Model.FaultHistory.Count)</button>
@@ -75,70 +86,134 @@
         </li>
     </ul>
 
-    @* TAB CONTENT (Panels) *@
+    @* --- TAB CONTENT (Panels) --- *@
     <div class="tab-content border border-top-0 p-3" id="historyTabsContent">
+
+        @* FAULT HISTORY TAB (Focus: Status, Resolution, and Technician Action) *@
         <div class="tab-pane fade show active" id="fault-history" role="tabpanel">
             @if (Model.FaultHistory != null && Model.FaultHistory.Any())
             {
-                <ul class="list-group">
-                    @foreach (var fault in Model.FaultHistory)
+                <div class="list-group">
+                    @foreach (var fault in Model.FaultHistory.OrderByDescending(f => f.DateReported))
                     {
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                        
+                            // Define badge based on status
+                            string statusBadge = fault.Status.ToString() switch
+                            {
+                                "Repaired" or "Resolved" => "bg-success",
+                                "Open" or "Reported" => "bg-danger",
+                                "Assigned" or "InProgress" => "bg-warning text-dark",
+                                _ => "bg-secondary"
+                            };
+                            bool isResolved = fault.Status == FaultStatus.Repaired || fault.Status == FaultStatus.Resolved;
+                        
+                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start @(isResolved ? "list-group-item-light" : "")">
                             <div class="ms-2 me-auto">
-                                <div class="fw-bold">Reported: @fault.DateReported.ToShortDateString() - @fault.Severity</div>
-                                @fault.FaultDescription
+                                <div class="fw-bold">
+                                    @* Show ID and Reporter for quick reference *@
+                                    <span class="text-danger">[@fault.Severity]</span> Reported: @fault.DateReported.ToString("dd MMM yyyy")
+                                </div>
+                                
+                                <p class="mb-1">@fault.FaultDescription</p>
+                                
+                                @if (isResolved)
+                                {
+                                    <small class="text-success">
+                                        <i class="bi bi-check-circle"></i> **Resolution Date:** @fault.ResolutionDate?.ToShortDateString()
+                                        
+                                        @* FIX: Use clean HTML divs to avoid syntax conflict and ensure readability *@
+                                        @if (!string.IsNullOrEmpty(fault.RepairDescription)) 
+                                        {
+                                            <div class="mt-1">
+                                                <strong>Repair Notes:</strong> @fault.RepairDescription
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(fault.PartsUsed)) 
+                                        {
+                                            <div class="mt-1">
+                                                <strong>Parts Used:</strong> @fault.PartsUsed
+                                            </div>
+                                        }
+                                    </small>
+                                }
+                                else
+                                {
+                                    <small class="text-warning text-dark">
+                                        <i class="bi bi-person-fill"></i> Assigned Tech: @(fault.AssignedTechnician?.FullName ?? "Unassigned")
+                                    </small>
+                                }
                             </div>
-                            <span class="badge bg-danger rounded-pill">Status: @fault.Status</span>
-                        </li>
+                            <span class="badge @statusBadge rounded-pill fs-6">@fault.Status</span>
+                        </div>
                     }
-                </ul>
+                </div>
             }
             else
             {
-                <div class="alert alert-secondary">No fault history found for this fridge.</div>
+                <div class="alert alert-secondary">No fault history found for this unit.</div>
             }
         </div>
+
+        @* SERVICE HISTORY TAB (Focus: Action, Parts, and Technician) *@
         <div class="tab-pane fade" id="service-history" role="tabpanel">
             @if (Model.ServiceHistory != null && Model.ServiceHistory.Any())
             {
-                <ul class="list-group">
-                    @foreach (var service in Model.ServiceHistory)
+                <div class="list-group">
+                    @foreach (var service in Model.ServiceHistory.OrderByDescending(s => s.DateOfService))
                     {
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
                             <div class="ms-2 me-auto">
-                                <div class="fw-bold">Completed: @service.DateOfService.ToShortDateString()</div>
-                                **Action Taken:** @service.ServiceDetails
+                                <div class="fw-bold text-primary">
+                                    <i class="bi bi-tools"></i> Service Completed: @service.DateOfService.ToString("dd MMM yyyy")
+                                </div>
+                                
+                                @* Action Taken (Primary detail) *@
+                                <p class="mb-1">**Details:** @service.ServiceDetails</p>
+                                
+                                @if (!string.IsNullOrEmpty(service.PartsUsed))
+                                {
+                                    <small class="text-muted">Parts Used: @service.PartsUsed</small>
+                                }
+                                @if (service.MaintenanceTypeId.HasValue)
+                                {
+                                    @* Assuming you can look up Maintenance Type name/description *@
+                                    <br /><small class="text-info">Type ID: @service.MaintenanceTypeId</small>
+                                }
                             </div>
-                            @* Assuming Technician navigation property exists on ServiceRecord *@
                             <span class="badge bg-info">Tech: @(service.Technician?.FullName ?? "N/A")</span>
-                        </li>
+                        </div>
                     }
-                </ul>
+                </div>
             }
             else
             {
-                <div class="alert alert-secondary">No service history found for this fridge.</div>
+                <div class="alert alert-secondary">No service history found for this unit.</div>
             }
         </div>
+
+        @* UPCOMING SCHEDULES TAB (Focus: Date, Task, and Confirmation) *@
         <div class="tab-pane fade" id="upcoming-schedules" role="tabpanel">
             @if (Model.UpcomingSchedules != null && Model.UpcomingSchedules.Any())
             {
-                <ul class="list-group">
-                    @foreach (var schedule in Model.UpcomingSchedules)
+                <div class="list-group">
+                    @foreach (var schedule in Model.UpcomingSchedules.OrderBy(s => s.ScheduledDate))
                     {
-                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
                             <div class="ms-2 me-auto">
-                                <div class="fw-bold">Scheduled Date: @schedule.ScheduledDate.ToShortDateString()</div>
-                                **Task:** @schedule.Description
+                                <div class="fw-bold">
+                                    <i class="bi bi-calendar-event"></i> Scheduled: @schedule.ScheduledDate.ToString("dd MMM yyyy @ HH:mm")
+                                </div>
+                                
+                                <p class="mb-1">**Task:** @schedule.Description</p>
                             </div>
-                            <span class="badge bg-warning">@schedule.Status</span>
-                        </li>
+                            <span class="badge bg-warning text-dark">@schedule.Status</span>
+                        </div>
                     }
-                </ul>
+                </div>
             }
             else
             {
-                <div class="alert alert-success">No upcoming maintenance schedules found.</div>
+                <div class="alert alert-success">No upcoming maintenance schedules found for this unit.</div>
             }
         </div>
     </div>
@@ -155,7 +230,6 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
-    @* 🚩 CRITICAL FIX: Explicitly initialize the Bootstrap tab component *@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Get all tab triggers by their class

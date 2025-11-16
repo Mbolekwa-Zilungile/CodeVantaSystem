@@ -1,0 +1,49 @@
+﻿@model IEnumerable<Code_Vanta_Systems.Models.FridgeUnit>
+
+@{
+    Layout = "~/Views/Shared/_InventoryLiaisonLayout.cshtml";
+    ViewData["Title"] = "Fridge Units";
+}
+
+<h2>Fridge Units for @ViewBag.FridgeModel (@ViewBag.FridgeSerial)</h2>
+
+<p>
+    <a asp-action="Index" class="btn btn-secondary">Back to Fridges</a>
+</p>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No units found for this fridge model.
+    </div>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Serial Number</th>
+                <th>Status</th>
+                <th>Condition</th>
+                <th>Customer</th>
+                <th>Technician</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var unit in Model)
+            {
+                <tr>
+                    <td>@unit.SerialNumber</td>
+                    <td>@unit.Status</td>
+                    <td>@unit.Condition</td>
+                    <td>@(unit.Customer?.BusinessName ?? "—")</td>
+                    <td>@(unit.Technician != null ? unit.Technician.FullName : "—")</td>
+                    <td>
+                        <a asp-action="DetailsUnit" asp-route-id="@unit.Id" class="btn btn-sm btn-primary">View</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

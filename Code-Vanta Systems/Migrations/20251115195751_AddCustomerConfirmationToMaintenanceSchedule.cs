@@ -5,25 +5,26 @@
 namespace Code_Vanta_Systems.Migrations
 {
     /// <inheritdoc />
-    public partial class IsApprovedOnDeliveryNote : Migration
+    public partial class AddCustomerConfirmationToMaintenanceSchedule : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "IsApproved",
-                table: "DeliveryNotes",
-                type: "bit",
+            migrationBuilder.AddColumn<string>(
+                name: "CustomerConfirmation",
+                table: "MaintenanceSchedules",
+                type: "nvarchar(20)",
+                maxLength: 20,
                 nullable: false,
-                defaultValue: false);
+                defaultValue: "");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "IsApproved",
-                table: "DeliveryNotes");
+                name: "CustomerConfirmation",
+                table: "MaintenanceSchedules");
         }
     }
 }

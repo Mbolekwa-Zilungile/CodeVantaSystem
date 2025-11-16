@@ -1,0 +1,79 @@
+﻿@model Tuple<List<Code_Vanta_Systems.Models.ServiceRecord>, List<Code_Vanta_Systems.Models.FridgeFault>>
+
+@{
+    ViewData["Title"] = "Unit History (Service & Faults)";
+    Layout = "~/Views/Shared/_CustomerLayout.cshtml";
+
+    var serviceHistory = Model.Item1;
+    var faultHistory = Model.Item2;
+}
+
+<div class="container py-4">
+    <h2 class="mb-4 text-primary"><i class="bi bi-clock-history me-2"></i> Service and Fault History</h2>
+    <p class="text-muted">A combined history of the service and fault records for all units currently allocated to your business.</p>
+
+    <div class="row">
+
+        @* --- SERVICE HISTORY --- *@
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Service History (@serviceHistory.Count)</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (serviceHistory.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var service in serviceHistory)
+                            {
+                                <li class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1 fw-bold text-success">@service.DateOfService.ToShortDateString()</h6>
+                                        <small class="text-muted">Unit: @service.FridgeUnit.SerialNumber</small>
+                                    </div>
+                                    <p class="mb-1">@service.ServiceDetails</p>
+                                    <small>Technician: @service.Technician.FullName</small>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="p-3 alert alert-secondary mb-0">No service records found.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* --- FAULT HISTORY --- *@
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Logged Fault History (@faultHistory.Count)</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (faultHistory.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var fault in faultHistory)
+                            {
+                                <li class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1 fw-bold text-danger">@fault.DateReported.ToShortDateString()</h6>
+                                        <small class="text-muted">Unit: @fault.FridgeUnit.SerialNumber</small>
+                                    </div>
+                                    <p class="mb-1">@fault.FaultDescription</p>
+                                    <small>Status: @fault.Status - Assigned: @(fault.AssignedTechnician?.FullName ?? "N/A")</small>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="p-3 alert alert-secondary mb-0">No fault reports found.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

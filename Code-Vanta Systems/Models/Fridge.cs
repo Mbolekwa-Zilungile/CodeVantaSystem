@@ -48,6 +48,7 @@ namespace Code_Vanta_Systems.Models
         public virtual ICollection<MaintenanceSchedule> MaintenanceSchedules { get; set; }
         public virtual ICollection<SensorReading> SensorReadings { get; set; }
         public virtual ICollection<ServiceRecord> ServiceRecords { get; set; }
+        public virtual ICollection<FridgeUnit> FridgeUnits { get; set; } = new HashSet<FridgeUnit>();
 
         // Added New Fridge Props
         [Required]
