@@ -132,7 +132,7 @@
                                     <i class="bi bi-person-circle me-2" style="font-size: 1.4rem; color: @PrimaryColor;"></i> @User.Identity.Name
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="navbarDropdown">
-                                    <li><a class="dropdown-item" href="#">Profile Settings</a></li>
+                                    <li><a class="dropdown-item" asp-controller="EmployeeProfile" asp-action="Index">Profile</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form method="post" asp-controller="Account" asp-action="Logout">

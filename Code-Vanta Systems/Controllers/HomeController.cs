@@ -1,7 +1,9 @@
 using Code_Vanta_Systems.Constants;
+using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
 namespace Code_Vanta_Systems.Controllers
@@ -10,11 +12,13 @@ namespace Code_Vanta_Systems.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ApplicationDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger, UserManager<ApplicationUser> userManager)
+        public HomeController(ILogger<HomeController> logger, UserManager<ApplicationUser> userManager, ApplicationDbContext context)
         {
             _logger = logger;
             _userManager = userManager;
+            _context = context;
         }
 
         public async Task<IActionResult> Index()
@@ -70,5 +74,40 @@ namespace Code_Vanta_Systems.Controllers
         {
             return View();
         }
+        public IActionResult About()
+        {
+            return View();
+        }
+     
+            [HttpGet]
+            public async Task<IActionResult> Contact()
+            {
+                var company = await _context.Company.FindAsync(1); // assuming fixed ID = 1
+                if (company == null)
+                {
+                    company = new Company(); // fallback defaults
+                }
+                return View(company);
+            }
+
+            // POST: Send Message
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public IActionResult SendMessage(string Name, string Email, string Message)
+            {
+                if (string.IsNullOrEmpty(Name) || string.IsNullOrEmpty(Email) || string.IsNullOrEmpty(Message))
+                {
+                    TempData["ErrorMessage"] = "All fields are required.";
+                    return RedirectToAction("Contact");
+                }
+
+                // Here you can send an email, store in DB, or call a service
+                // Example: Console log (replace with real implementation)
+                System.Console.WriteLine($"Contact Message from {Name} ({Email}): {Message}");
+
+                TempData["SuccessMessage"] = "Thank you! Your message has been sent.";
+                return RedirectToAction("Contact");
+            }
+        
     }
 }

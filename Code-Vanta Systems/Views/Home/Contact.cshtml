@@ -1,0 +1,163 @@
+﻿@model Code_Vanta_Systems.Models.Company
+
+@{
+    Layout = null; // We'll include navbar/footer manually like About page
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Contact Us - CodeVanta Systems</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-teal': '#009688',
+                        'secondary-indigo': '#4F46E5',
+                        'background-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="flex flex-col min-h-screen bg-background-light font-sans antialiased">
+
+    <!-- NAVBAR (from About page layout) -->
+    <header class="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-sm shadow-xl transition-all duration-300">
+        <nav class="container mx-auto flex justify-between items-center py-4 px-6 lg:px-8">
+            <a asp-controller="Home" asp-action="Index" class="flex items-center space-x-3 group">
+                <img src="~/images/logo.jpg" alt="CodeVanta Logo" class="h-10 w-10 object-cover rounded-full border-2 border-primary-teal shadow-xl transition-transform group-hover:scale-105" />
+                <span class="text-2xl font-extrabold text-secondary-indigo tracking-tight">CodeVanta</span>
+            </a>
+            <div class="hidden md:flex items-center space-x-7 text-gray-700 font-medium">
+                <a asp-controller="Home" asp-action="Index" class="hover:text-primary-teal pb-1 border-b-2 border-transparent hover:border-primary-teal">Home</a>
+                <a asp-controller="Home" asp-action="Services" class="hover:text-primary-teal pb-1 border-b-2 border-transparent hover:border-primary-teal">Services</a>
+                <a asp-controller="Home" asp-action="About" class="hover:text-primary-teal pb-1 border-b-2 border-transparent hover:border-primary-teal">About</a>
+                <a asp-controller="Home" asp-action="Contact" class="hover:text-primary-teal pb-1 border-b-2 border-transparent hover:border-primary-teal font-bold">Contact</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="relative bg-background-light pt-[68px] overflow-hidden border-b border-gray-200">
+        <div class="container mx-auto flex flex-col md:flex-row items-center px-6 lg:px-8 py-16 md:py-24">
+            <div class="md:w-1/2 space-y-6 z-10 text-center md:text-left">
+                <h1 class="text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
+                    Contact <span class="text-secondary-indigo">CodeVanta Systems</span>
+                </h1>
+                <p class="text-xl text-gray-600 max-w-lg mx-auto md:mx-0">
+                    Get in touch with us for fridge management, service requests, or support inquiries.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN CONTACT SECTION -->
+    <main class="flex-grow container mx-auto px-6 lg:px-8 py-16">
+        <div class="grid md:grid-cols-2 gap-12 items-start">
+
+            <!-- LEFT: Company Info -->
+            <div class="space-y-6 bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Company Information</h2>
+
+                <p class="text-gray-700 text-lg"><strong>Company:</strong> @Model.Name</p>
+                <p class="text-gray-700 text-lg"><strong>Email:</strong> <a href="mailto:@Model.Email" class="text-secondary-indigo underline hover:text-primary-teal">@Model.Email</a></p>
+                <p class="text-gray-700 text-lg"><strong>Phone:</strong> <a href="tel:@Model.Phone" class="text-secondary-indigo underline hover:text-primary-teal">@Model.Phone</a></p>
+                <p class="text-gray-700 text-lg"><strong>Address:</strong> @Model.Address</p>
+                @if (!string.IsNullOrEmpty(Model.RegistrationNumber))
+                {
+                    <p class="text-gray-700 text-lg"><strong>Registration No.:</strong> @Model.RegistrationNumber</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.VatNumber))
+                {
+                    <p class="text-gray-700 text-lg"><strong>VAT No.:</strong> @Model.VatNumber</p>
+                }
+            </div>
+
+            <!-- RIGHT: Contact Form -->
+            <div class="bg-background-light rounded-2xl shadow-lg p-8 border border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Send Us a Message</h2>
+
+                <form method="post" asp-action="SendMessage">
+                    <div class="mb-5">
+                        <label class="block font-semibold mb-1">Your Name</label>
+                        <input type="text" name="Name"
+                               class="w-full p-3 rounded-lg border border-gray-300 focus:ring-secondary-indigo focus:border-secondary-indigo" required />
+                    </div>
+
+                    <div class="mb-5">
+                        <label class="block font-semibold mb-1">Your Email</label>
+                        <input type="email" name="Email"
+                               class="w-full p-3 rounded-lg border border-gray-300 focus:ring-secondary-indigo focus:border-secondary-indigo" required />
+                    </div>
+
+                    <div class="mb-5">
+                        <label class="block font-semibold mb-1">Message</label>
+                        <textarea name="Message" rows="5"
+                                  class="w-full p-3 rounded-lg border border-gray-300 focus:ring-secondary-indigo focus:border-secondary-indigo" required></textarea>
+                    </div>
+
+                    <button type="submit"
+                            class="bg-primary-teal text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-secondary-indigo transition-all duration-300">
+                        Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER (from About page layout) -->
+    <footer class="bg-gray-900 text-gray-400 pt-12 pb-6 border-t-4 border-primary-teal">
+        <div class="container mx-auto grid md:grid-cols-4 gap-10 px-6 lg:px-8">
+            <div class="md:col-span-1">
+                <h3 class="text-white font-extrabold text-2xl mb-4">CodeVanta</h3>
+                <p class="text-sm">Driven by technology, built on trust. We ensure your essential appliances run flawlessly.</p>
+            </div>
+            <div>
+                <h3 class="text-white font-bold text-lg mb-4 border-b border-gray-700 pb-2">Navigation</h3>
+                <ul class="space-y-3 text-sm">
+                    <li><a asp-controller="Home" asp-action="Index" class="hover:text-primary-teal transition">Home</a></li>
+                    <li><a asp-controller="Home" asp-action="Services" class="hover:text-primary-teal transition">Our Services</a></li>
+                    <li><a asp-controller="Home" asp-action="About" class="hover:text-primary-teal transition">Who We Are</a></li>
+                    <li><a asp-controller="Home" asp-action="Contact" class="hover:text-primary-teal transition font-bold">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-white font-bold text-lg mb-4 border-b border-gray-700 pb-2">Account</h3>
+                <ul class="space-y-3 text-sm">
+                    <li><a asp-controller="Account" asp-action="Login" class="hover:text-primary-teal transition">Client Login</a></li>
+                    <li><a asp-controller="Account" asp-action="Register" class="hover:text-primary-teal transition">Register</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-white font-bold text-lg mb-4 border-b border-gray-700 pb-2">Contact Info</h3>
+                <ul class="space-y-3 text-sm">
+                    <li class="flex items-center space-x-2"><i class="fas fa-envelope text-primary-teal"></i><span class="hover:text-primary-teal">@Model.Email</span></li>
+                    <li class="flex items-center space-x-2"><i class="fas fa-phone text-primary-teal"></i><span class="hover:text-primary-teal">@Model.Phone</span></li>
+                    <li class="flex items-center space-x-2"><i class="fas fa-map-marker-alt text-primary-teal"></i><span class="hover:text-primary-teal">@Model.Address</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="text-center text-gray-500 text-sm border-t border-gray-700 mt-10 pt-6">
+            © @DateTime.Now.Year CodeVanta Systems. All Rights Reserved.
+        </div>
+    </footer>
+
+</body>
+</html>

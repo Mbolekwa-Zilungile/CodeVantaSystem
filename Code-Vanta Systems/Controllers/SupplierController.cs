@@ -892,6 +892,7 @@ namespace Code_Vanta_Systems.Controllers
             if (!ModelState.IsValid)
                 return View("DeliveryNote", model);
 
+            // Get the purchase order
             var purchaseOrder = await context.PurchaseOrders
                 .Include(po => po.Supplier)
                 .Include(po => po.Items)
@@ -901,47 +902,49 @@ namespace Code_Vanta_Systems.Controllers
             if (purchaseOrder == null)
                 return NotFound();
 
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Logged-in supplier
+            var supplierUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            // Create the delivery note
             var deliveryNote = new DeliveryNote
             {
                 PurchaseOrderId = purchaseOrder.PurchaseOrderId,
                 SupplierId = purchaseOrder.SupplierId,
                 GeneratedDate = DateTime.Now,
-                ReceivedById = userId,
+                ReceivedById = supplierUserId,
                 Notes = "Delivery generated from approved purchase order."
             };
-
             context.DeliveryNotes.Add(deliveryNote);
 
-            // ✅ Update the Purchase Order status instead of storing it in the DeliveryNote
+            // Update the PO status to Shipped
             purchaseOrder.Status = OrderStatus.Shipped;
             context.PurchaseOrders.Update(purchaseOrder);
 
+            // Save changes to generate IDs
             await context.SaveChangesAsync();
 
-            // Notify all purchase managers
+            // Notify all Purchase Managers
             var managers = await userManager.GetUsersInRoleAsync("PurchaseManager");
-            if (managers.Any())
+
+            foreach (var manager in managers)
             {
-                foreach (var manager in managers)
+                var notification = new Notification
                 {
-                    var notification = new Notification
-                    {
-                        RecipientUserId = manager.Id,
-                        Title = "Delivery Note Created",
-                        Message = $"Delivery Note for Purchase Order {purchaseOrder.PONumber} has been generated.",
-                        TargetController = "PurchasingManager",
-                        TargetAction = "AllPurchaseOrders",
-                        CreatedAt = DateTime.Now,
-                        IsRead = false
-                    };
-                    context.Notifications.Add(notification);
-                }
-                await context.SaveChangesAsync();
+                    RecipientUserId = manager.Id,
+                    Title = "Purchase Order Shipped",
+                    Message = $"Purchase Order {purchaseOrder.PONumber} has been shipped by {purchaseOrder.Supplier?.Name}. Delivery note has been generated.",
+                    TargetController = "PurchasingManager",
+                    TargetAction = "AllPurchaseOrders",
+                    CreatedAt = DateTime.Now,
+                    IsRead = false
+                };
+                context.Notifications.Add(notification);
             }
 
-            TempData["SuccessMessage"] = $"Delivery Note for {purchaseOrder.PONumber} sent successfully.";
+            await context.SaveChangesAsync();
+
+            // Optional success message for the supplier
+            TempData["SuccessMessage"] = $"Delivery Note for {purchaseOrder.PONumber} sent successfully and Purchase Manager notified.";
 
             return RedirectToAction("ShippedPurchaseOrders", "Supplier");
         }

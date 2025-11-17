@@ -108,38 +108,30 @@
             <a class="navbar-brand fw-bold fs-5" asp-controller="FaultTechnician" asp-action="Dashboard">
                 <i class="bi bi-exclamation-triangle me-2" style="color: @AccentColorFault;"></i>Fault Technician Portal
             </a>
-
-            <div class="collapse navbar-collapse justify-content-end">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    @* Notification Icon *@
+            <div class="d-flex">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- Notification Bell -->
                     <li class="nav-item d-flex align-items-center me-3">
                         <a class="nav-link position-relative d-flex align-items-center text-white"
                            asp-controller="Notification" asp-action="Index" title="Notifications">
-                            @* Accent color is Red/Danger for Faults *@
-                            <i class="bi bi-bell-fill me-1" style="font-size:1.4rem; color: @AccentColorFault;"></i>
-                            <span id="notificationBadge"
-                                  class="position-absolute translate-middle badge rounded-pill"
-                                  style="top:0.6rem; right:0.2rem; font-size:0.65rem; min-width:1.2rem; height:1.2rem; line-height:1.2rem; padding:0; display:none; background-color: @AccentColorFault !important;">
+                            <i class="bi bi-bell-fill me-1" style="font-size:1.4rem; color:@PrimaryColor;"></i>
+                            <span id="notificationBadge" class="position-absolute translate-middle badge rounded-pill bg-danger"
+                                  style="top:0.6rem; right:0.2rem; font-size:0.65rem; min-width:1.2rem; height:1.2rem; line-height:1.2rem; padding:0; display:none;">
                             </span>
                         </a>
                     </li>
 
-                    @* User Dropdown *@
+                    <!-- User Dropdown -->
                     <li class="nav-item dropdown d-flex align-items-center">
                         <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#"
                            id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-person-circle me-1"></i> @User.Identity.Name
+                            <i class="bi bi-person-circle me-2"></i> @User.Identity.Name
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="navbarDropdown">
-                            <li>
-                                <a class="dropdown-item" asp-controller="EmployeeProfile" asp-action="Index">
-                                    Profile
-                                </a>
-                            </li>
+                            <li><a class="dropdown-item" asp-controller="EmployeeProfile" asp-action="Index">Profile</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="post" asp-controller="Account"
-                                      asp-action="Logout">
+                                <form method="post" asp-controller="Account" asp-action="Logout">
                                     <button type="submit" class="dropdown-item text-danger">Logout <i class="bi bi-box-arrow-right ms-2"></i></button>
                                 </form>
                             </li>

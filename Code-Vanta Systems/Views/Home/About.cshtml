@@ -1,0 +1,224 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>About Us - CodeVanta Systems</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Poppins Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-teal': '#009688',
+                        'secondary-indigo': '#4F46E5',
+                        'background-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-background-light font-sans antialiased">
+
+    <!-- ⭐⭐⭐ FULL NAVBAR COPIED FROM LAYOUT ⭐⭐⭐ -->
+    <header class="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-sm shadow-xl transition-all duration-300">
+        <nav class="container mx-auto flex justify-between items-center py-4 px-6 lg:px-8">
+            <a asp-controller="Home" asp-action="Index" class="flex items-center space-x-3 group">
+                <img src="~/images/logo.jpg"
+                     alt="CodeVanta Logo"
+                     class="h-10 w-10 object-cover rounded-full border-2 border-primary-teal shadow-xl transition-transform group-hover:scale-105" />
+                <span class="text-2xl font-extrabold text-secondary-indigo tracking-tight">CodeVanta</span>
+            </a>
+
+            <div class="hidden md:flex items-center space-x-7 text-gray-700 font-medium">
+                <a asp-controller="Home" asp-action="Index" class="hover:text-primary-teal transition">Home</a>
+                <a asp-controller="Home" asp-action="Services" class="hover:text-primary-teal transition">Services</a>
+                <a asp-controller="Home" asp-action="About" class="text-primary-teal font-semibold border-b-2 border-primary-teal pb-1">About</a>
+                <a asp-controller="Home" asp-action="Contact" class="hover:text-primary-teal transition">Contact</a>
+
+                <a asp-controller="Account" asp-action="Login" class="text-secondary-indigo hover:text-primary-teal font-bold transition">Sign In</a>
+            </div>
+
+            <div class="md:hidden">
+                <button id="menu-btn" class="text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+            </div>
+        </nav>
+
+        <!-- MOBILE MENU -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-2xl border-t absolute w-full z-40">
+            <div class="flex flex-col px-6 py-4 space-y-3 text-gray-700 font-medium">
+                <a asp-controller="Home" asp-action="Index" class="block py-2 px-3 hover:bg-gray-50 rounded-lg">Home</a>
+                <a asp-controller="Home" asp-action="Services" class="block py-2 px-3 hover:bg-gray-50 rounded-lg">Services</a>
+                <a asp-controller="Home" asp-action="About" class="block py-2 px-3 hover:bg-gray-50 rounded-lg">About</a>
+                <a asp-controller="Home" asp-action="Contact" class="block py-2 px-3 hover:bg-gray-50 rounded-lg">Contact</a>
+            </div>
+        </div>
+    </header>
+
+
+
+    <!-- 🔹 YOUR EXISTING ABOUT PAGE CONTENT (unchanged) -->
+    <section class="container mx-auto px-6 py-16">
+        <div class="grid md:grid-cols-2 gap-14 items-center">
+
+            <div class="space-y-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900">
+                    Innovating the Future of Fridge Management
+                </h2>
+
+                <p class="text-gray-700 leading-relaxed text-lg">
+                    CodeVanta Systems is a modern, technology-driven platform designed to streamline
+                    everything related to fridge operations — from customer rentals to maintenance,
+                    repairs, inventory tracking, and supplier management.
+                </p>
+
+                <p class="text-gray-700 leading-relaxed text-lg">
+                    Our Fridge Management System simplifies how businesses handle their equipment by
+                    providing real-time visibility, automated processes, and a seamless user experience
+                    for administrators, technicians, suppliers, and customers.
+                </p>
+
+                <p class="text-gray-700 leading-relaxed text-lg">
+                    Whether you're managing fault reports, dispatching technicians, purchasing new units,
+                    or monitoring inventory at multiple locations — CodeVanta ensures everything works
+                    smoothly and efficiently.
+                </p>
+            </div>
+
+            <div class="flex justify-center">
+                <img src="~/images/Repair.jpg" class="rounded-2xl shadow-2xl w-full max-w-md"
+                     alt="Fridge Maintenance Team" />
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- FEATURES SECTION -->
+    <section class="bg-white py-16 border-t border-gray-200">
+        <div class="container mx-auto px-6">
+            <h3 class="text-3xl font-bold text-center text-gray-900 mb-12">
+                What Our System Offers
+            </h3>
+
+            <div class="grid md:grid-cols-3 gap-10">
+
+                <div class="p-8 bg-background-light rounded-xl shadow-lg hover:shadow-xl transition">
+                    <h4 class="text-xl font-bold text-secondary-indigo mb-3">Customer Management</h4>
+                    <p class="text-gray-700">Manage customer details, rental requests, fridge allocations, and location tracking seamlessly.</p>
+                </div>
+
+                <div class="p-8 bg-background-light rounded-xl shadow-lg hover:shadow-xl transition">
+                    <h4 class="text-xl font-bold text-secondary-indigo mb-3">Fault Logging & Repairs</h4>
+                    <p class="text-gray-700">Log fridge issues, assign technicians, track repairs, and monitor job completion.</p>
+                </div>
+
+                <div class="p-8 bg-background-light rounded-xl shadow-lg hover:shadow-xl transition">
+                    <h4 class="text-xl font-bold text-secondary-indigo mb-3">Purchasing & Supplier Control</h4>
+                    <p class="text-gray-700">Manage supplier quotations, purchase orders, deliveries, and fridge stock updates.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+
+    <!-- FINAL CTA -->
+    <section class="container mx-auto px-6 py-16 text-center">
+        <h3 class="text-3xl font-bold text-gray-900 mb-6">
+            Empower Your Business with CodeVanta
+        </h3>
+        <p class="text-gray-700 text-lg max-w-2xl mx-auto mb-10">
+            Our unified platform gives you everything you need to manage your fridge inventory,
+            customers, suppliers, and technicians — all in one place.
+        </p>
+
+        <a href="/" class="bg-primary-teal text-white px-10 py-4 rounded-full shadow-xl hover:bg-secondary-indigo transition-all duration-300 text-lg font-bold">
+            Back to Home
+        </a>
+    </section>
+
+
+
+    <!-- ⭐⭐⭐ FULL FOOTER COPIED FROM LAYOUT ⭐⭐⭐ -->
+    <footer class="bg-gray-900 text-gray-400 pt-12 pb-6 border-t-4 border-primary-teal">
+        <div class="container mx-auto grid md:grid-cols-4 gap-10 px-6 lg:px-8">
+
+            <div>
+                <h3 class="text-white font-extrabold text-2xl mb-4">CodeVanta</h3>
+                <p class="text-sm">Driven by technology, built on trust. We ensure your essential appliances run flawlessly.</p>
+                <div class="flex space-x-3 mt-6">
+                    <a href="#" class="text-gray-500 hover:text-primary-teal transition"><i class="fab fa-facebook-f fa-lg"></i></a>
+                    <a href="#" class="text-gray-500 hover:text-primary-teal transition"><i class="fab fa-twitter fa-lg"></i></a>
+                    <a href="#" class="text-gray-500 hover:text-primary-teal transition"><i class="fab fa-linkedin-in fa-lg"></i></a>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-white font-bold text-lg mb-4 border-b border-gray-700 pb-2">Navigation</h3>
+                <ul class="space-y-3 text-sm">
+                    <li><a asp-controller="Home" asp-action="Index" class="hover:text-primary-teal transition">Home</a></li>
+                    <li><a asp-controller="Home" asp-action="Services" class="hover:text-primary-teal transition">Our Services</a></li>
+                    <li><a asp-controller="Home" asp-action="About" class="hover:text-primary-teal transition">Who We Are</a></li>
+                    <li><a asp-controller="Home" asp-action="Contact" class="hover:text-primary-teal transition">Get In Touch</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h3 class="text-white font-bold text-lg mb-4 border-b border-gray-700 pb-2">Account</h3>
+                <ul class="space-y-3 text-sm">
+                    <li><a asp-controller="Account" asp-action="Login" class="hover:text-primary-teal transition">Client Login</a></li>
+                    <li><a asp-controller="Account" asp-action="Register" class="hover:text-primary-teal transition">Register</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h3 class="text-white font-bold text-lg mb-4 border-b border-gray-700 pb-2">Contact Info</h3>
+                <ul class="space-y-3 text-sm">
+                    <li><i class="fas fa-envelope text-primary-teal"></i> support@@codevanta.com</li>
+                    <li><i class="fas fa-phone text-primary-teal"></i> +27 66 205 0721</li>
+                    <li><i class="fas fa-map-marker-alt text-primary-teal"></i> Port Elizabeth, SA</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="text-center text-gray-500 text-sm border-t border-gray-700 mt-10 pt-6">
+            © @DateTime.Now.Year CodeVanta Systems. All Rights Reserved.
+        </div>
+    </footer>
+
+
+    <script>
+        document.getElementById('menu-btn').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+    </script>
+
+</body>
+</html>
