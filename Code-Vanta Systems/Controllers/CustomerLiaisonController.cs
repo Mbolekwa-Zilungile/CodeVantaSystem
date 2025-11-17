@@ -112,34 +112,51 @@ namespace Code_Vanta_Systems.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ApproveCustomer(int id)
         {
+            // 1️⃣ Load customer with associated user
             var customer = await _context.Customers
                 .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.Id == id && c.Status == CustomerStatus.Pending);
 
-            if (customer == null) return NotFound("Customer not found or not pending.");
+            if (customer == null)
+                return NotFound("Customer not found or not pending.");
 
+            // 2️⃣ Update customer status
             customer.Status = CustomerStatus.Active;
             _context.Customers.Update(customer);
             await _context.SaveChangesAsync();
 
-            if (customer.User != null)
+            // 3️⃣ Send email if user exists
+            if (customer.User != null && !string.IsNullOrEmpty(customer.User.Email))
             {
                 try
                 {
                     await _emailService.SendEmailAsync(
                         customer.User.Email,
                         "Account Approved - CodeVanta System",
-                        $"Hello {customer.ContactName},<br><br>Your account '{customer.BusinessName}' has been approved. You can now log in to your dashboard.<br><br>Best regards,<br>CodeVanta Team"
+                        $@"
+                            Hello {customer.ContactName},<br><br>
+                            Great news! Your business account <strong>{customer.BusinessName}</strong> 
+                            has been <span style='color:green;font-weight:bold;'>approved</span>.<br><br>
+                            You may now log in and start renting fridges or accessing your dashboard.<br><br>
+                            Best regards,<br>
+                            <strong>CodeVanta Team</strong>
+"
                     );
                 }
-                catch { /* log if necessary */ }
+                catch (Exception ex)
+                {
+                    // ✅ FIXED: Log the error and alert the user via TempData.
+                    Console.WriteLine($"Failed to send email to {customer.User.Email}: {ex.Message}");
+                    TempData["EmailError"] = $"Email failed to send to {customer.User.Email}. Error: {ex.Message}";
+                }
             }
 
+            // 4️⃣ Always redirect with a success message (and potential email error message)
             TempData["Success"] = $"Customer '{customer.BusinessName}' has been approved and emailed.";
             return RedirectToAction("ActiveCustomers");
         }
 
-        [HttpPost]
+          [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectCustomer(int id)
         {

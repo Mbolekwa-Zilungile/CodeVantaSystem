@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
 using System.Security.Claims;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
@@ -190,8 +191,157 @@ namespace Code_Vanta_Systems.Controllers
             return View(vm);
         }
 
+        public async Task<IActionResult> DownloadRFQPdf(int id)
+        {
+            var vm = await GetRFQDetailViewModel(id);
+            if (vm == null) return NotFound();
+
+            var pdf = CreateRFQPdf(vm);
+
+            return File(pdf, "application/pdf", $"RFQ_{vm.RFQId}.pdf");
+        }
+
+        private byte[] CreateRFQPdf(RFQDetailViewModel model)
+        {
+            var document = QuestPDF.Fluent.Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Margin(20);
+
+                    page.Header().Text($"RFQ #{model.RFQId}")
+                        .Bold().FontSize(20).AlignCenter();
+
+                    page.Content().Column(col =>
+                    {
+                        col.Item().Text("Company Information").Bold().FontSize(16);
+                        col.Item().Text($"Name: {model.CompanyName}");
+                        col.Item().Text($"Email: {model.CompanyEmail}");
+                        col.Item().Text($"Phone: {model.CompanyPhone}");
+                        col.Item().Text($"Address: {model.CompanyAddress}");
+                        col.Item().LineHorizontal(thickness: 1);
+
+                        col.Item().Text("RFQ Information").Bold().FontSize(16);
+                        col.Item().Text($"Request #: {model.PurchaseRequestNumber}");
+                        col.Item().Text($"Request Date: {model.RequestDate:dd MMM yyyy}");
+                        col.Item().Text($"Expected Delivery: {model.ExpectedDate:dd MMM yyyy}");
+                        col.Item().Text($"Requested By: {model.IssuedByName}");
+                        col.Item().Text($"Notes: {model.Notes}");
+                        col.Item().LineHorizontal(thickness: 1);
+
+                        col.Item().Text("Requested Items").Bold().FontSize(16);
+
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.ConstantColumn(40);
+                                columns.RelativeColumn();
+                                columns.ConstantColumn(70);
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Text("#").Bold();
+                                header.Cell().Text("Fridge Model").Bold();
+                                header.Cell().Text("Qty").Bold();
+                            });
+
+                            for (int i = 0; i < model.Items.Count; i++)
+                            {
+                                var item = model.Items[i];
+                                table.Cell().Text($"{i + 1}");
+                                table.Cell().Text(item.FridgeModel);
+                                table.Cell().Text(item.Quantity.ToString());
+                            }
+                        });
+                    });
+
+                    page.Footer().AlignCenter().Text(text =>
+                    {
+                        text.Span("Generated on ").FontSize(10);
+                        text.Span(DateTime.Now.ToString("dd MMM yyyy HH:mm")).FontSize(10).Bold();
+                    });
+                });
+            });
+
+            return document.GeneratePdf();
+        }
+
+        private async Task<RFQDetailViewModel?> GetRFQDetailViewModel(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var supplier = await context.Suppliers
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.User.Id == userId);
+
+            if (supplier == null)
+                return null; // just return null, let the controller handle it
+
+            // Get the RFQ with supplier info and linked PurchaseRequest
+            var rfq = await context.RequestQuotations
+                .Include(r => r.Supplier)
+                    .ThenInclude(s => s.User)
+                .Include(r => r.RequestedBy)
+                .Include(r => r.Quotations)
+                .Include(r => r.PurchaseRequest)
+                .FirstOrDefaultAsync(r => r.RequestQuotationId == id && r.SupplierId == supplier.Id);
+
+            if (rfq == null)
+                return null;
+
+            // Get related PurchaseRequest with items
+            var purchaseRequest = await context.PurchaseRequests
+                .Include(pr => pr.RequestedItems)
+                    .ThenInclude(ri => ri.Fridge)
+                .Include(pr => pr.RequestedBy)
+                .FirstOrDefaultAsync(pr => pr.Id == rfq.PurchaseRequestId);
+
+            if (purchaseRequest == null)
+                return null;
+
+            // Get company info
+            var company = await context.Company.FirstOrDefaultAsync();
+
+            // Map items
+            var items = purchaseRequest.RequestedItems.Select(i => new RFQItemViewModel
+            {
+                FridgeId = i.FridgeId,
+                FridgeModel = i.Fridge?.Model ?? "Unknown",
+                Quantity = i.Quantity
+            }).ToList();
+
+            // Map quotations
+            var quotations = rfq.Quotations.Select(q => new QuotationSummaryViewModel
+            {
+                QuotationId = q.Id,
+                SupplierName = q.Supplier.Name,
+                DateReceived = q.DateReceived
+            }).ToList();
+
+            // Build the final ViewModel
+            var vm = new RFQDetailViewModel
+            {
+                RFQId = rfq.RFQId,
+                RequestQuotationId = rfq.RequestQuotationId,
+                RequestDate = rfq.RequestDate,
+                ExpectedDate = rfq.PurchaseRequest?.ExpectedDate,
+                Notes = rfq.Notes,
+                IssuedByName = rfq.RequestedBy?.UserName ?? "Unknown",
+                CompanyName = company?.Name,
+                CompanyEmail = company?.Email,
+                CompanyPhone = company?.Phone,
+                CompanyAddress = company?.Address,
+                Items = items,
+                SubmittedQuotations = quotations,
+                PurchaseRequestNumber = purchaseRequest.RequestNumber
+            };
+
+            return vm; // ✅ Return the ViewModel
+        }
 
         #endregion
+
 
         #region Supplier Qoutations
 

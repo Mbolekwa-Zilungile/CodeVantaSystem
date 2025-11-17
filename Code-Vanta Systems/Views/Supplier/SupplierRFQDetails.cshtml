@@ -87,5 +87,10 @@
     <a class="btn btn-primary" asp-action="CreateQoutation" asp-route-requestQuotationId="@Model.RequestQuotationId">
         Create Quotation
     </a>
+    <a class="btn btn-danger"
+       asp-action="DownloadRFQPdf"
+       asp-route-id="@Model.RequestQuotationId">
+        Download PDF
+    </a>
 </div>
 

@@ -1,6 +1,7 @@
 ﻿using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
 using Code_Vanta_Systems.Models.Enums;
+using Code_Vanta_Systems.Services;
 using Code_Vanta_Systems.ViewModels;
 using Code_Vanta_Systems.ViewModels.Customer;
 using Code_Vanta_Systems.ViewModels.Log_Fault;
@@ -397,7 +398,6 @@ namespace Code_Vanta_Systems.Controllers
 
         #endregion
 
-        // New endpoints for the Customer Portal
         #region Fault 
 
         // Dashboard
@@ -963,8 +963,6 @@ namespace Code_Vanta_Systems.Controllers
         #endregion
 
         #region Checkout Logic
-        [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Checkout([FromBody] List<RentalViewModel> cartItems)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -979,8 +977,7 @@ namespace Code_Vanta_Systems.Controllers
                 return Json(new { success = false, message = "Customer profile not found." });
 
             if (customer.Status != CustomerStatus.Active)
-                return Json(new { success = false, message = "Your account is not verified. Please wait for verification before making rental requests." });
-
+                return Json(new { success = false, message = "Your account is not verified." });
 
             var rentalsToSave = cartItems.Select(item => new RentalRequest
             {
@@ -995,22 +992,42 @@ namespace Code_Vanta_Systems.Controllers
             _context.RentalRequests.AddRange(rentalsToSave);
             await _context.SaveChangesAsync();
 
+            // 🔔 Notify Customer Liaison
+            var liaisonUsers = await _userManager.GetUsersInRoleAsync("Customer Liaison");
+            var liaisonUser = liaisonUsers.FirstOrDefault();
+
+            if (liaisonUser != null)
+            {
+                var notification = new Notification
+                {
+                    RecipientUserId = liaisonUser.Id,
+                    Title = "New Rental Request Submitted",
+                    Message = $"Customer '{customer.BusinessName}' submitted a rental request for {rentalsToSave.Count} fridge(s).",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false,
+                    TargetController = "CustomerLiaison",
+                    TargetAction = "Requests"
+                };
+
+                _context.Notifications.Add(notification);
+                await _context.SaveChangesAsync();
+            }
 
             var rentalIds = rentalsToSave.Select(r => r.Id).ToList();
-
             var redirectUrl = Url.Action("PayLater", new { rentalIds = string.Join(",", rentalIds) });
 
             return Json(new
             {
                 success = true,
-                message = "Rental request submitted! You can pay later if you want.",
+                message = "Rental request submitted & liaison notified.",
                 redirectUrl
             });
         }
-        #endregion
 
-        #region Mock Payment Page
-        [HttpGet]
+    #endregion
+
+    #region Mock Payment Page
+    [HttpGet]
         public IActionResult Payment(string rentalIds)
         {
             if (string.IsNullOrEmpty(rentalIds))
