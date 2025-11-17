@@ -47,6 +47,9 @@ namespace Code_Vanta_Systems.Controllers
             .ToListAsync();
             ViewBag.ActiveSupplierCount = activeSuppliers.Count;
             ViewBag.RequestCount = await context.PurchaseRequests.CountAsync();
+            ViewBag.RFQ = await context.RequestQuotations.CountAsync();
+            @ViewBag.Qoutations = await context.Quotations.CountAsync();
+            @ViewBag.purchaseOrder= await context.PurchaseOrders.CountAsync();
 
             if (User.IsInRole("Purchasing Manager"))
             {
@@ -874,6 +877,7 @@ namespace Code_Vanta_Systems.Controllers
             ViewBag.ApprovedCount = allQuotations.Count(q => q.Status == "Approved");
             ViewBag.RejectedCount = allQuotations.Count(q => q.Status == "Rejected");
             ViewBag.sentCount = allQuotations.Count(q => q.Status == "Sent");
+
 
             // Only pending quotations for this page
             var quotations = await context.Quotations
