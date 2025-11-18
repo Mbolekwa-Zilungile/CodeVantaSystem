@@ -26,8 +26,7 @@
 
                 <form asp-action="ConfirmMaintenanceResponse" method="post" id="rescheduleForm">
                     <input type="hidden" name="scheduleId" value="@Model.Id" />
-
-                    {{-- NEW: Notes Field (Initially Hidden) --}}
+              
                     <div id="rescheduleNotesContainer" class="mb-3 mt-4" style="display:none;">
                         <label for="rescheduleNotes" class="form-label text-danger">Suggested Reschedule Time/Notes:</label>
                         <textarea name="rescheduleNotes" id="rescheduleNotes" class="form-control" rows="3" placeholder="Please indicate days/times you ARE available (e.g., 'Mondays after 2 PM' or 'Next Wednesday morning')."></textarea>
@@ -42,7 +41,6 @@
                             <i class="bi bi-calendar-x"></i> No, I Need to Reschedule
                         </button>
 
-                        {{-- New hidden submit button for the reschedule process --}}
                         <button type="submit" name="response" value="Decline" id="finalRescheduleSubmit" class="btn btn-danger btn-lg ms-3" style="display:none;">
                             Submit Reschedule Request
                         </button>

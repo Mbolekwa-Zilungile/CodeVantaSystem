@@ -1195,11 +1195,13 @@ namespace Code_Vanta_Systems.Controllers
         //=========================================================
         // ASSIGN TECHNICIAN (POST)
         //=========================================================
+        // Inside AdminController.cs
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AssignMaintenanceTechnician(int fridgeId, string technicianId)
         {
-            // 1. Fetch the specific FridgeUnit (using the Unit ID passed as fridgeId)
+            // 1. Fetch the specific FridgeUnit
             var unit = await context.FridgeUnits
                 .Include(u => u.Fridge)
                 .FirstOrDefaultAsync(u => u.Id == fridgeId && u.Condition == FridgeCondition.RequireMaintenance);
@@ -1216,23 +1218,14 @@ namespace Code_Vanta_Systems.Controllers
 
             // 3. Assign the technician to the FridgeUnit
             var oldTechnicianId = unit.TechnicianUserId;
-            unit.TechnicianUserId = technicianId;
+            unit.TechnicianUserId = technicianId; // Assign the job
 
             try
             {
                 context.Update(unit);
 
-                // 4. CRITICAL ADDITION: Create an immediate Maintenance Schedule Record
-                var schedule = new MaintenanceSchedule
-                {
-                    FridgeId = unit.FridgeId, // General model ID
-                    FridgeUnitId = unit.Id,   // Specific unit ID
-                    TechnicianId = technicianId,
-                    ScheduledDate = DateTime.Now, // Schedule for NOW (immediate action)
-                    Description = $"Unscheduled maintenance required after fault diagnosis (Admin assigned). Unit Condition: {unit.Condition}.",
-                    Status = "Assigned"
-                };
-                context.MaintenanceSchedules.Add(schedule);
+                // 4. REMOVED: Immediate Maintenance Schedule Creation (Admin no longer schedules)
+                // The Maintenance Technician must now create the schedule record themselves.
 
                 // 5. Add Audit Trail for the assignment
                 var audit = new AuditTrail
@@ -1240,30 +1233,30 @@ namespace Code_Vanta_Systems.Controllers
                     EntityName = "FridgeUnit",
                     EntityId = unit.Id,
                     ChangeType = "Assign Maintenance",
-                    ChangeDetails = $"Maintenance Technician assigned to unit {unit.SerialNumber}. From {oldTechnicianId ?? "Unassigned"} to {assignedTechnician?.FullName}.",
+                    ChangeDetails = $"Maintenance Technician assigned to unit {unit.SerialNumber} for follow-up. From {oldTechnicianId ?? "Unassigned"} to {assignedTechnician?.FullName}.",
                     ChangeDate = DateTime.Now,
                     ChangedByUserId = currentUser?.Id ?? "System"
                 };
                 context.AuditTrails.Add(audit);
 
-                // 6. CRITICAL ADDITION: Send Notification to the technician
+                // 6. CRITICAL ADDITION: Send Notification to the technician (Informing them of new job)
                 if (assignedTechnician != null)
                 {
                     var notification = new Notification
                     {
                         RecipientUserId = assignedTechnician.Id,
-                        Title = "New Maintenance Assignment",
-                        Message = $"Unit {unit.SerialNumber} ({unit.Fridge.Model}) has been assigned to you for required maintenance (Fault Follow-up).",
+                        Title = "New Maintenance Job Assigned",
+                        Message = $"Unit {unit.SerialNumber} ({unit.Fridge.Model}) requires service. Please schedule the visit now.",
                         CreatedAt = DateTime.Now,
                         IsRead = false,
                         TargetController = "MaintenanceTechnician",
-                        TargetAction = "MaintenanceSchedules"
+                        TargetAction = "AllocatedFridges" // Redirects them to their list of units to action the job
                     };
                     context.Notifications.Add(notification);
                 }
 
                 await context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"Unit {unit.SerialNumber} ({unit.Fridge.Model}) successfully assigned and scheduled for follow-up maintenance.";
+                TempData["SuccessMessage"] = $"Unit {unit.SerialNumber} ({unit.Fridge.Model}) successfully assigned to technician. Technician must now schedule visit.";
             }
             catch (Exception ex)
             {
