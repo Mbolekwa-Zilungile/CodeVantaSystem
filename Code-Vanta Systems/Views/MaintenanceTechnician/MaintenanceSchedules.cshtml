@@ -27,64 +27,64 @@
                     <th>Customer</th>
                     <th>Description</th>
                     <th>Schedule Status</th>
-                    <th>Customer Confirmation</th> @* <--- NEW COLUMN *@
+                    <th>Customer Confirmation</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in Model)
                 {
-                    
-                        // Determine status badge colors
-                        string statusBadge = item.Status == "Scheduled" ? "bg-warning text-dark" : item.Status == "Cancelled" ? "bg-secondary" : "bg-info";
-                        string confirmBadge = item.CustomerConfirmation switch
-                        {
-                            "Confirmed" => "bg-success",
-                            "Declined" => "bg-danger",
-                            _ => "bg-secondary"
-                        };
 
-                        // Determine if the Log Service button should be highlighted/available
-                        bool isConfirmed = item.CustomerConfirmation == "Confirmed";
-                    
+                    // Determine status badge colors
+                    string statusBadge = item.Status == "Scheduled" ?
+                    "bg-warning text-dark" : item.Status == "Cancelled" ? "bg-secondary" : "bg-info";
+                    string confirmBadge = item.CustomerConfirmation switch
+                    {
+                        "Confirmed" => "bg-success",
+                        "Declined" => "bg-danger",
+                        _ => "bg-secondary"
+                    };
+                    // Determine if the Log Service button should be highlighted/available
+                    bool isConfirmed = item.CustomerConfirmation == "Confirmed";
+
                     <tr>
                         <td class="fw-bold">@item.ScheduledDate.ToString("dd MMM yyyy @ HH:mm")</td>
                         <td>
                             <a asp-action="FridgeDetails" asp-route-id="@item.FridgeUnitId" class="text-primary">
-                                @item.FridgeUnit.SerialNumber 
+                                @item.FridgeUnit.SerialNumber
                             </a>
                         </td>
                         <td>@item.FridgeUnit.Customer?.BusinessName</td>
                         <td>@item.Description</td>
-                        
+
                         <td><span class="badge @statusBadge">@item.Status</span></td>
-                        
-                       
+
                         <td><span class="badge @confirmBadge">@item.CustomerConfirmation</span></td>
-                        
+
                         <td>
                             @* Action 1: Log Service/Completion - Highlighted if confirmed *@
-                            <a asp-action="CreateServiceRecord" asp-route-unitId="@item.FridgeUnitId" 
-                               class="btn btn-sm @(isConfirmed ? "btn-success" : "btn-outline-success") me-2" 
+                            <a asp-action="CreateServiceRecord" asp-route-unitId="@item.FridgeUnitId"
+                               class="btn btn-sm @(isConfirmed ? "btn-success" : "btn-outline-success") me-2"
                                title="Log Service Completion">
                                 <i class="bi bi-patch-check"></i> Log Service
                             </a>
-                            
+
                             @* Action 2: Schedule Cancellation/Management *@
                             @if (item.Status != "Completed" && item.Status != "Cancelled")
                             {
+                                @* Reschedule Button (Replaces Details) *@
+                                <a asp-action="RescheduleSchedule" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning me-2" title="Reschedule Visit">
+                                    <i class="bi bi-arrow-repeat"></i> Reschedule
+                                </a>
+
                                 <button type="button" class="btn btn-sm btn-outline-danger me-2" data-bs-toggle="modal" data-bs-target="#cancelModal-@item.Id">
                                     <i class="bi bi-x-circle"></i> Cancel
                                 </button>
                             }
-                            
-                            <a asp-action="FridgeDetails" asp-route-id="@item.FridgeUnitId" class="btn btn-sm btn-outline-info" title="View Unit Details">
-                                <i class="bi bi-info-circle"></i> Details
-                            </a>
                         </td>
                     </tr>
-                    
-                    @* Cancellation Modal (Remains the same) *@
+
+                    @* Cancellation Modal *@
                     <div class="modal fade" id="cancelModal-@item.Id" tabindex="-1" aria-labelledby="cancelModalLabel-@item.Id" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">

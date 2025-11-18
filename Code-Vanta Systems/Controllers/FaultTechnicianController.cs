@@ -336,5 +336,6 @@ namespace Code_Vanta_Systems.Controllers
 
         // The ResolveFault action is removed as its logic is merged into ProcessRepair,
         // which now handles the entire fault resolution process (repair, notes, and condition update).
+    
     }
 }

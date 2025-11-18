@@ -15,7 +15,14 @@ namespace Code_Vanta_Systems.ViewModels
         [Display(Name = "Total Upcoming Schedules")]
         public int TotalScheduledMaintenance { get; set; }
 
+        // NEW KPIs (To fix CS0117 errors)
+        public int TotalAllocatedUnits { get; set; }
+        public int TotalServiceRecords { get; set; }
+
         // Data structure for the Fault Activity Over Time chart
         public List<ChartDataPoint> ActivityOverTime { get; set; } = new List<ChartDataPoint>();
+
+        // NEW Chart Data Series 2 (Faults Repaired) (To fix CS0117 error)
+        public List<ChartDataPoint> ActivityOverTimeRepaired { get; set; } = new List<ChartDataPoint>();
     }
 }

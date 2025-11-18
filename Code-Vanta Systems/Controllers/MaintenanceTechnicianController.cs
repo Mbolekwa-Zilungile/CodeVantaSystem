@@ -674,7 +674,85 @@ namespace Code_Vanta_Systems.Controllers
             return View(viewModel);
         }
 
-        // Inside MaintenanceTechnicianController.cs
+        public async Task<IActionResult> RescheduleSchedule(int id)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var schedule = await _context.MaintenanceSchedules
+                // Fetch the schedule and ensure it's assigned to the current technician and not completed/cancelled
+                .FirstOrDefaultAsync(ms => ms.Id == id && ms.TechnicianId == currentUserId && ms.Status == "Scheduled");
+
+            if (schedule == null)
+            {
+                TempData["ErrorMessage"] = "Schedule not found or not eligible for rescheduling.";
+                return RedirectToAction(nameof(MaintenanceSchedules));
+            }
+
+            // Map the existing schedule data to the CreateScheduleViewModel
+            var viewModel = new CreateScheduleViewModel
+            {
+                ScheduleId = schedule.Id, // NEW: Used to identify the schedule being updated
+                FridgeUnitId = schedule.FridgeUnitId,
+                ScheduledDate = schedule.ScheduledDate.Date.AddHours(9), // Default to 9 AM, ready for user modification
+                Description = schedule.Description,
+                IsReschedule = true // Flag to indicate this is an update, not a new schedule
+            };
+
+            await PopulateCreateScheduleViewModel(viewModel);
+
+            // Set the selected unit ID so the dropdown is pre-selected
+            if (viewModel.AvailableFridges.Any(f => f.Value == schedule.FridgeUnitId.ToString()))
+            {
+                viewModel.AvailableFridges.First(f => f.Value == schedule.FridgeUnitId.ToString()).Selected = true;
+            }
+
+            ViewData["Title"] = $"Reschedule Maintenance Visit #{schedule.Id}";
+            return View("CreateSchedule", viewModel); // Reuse the CreateSchedule view
+        }
+
+        // POST Method for Rescheduling an existing Schedule
+        // POST: MaintenanceTechnician/RescheduleSchedule
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RescheduleSchedule(CreateScheduleViewModel viewModel)
+        {
+            // 1. Mandatory check for ScheduleId and FridgeUnitId
+            if (!viewModel.ScheduleId.HasValue || !viewModel.FridgeUnitId.HasValue)
+            {
+                ModelState.AddModelError("", "Missing schedule or unit information.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var currentUserId = _userManager.GetUserId(User);
+                var schedule = await _context.MaintenanceSchedules
+                    .FirstOrDefaultAsync(ms => ms.Id == viewModel.ScheduleId.Value && ms.TechnicianId == currentUserId);
+
+                if (schedule == null)
+                {
+                    TempData["ErrorMessage"] = "Schedule not found or you are not authorized to update it.";
+                    return RedirectToAction(nameof(MaintenanceSchedules));
+                }
+
+                // 2. Update the schedule details
+                schedule.FridgeUnitId = viewModel.FridgeUnitId.Value;
+                schedule.ScheduledDate = viewModel.ScheduledDate;
+                schedule.Description = viewModel.Description;
+                schedule.Status = "Scheduled"; // Reset status just in case
+
+                _context.MaintenanceSchedules.Update(schedule);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = $"Maintenance schedule #{schedule.Id} successfully **rescheduled** for {viewModel.ScheduledDate:dd MMM yyyy @ HH:mm}.";
+
+                return RedirectToAction(nameof(MaintenanceSchedules)); // Redirect back to the schedule list
+            }
+
+            // 3. Re-populate context and dropdowns on failure
+            await PopulateCreateScheduleViewModel(viewModel);
+            viewModel.IsReschedule = true; // Maintain the context flag
+
+            return View("CreateSchedule", viewModel);
+        }
 
         // POST: MaintenanceTechnician/CancelSchedule/5
         [HttpPost]
@@ -748,16 +826,27 @@ namespace Code_Vanta_Systems.Controllers
                 .CountAsync(ff => ff.AssignedTechnicianId == currentUserId &&
                                    (ff.Status == FaultStatus.Repaired || ff.Status == FaultStatus.Resolved));
 
+            // NEW METRIC: Total Service Records created by this technician
+            var totalServiceRecords = await _context.ServiceRecords
+                .CountAsync(sr => sr.TechnicianUserId == currentUserId);
+
             var totalScheduled = await _context.MaintenanceSchedules
                 .CountAsync(ms => ms.TechnicianId == currentUserId && ms.Status != "Completed");
 
-            // 2. Fetch data for a chart (Fault activity over time)
-            var faultsDates = await _context.FridgeFaults
+            // NEW METRIC: Total Allocated Units (already calculated in Index, but fetched here for the report)
+            var totalAllocatedUnits = await _context.FridgeUnits
+                .CountAsync(u => u.TechnicianUserId == currentUserId && u.IsRented);
+
+
+            // 2. Fetch data for the charts (Fault activity over time)
+
+            // Series 1: Faults Reported/Assigned (Incoming Workload)
+            var assignedFaultsDates = await _context.FridgeFaults
                 .Where(f => f.AssignedTechnicianId == currentUserId)
                 .Select(f => f.DateReported)
                 .ToListAsync();
 
-            var groupedData = faultsDates
+            var assignedGroupedData = assignedFaultsDates
                 .Where(d => d.Year == DateTime.Now.Year)
                 .GroupBy(d => d.Month)
                 .Select(g => new
@@ -767,25 +856,60 @@ namespace Code_Vanta_Systems.Controllers
                 })
                 .ToList();
 
-            var activityOverTime = Enumerable.Range(1, 12)
-                .Select(m => new ChartDataPoint
+            // Series 2: Faults Repaired/Resolved (Outgoing Workload)
+            var repairedFaultsDates = await _context.FridgeFaults
+                .Where(f => f.AssignedTechnicianId == currentUserId && (f.Status == FaultStatus.Repaired || f.Status == FaultStatus.Resolved))
+                .Select(f => f.ResolutionDate.HasValue ? f.ResolutionDate.Value : DateTime.MinValue) // Use ResolutionDate
+                .ToListAsync();
+
+            var repairedGroupedData = repairedFaultsDates
+                .Where(d => d.Year == DateTime.Now.Year)
+                .GroupBy(d => d.Month)
+                .Select(g => new
                 {
-                    Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"),
-                    Value = groupedData
-                        .Where(g => g.Month == m)
-                        .Select(g => g.Count)
-                        .FirstOrDefault()
+                    Month = g.Key,
+                    Count = g.Count()
                 })
                 .ToList();
 
-            // 3. Build the ViewModel
+
+            // 3. Build the ViewModel (Needs to be updated to support two chart series if ViewModel is not flexible)
+            // Assuming MaintenanceReportsViewModel can hold two lists of ChartDataPoint
+            var activityOverTimeAssigned = Enumerable.Range(1, 12)
+                .Select(m => new ChartDataPoint
+                {
+                    Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"),
+                    Value = assignedGroupedData.FirstOrDefault(g => g.Month == m)?.Count ?? 0
+                })
+                .ToList();
+
+            var activityOverTimeRepaired = Enumerable.Range(1, 12)
+                .Select(m => new ChartDataPoint
+                {
+                    Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"),
+                    Value = repairedGroupedData.FirstOrDefault(g => g.Month == m)?.Count ?? 0
+                })
+                .ToList();
+
+            // NOTE: The ViewModel structure isn't provided, so I'm assuming the existing one
+            // 'ActivityOverTime' will be renamed/repurposed, or a second property is added.
+            // For simplicity, I'll pass both lists via ViewBag/ViewModel (assuming ViewModel is updated)
             var viewModel = new MaintenanceReportsViewModel
             {
                 TotalAssignedFaults = totalAssigned,
                 TotalRepairedFaults = totalRepaired,
                 TotalScheduledMaintenance = totalScheduled,
-                ActivityOverTime = activityOverTime
+                // NEW KPIs
+                TotalAllocatedUnits = totalAllocatedUnits,
+                TotalServiceRecords = totalServiceRecords,
+                // Pass both series data via the ViewModel (assuming it was updated to contain both)
+                ActivityOverTime = activityOverTimeAssigned,
+                ActivityOverTimeRepaired = activityOverTimeRepaired // Placeholder for the second series
             };
+
+            // If the ViewModel only supports one list, we pass the second via ViewBag
+            ViewBag.ActivityOverTimeRepaired = activityOverTimeRepaired;
+
 
             ViewData["Title"] = "Performance Reports";
             return View(viewModel);

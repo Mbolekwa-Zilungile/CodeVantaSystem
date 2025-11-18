@@ -24,6 +24,12 @@ namespace Code_Vanta_Systems.ViewModels
         // Used to store the selected fridge unit's display name for success messages
         public string? FridgeDisplay { get; set; }
 
+        // NEW: Property to hold the ID of the schedule being edited/rescheduled
+        public int? ScheduleId { get; set; }
+
+        // NEW: Flag to help the view (CreateSchedule.cshtml) change its title/button text
+        public bool IsReschedule { get; set; } = false;
+
         // Used by the Controller to populate the unit dropdown list
         public IEnumerable<SelectListItem> AvailableFridges { get; set; } = new List<SelectListItem>();
     }
