@@ -65,12 +65,12 @@
 
         <!-- Card 2: Submitted Quotations -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <a href="@Url.Action("Quotations", "Supplier")" class="text-decoration-none">
+            <a href="@Url.Action("MyQuotations", "Supplier")" class="text-decoration-none">
                 <div class="card shadow h-100 py-2 bg-success text-white metric-card">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col">
-                                <div class="text-xs fw-bold text-uppercase mb-2">Submitted Quotations</div>
+                                <div class="text-xs fw-bold text-uppercase mb-2">Quotations</div>
                                 <div class="h4 mb-0 fw-bold">
                                     <i class="bi bi-envelope-check me-2"></i> 3
                                 </div>
@@ -83,7 +83,7 @@
 
         <!-- Card 3: Approved Orders -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <a href="@Url.Action("ApprovedOrders", "Supplier")" class="text-decoration-none">
+            <a href="@Url.Action("ApprovedPurchaseOrders", "Supplier")" class="text-decoration-none">
                 <div class="card shadow h-100 py-2 bg-warning text-dark metric-card">
                     <div class="card-body">
                         <div class="row align-items-center">
@@ -101,7 +101,7 @@
 
         <!-- Card 4: Pending Deliveries -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <a href="@Url.Action("Deliveries", "Supplier")" class="text-decoration-none">
+            <a href="@Url.Action("DeliveredPurchaseOrders", "Supplier")" class="text-decoration-none">
                 <div class="card shadow h-100 py-2 bg-danger text-white metric-card">
                     <div class="card-body">
                         <div class="row align-items-center">

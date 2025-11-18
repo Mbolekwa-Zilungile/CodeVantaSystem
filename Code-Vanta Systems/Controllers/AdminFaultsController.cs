@@ -35,7 +35,9 @@ namespace Code_Vanta_Systems.Controllers
             {
                 // Base query: include related entities
                 var query = _context.FridgeFaults
-                    .Include(f => f.Fridge)
+                    .Include(f => f.Fridge)                     // parent fridge (if needed)
+                    .Include(f => f.FridgeUnit)                 // specific unit
+                        .ThenInclude(u => u.Technician)         // technician assigned to unit
                     .Include(f => f.ReportedBy)
                     .Include(f => f.AssignedTechnician)
                     .AsQueryable();
@@ -45,10 +47,13 @@ namespace Code_Vanta_Systems.Controllers
                 {
                     search = search.ToLower();
                     query = query.Where(f =>
-                        f.Fridge.SerialNumber.ToLower().Contains(search) ||
+                        f.FridgeUnit.SerialNumber.ToLower().Contains(search) ||   // use FridgeUnit serial
                         f.FaultDescription.ToLower().Contains(search) ||
                         f.ReportedBy.FullName.ToLower().Contains(search) ||
-                        (f.AssignedTechnician != null && f.AssignedTechnician.FullName.ToLower().Contains(search))
+                        (f.AssignedTechnician != null &&
+                         f.AssignedTechnician.FullName.ToLower().Contains(search)) ||
+                        (f.FridgeUnit.Technician != null &&
+                         f.FridgeUnit.Technician.FullName.ToLower().Contains(search))
                     );
                 }
 
@@ -92,15 +97,17 @@ namespace Code_Vanta_Systems.Controllers
             }
         }
 
+
         // Assign Technician
         [HttpPost]
         public async Task<IActionResult> AssignTechnician(int faultId, int technicianId)
         {
             try
             {
-                // 1️ Find the fault and include Fridge
+                // 1️ Find the fault and include FridgeUnit
                 var fault = await _context.FridgeFaults
                     .Include(f => f.Fridge)
+                    .Include(f => f.FridgeUnit)
                     .Include(f => f.ReportedBy)
                     .Include(f => f.AssignedTechnician)
                     .FirstOrDefaultAsync(f => f.Id == faultId);
@@ -111,7 +118,7 @@ namespace Code_Vanta_Systems.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // 2️ Find the technician
+                // 2️ Find the technician (Employee)
                 var technician = await _context.Employees
                     .Include(e => e.User)
                     .FirstOrDefaultAsync(e => e.Id == technicianId && e.Position == "Fault Technician");
@@ -122,15 +129,22 @@ namespace Code_Vanta_Systems.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // 3️ Assign the technician
+                // 3️ Assign the technician to the FAULT
                 fault.AssignedTechnicianId = technician.ApplicationUserId;
-                _context.FridgeFaults.Update(fault);
+
+                // 3b️⃣ Assign the same technician to the FRIDGE UNIT
+                if (fault.FridgeUnit != null)
+                {
+                    fault.FridgeUnit.TechnicianUserId = technician.ApplicationUserId;
+                    fault.FridgeUnit.UpdatedAt = DateTime.Now;
+                }
+
                 await _context.SaveChangesAsync();
 
-                // 4️  Get the current logged-in admin (Identity)
+                // 4️ Get the current logged-in admin (Identity)
                 var currentUser = await _userManager.GetUserAsync(User);
 
-                // 5️  Create AuditTrail entry (safe null checks)
+                // 5️ Audit trail (use FridgeUnit serial)
                 var audit = new AuditTrail
                 {
                     EntityName = "FridgeFault",
@@ -138,18 +152,20 @@ namespace Code_Vanta_Systems.Controllers
                     ChangedByUserId = currentUser?.Id ?? "System",
                     ChangeType = "Update",
                     ChangeDate = DateTime.Now,
-                    ChangeDetails = $"Technician '{technician?.User?.FullName ?? "Unknown"}' assigned to Fridge (Serial: {fault?.Fridge?.SerialNumber ?? "N/A"}) by '{currentUser?.FullName ?? "System"}'."
+                    ChangeDetails =
+                        $"Technician '{technician?.User?.FullName ?? "Unknown"}' assigned to Fridge Unit (Serial: {fault?.FridgeUnit?.SerialNumber ?? "N/A"}) by '{currentUser?.FullName ?? "System"}'."
                 };
 
                 _context.AuditTrails.Add(audit);
                 await _context.SaveChangesAsync();
 
-                // 6️ Create Notification for assigned technician
+                // 6️ Notification for assigned technician
                 var notification = new Notification
                 {
                     RecipientUserId = technician.ApplicationUserId,
                     Title = "New Fridge Fault Assigned",
-                    Message = $"You have been assigned to resolve Fridge Fault (Serial: {fault?.Fridge?.SerialNumber ?? "N/A"}). Please review the fault details.",
+                    Message =
+                        $"You have been assigned to resolve a fault for Fridge Unit (Serial: {fault?.FridgeUnit?.SerialNumber ?? "N/A"}). Please review the fault details.",
                     CreatedAt = DateTime.Now,
                     IsRead = false,
                     TargetController = "TechnicianFaults",
@@ -159,11 +175,12 @@ namespace Code_Vanta_Systems.Controllers
                 _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = $"Technician '{technician.User.FullName}' has been successfully assigned to the fault for fridge with Serial Number '{fault.Fridge.SerialNumber}'.";
+                TempData["SuccessMessage"] =
+                    $"Technician '{technician.User.FullName}' has been successfully assigned to the fault for fridge unit with Serial Number '{fault.FridgeUnit?.SerialNumber ?? "N/A"}'.";
             }
             catch (Exception)
             {
-                TempData["ErrorMessage"] = $"An error occurred while assigning the technician.";
+                TempData["ErrorMessage"] = "An error occurred while assigning the technician.";
             }
 
             return RedirectToAction(nameof(Index));

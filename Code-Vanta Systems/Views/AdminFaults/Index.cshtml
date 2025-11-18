@@ -39,7 +39,7 @@
     <thead>
         <tr>
             <th>#</th>
-            <th>Fridge</th>
+            <th>Fridge Unit</th>
             <th>Fault Description</th>
             <th>Reported By</th>
             <th>Status</th>
@@ -52,14 +52,23 @@
         {
             <tr>
                 <td>@counter</td>
-                <td>@fault.Fridge?.SerialNumber</td>
+
+                <!-- Show the fridge UNIT serial number -->
+                <td>@fault.FridgeUnit?.SerialNumber</td>
+
                 <td>@fault.FaultDescription</td>
                 <td>@fault.ReportedBy?.FullName</td>
                 <td>@fault.Status</td>
-                <td>@(fault.AssignedTechnician?.FullName ?? "Not yet assigned")</td>
+
+                <!-- Display technician (from fault or fridge unit – they should now be in sync) -->
+                <td>
+                    @(fault.AssignedTechnician?.FullName
+                                    ?? fault.FridgeUnit?.Technician?.FullName
+                                    ?? "Not yet assigned")
+            </td>
 
                 <td class="text-center">
-                    @if (fault.Status == FaultStatus.Cancelled)
+                @if (fault.Status == FaultStatus.Cancelled)
                     {
                         <i class="bi bi-x-circle text-danger" title="Cancelled"></i>
                     }
@@ -69,16 +78,18 @@
                             <input type="hidden" name="faultId" value="@fault.Id" />
                             <select name="technicianId" class="form-select">
                                 <option value="">-- Select Technician --</option>
-                                @foreach (var tech in technicians)
+                                @if (technicians != null)
                                 {
-                                    <option value="@tech.TechnicianId">@tech.FullName</option>
+                                    foreach (var tech in technicians)
+                                    {
+                                        <option value="@tech.TechnicianId">@tech.FullName</option>
+                                    }
                                 }
                             </select>
                             <button type="submit" class="btn btn-sm btn-primary mt-1">Assign</button>
                         </form>
                     }
                 </td>
-
             </tr>
             counter++;
         }
@@ -91,7 +102,10 @@
         @for (int i = 1; i <= (int)ViewData["totalPages"]; i++)
         {
             <li class="page-item @(i == (int)ViewData["currentPage"] ? "active" : "")">
-                <a class="page-link" asp-action="Index" asp-route-pageIndex="@i" asp-route-search="@ViewData["search"]">@i</a>
+                <a class="page-link"
+                   asp-action="Index"
+                   asp-route-pageIndex="@i"
+                   asp-route-search="@ViewData["search"]">@i</a>
             </li>
         }
     </ul>

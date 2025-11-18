@@ -29,7 +29,11 @@ namespace Code_Vanta_Systems.Models
         public virtual Customer? Customer { get; set; }
 
         // Assigned Technician (nullable until fridge is under maintenance)
+
+      
         public string? TechnicianUserId { get; set; }
+
+        [ForeignKey(nameof(TechnicianUserId))]
         public virtual ApplicationUser? Technician { get; set; }
 
         public bool IsRented { get; set; } = false;

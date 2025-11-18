@@ -709,11 +709,8 @@ namespace Code_Vanta_Systems.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<string>("TechnicianId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("TechnicianUserId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -724,7 +721,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasIndex("FridgeId");
 
-                    b.HasIndex("TechnicianId");
+                    b.HasIndex("TechnicianUserId");
 
                     b.ToTable("FridgeUnits");
                 });
@@ -1974,7 +1971,7 @@ namespace Code_Vanta_Systems.Migrations
 
                     b.HasOne("Code_Vanta_Systems.Models.ApplicationUser", "Technician")
                         .WithMany()
-                        .HasForeignKey("TechnicianId");
+                        .HasForeignKey("TechnicianUserId");
 
                     b.Navigation("Customer");
 
