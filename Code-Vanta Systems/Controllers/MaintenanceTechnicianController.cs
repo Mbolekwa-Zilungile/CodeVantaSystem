@@ -833,7 +833,7 @@ namespace Code_Vanta_Systems.Controllers
             var totalScheduled = await _context.MaintenanceSchedules
                 .CountAsync(ms => ms.TechnicianId == currentUserId && ms.Status != "Completed");
 
-            // NEW METRIC: Total Allocated Units (already calculated in Index, but fetched here for the report)
+            // NEW METRIC: Total Allocated Units 
             var totalAllocatedUnits = await _context.FridgeUnits
                 .CountAsync(u => u.TechnicianUserId == currentUserId && u.IsRented);
 
@@ -873,8 +873,7 @@ namespace Code_Vanta_Systems.Controllers
                 .ToList();
 
 
-            // 3. Build the ViewModel (Needs to be updated to support two chart series if ViewModel is not flexible)
-            // Assuming MaintenanceReportsViewModel can hold two lists of ChartDataPoint
+            // 3. Build the ViewModel
             var activityOverTimeAssigned = Enumerable.Range(1, 12)
                 .Select(m => new ChartDataPoint
                 {
@@ -891,23 +890,20 @@ namespace Code_Vanta_Systems.Controllers
                 })
                 .ToList();
 
-            // NOTE: The ViewModel structure isn't provided, so I'm assuming the existing one
-            // 'ActivityOverTime' will be renamed/repurposed, or a second property is added.
-            // For simplicity, I'll pass both lists via ViewBag/ViewModel (assuming ViewModel is updated)
             var viewModel = new MaintenanceReportsViewModel
             {
                 TotalAssignedFaults = totalAssigned,
                 TotalRepairedFaults = totalRepaired,
                 TotalScheduledMaintenance = totalScheduled,
-                // NEW KPIs
                 TotalAllocatedUnits = totalAllocatedUnits,
                 TotalServiceRecords = totalServiceRecords,
-                // Pass both series data via the ViewModel (assuming it was updated to contain both)
+                // Pass Series 1 as the main list
                 ActivityOverTime = activityOverTimeAssigned,
-                ActivityOverTimeRepaired = activityOverTimeRepaired // Placeholder for the second series
+                // Pass Series 2 as a separate property (assuming ViewModel update)
+                ActivityOverTimeRepaired = activityOverTimeRepaired
             };
 
-            // If the ViewModel only supports one list, we pass the second via ViewBag
+            // Pass Series 2 data via ViewBag for the chart (fallback/guarantee)
             ViewBag.ActivityOverTimeRepaired = activityOverTimeRepaired;
 
 
@@ -916,16 +912,16 @@ namespace Code_Vanta_Systems.Controllers
         }
 
 
-        // ACTION STUB FOR DOWNLOADABLE REPORT (Resolves routing error)
+        // ACTION STUB FOR DOWNLOADABLE REPORT (MIME type corrected)
         [HttpGet]
         public IActionResult ExportReportsToPdf()
         {
             var content = "Maintenance Performance Report generated on " + DateTime.Now.ToString("yyyy-MM-dd HH:mm") + ". Note: This is a text placeholder, not a functional PDF.";
-            // Keep the .pdf extension but change the MIME type to text/plain
             var fileName = $"Maintenance_Report_{DateTime.Now:yyyyMMdd}.pdf";
-            var mimeType = "text/plain";
 
-            // ✅ FIX: Use the correct MIME type when returning the file.
+            // CORRECTED MIME TYPE
+            var mimeType = "application/pdf";
+
             return File(System.Text.Encoding.UTF8.GetBytes(content), mimeType, fileName);
         }
     }
