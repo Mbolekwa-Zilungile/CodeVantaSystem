@@ -155,10 +155,6 @@
             <i class="bi bi-list-task"></i> My Assigned Faults
         </a>
 
-        <a class="sidebar-link @(currentController == "FaultTechnician" && currentAction == "CreateFaultReport" ? "active" : "")"
-           asp-controller="FaultTechnician" asp-action="CreateFaultReport">
-            <i class="bi bi-pencil-square"></i> Report New Fault
-        </a>
 
         @* Removed Maintenance Schedules link, as Fault Tech does not schedule maintenance *@
 

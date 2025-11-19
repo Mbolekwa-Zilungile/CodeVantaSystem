@@ -127,28 +127,13 @@
                             <span class="badge bg-primary rounded-pill fs-6 px-3 py-2">@Model.TotalFridgesInInventory</span>
                         </li>
                     </ul>
-                    <div class="d-grid mt-3">
-                        <a asp-controller="Admin" asp-action="ViewReports" class="btn btn-outline-secondary btn-lg">
-                            <i class="bi bi-file-earmark-bar-graph me-2"></i> Generate Detailed System Reports
-                        </a>
-                    </div>
+         
                 </div>
             </div>
         </div>
 
         <!-- Role-Based Access Points Card -->
-        <div class="col-lg-6">
-            <div class="card shadow-lg border-0 h-100">
-                <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-person-rolodex me-2"></i> Quick Access Role Portals</div>
-                <div class="card-body d-flex flex-wrap gap-3 align-content-start">
-                    <a asp-controller="CustomerLiaison" asp-action="Index" class="btn btn-lg btn-outline-primary shadow-sm"><i class="bi bi-headset me-2"></i> Customer Liaison</a>
-                    <a asp-controller="InventoryLiaison" asp-action="Index" class="btn btn-lg btn-outline-info shadow-sm"><i class="bi bi-archive-fill me-2"></i> Inventory Liaison</a>
-                    <a asp-controller="FaultTechnician" asp-action="Index" class="btn btn-lg btn-outline-danger shadow-sm"><i class="bi bi-exclamation-triangle-fill me-2"></i> Fault Technician</a>
-                    <a asp-controller="MaintenanceTechnician" asp-action="Index" class="btn btn-lg btn-outline-success shadow-sm"><i class="bi bi-wrench-adjustable-fill me-2"></i> Maintenance Technician</a>
-                    <a asp-controller="PurchasingManager" asp-action="Index" class="btn btn-lg btn-outline-warning shadow-sm"><i class="bi bi-cart-fill me-2"></i> Purchasing Manager</a>
-                </div>
-            </div>
-        </div>
+      
     </div>
 
 </div>
