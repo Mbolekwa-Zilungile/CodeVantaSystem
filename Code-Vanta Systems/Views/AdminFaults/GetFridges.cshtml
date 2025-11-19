@@ -1,0 +1,56 @@
+﻿@model IEnumerable<Fridge>
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Fridges";
+}
+
+<h2>Fridges List</h2>
+
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Model</th>
+            <th>Serial Number</th>
+            <th>Status</th>
+            <th>Purchase Date</th>
+            <th>Category</th>
+            <th>Rental Price (per month)</th>
+            <th>Stock Quantity</th>
+            <th>Condition</th>
+            <th>Image</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var fridge in Model)
+        {
+            <tr>
+                <td>@fridge.Id</td>
+                <td>@fridge.Model</td>
+                <td>@fridge.SerialNumber</td>
+                <td>@fridge.Status</td>
+                <td>@fridge.PurchaseDate.ToShortDateString()</td>
+                <td>@fridge.Category</td>
+                <td>@fridge.RentalPricePerMonth</td>
+                <td>@fridge.StockQuantity</td>
+                <td>@fridge.Condition</td>
+                <td>
+                    @if (!string.IsNullOrEmpty(fridge.ImageUrl))
+                    {
+                        <img src="@fridge.ImageUrl" width="80" />
+                    }
+                </td>
+                <td>
+                    <a class="btn btn-warning btn-sm" asp-controller="AdminFaults" asp-action="EditFridge" asp-route-id="@fridge.Id">Edit</a>
+
+                    <form asp-controller="AdminFaults" asp-action="DeleteFridge" asp-route-id="@fridge.Id" method="post" class="d-inline"
+                          onsubmit="return confirm('Are you sure you want to delete this fridge?');">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
