@@ -41,7 +41,9 @@
                         </tr>
                         <tr>
                             <td>Assigned Technician:</td>
-                            <td colspan="3">@Model.UnitDetails.FirstOrDefault()?.AssignedTechnician ?? "N/A"</td>
+                            <td colspan="3">                              
+                             @(Model.UnitDetails.FirstOrDefault()?.AssignedTechnician ?? "N/A")
+                       </td>
                         </tr>
                         <tr>
                             <td>Next Scheduled Visit:</td>

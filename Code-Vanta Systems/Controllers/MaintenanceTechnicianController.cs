@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -813,6 +816,119 @@ namespace Code_Vanta_Systems.Controllers
         // REPORTS
         //=========================================================
 
+        private byte[] CreatePerformanceReportPdf(MaintenanceReportsViewModel model, List<ChartDataPoint> repairedData)
+        {
+            // Ensure QuestPDF registration is done once (optional, but safer)
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var document = QuestPDF.Fluent.Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Margin(20);
+
+                    // ------------------ HEADER ------------------
+                    page.Header().Row(row =>
+                    {
+                        row.ConstantColumn(150).Text("CODE VANTA SYSTEMS").Bold().FontSize(12).FontColor(Colors.BlueGrey.Darken2);
+                        row.RelativeColumn().Text("MAINTENANCE TECHNICIAN PERFORMANCE REPORT")
+                            .Bold().FontSize(18).FontColor(Colors.Red.Medium).AlignRight();
+                    });
+
+                    // ------------------ CONTENT ------------------
+                    page.Content().Column(col =>
+                    {
+                        col.Spacing(20);
+
+                        // --- 1. Technician Details ---
+                        // FIX: Use Container() before PaddingBottom
+                        col.Item().Container().PaddingBottom(5).Text($"Report for: {_userManager.GetUserAsync(User).Result?.FullName ?? "N/A"}")
+                            .FontSize(14).SemiBold();
+
+                        // FIX: Use Container() before PaddingBottom
+                        col.Item().Container().PaddingBottom(5).Text($"Date Generated: {DateTime.Now:dd MMMM yyyy HH:mm}")
+                            .FontSize(10).FontColor(Colors.Grey.Medium);
+
+                        col.Item().LineHorizontal(1);
+
+                        // --- 2. Key Performance Indicators (KPIs) ---
+                        col.Item().Container().PaddingBottom(5).Text("Key Metrics Summary")
+    .Bold().FontSize(14);
+
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+
+                            // Row 1
+                            table.Cell().Background(Colors.BlueGrey.Lighten5).Padding(5).Text("Total Faults Assigned").SemiBold();
+                            table.Cell().Background(Colors.BlueGrey.Lighten5).Padding(5).Text(model.TotalAssignedFaults.ToString()).AlignRight();
+
+                            // Row 2
+                            table.Cell().Padding(5).Text("Total Faults Repaired/Resolved").SemiBold();
+                            table.Cell().Padding(5).Text(model.TotalRepairedFaults.ToString()).AlignRight();
+
+                            // Row 3
+                            table.Cell().Background(Colors.BlueGrey.Lighten5).Padding(5).Text("Total Allocated Units (Oversight)").SemiBold();
+                            table.Cell().Background(Colors.BlueGrey.Lighten5).Padding(5).Text(model.TotalAllocatedUnits.ToString()).AlignRight();
+
+                            // Row 4
+                            table.Cell().Padding(5).Text("Total Service Records Created").SemiBold();
+                            table.Cell().Padding(5).Text(model.TotalServiceRecords.ToString()).AlignRight();
+
+                        });
+
+                        // --- 3. Workload Trends (Tabular Data) ---
+                        // FIX: Use Container() before PaddingTop/PaddingBottom
+                        col.Item().Container().PaddingTop(15).PaddingBottom(5).Text("Monthly Workload Trends (Current Year)")
+                            .Bold().FontSize(14);
+
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.ConstantColumn(80);
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Month").Bold();
+                                header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Faults Assigned").Bold().AlignRight();
+                                header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Faults Repaired").Bold().AlignRight();
+                            });
+
+                            for (int i = 0; i < model.ActivityOverTime.Count; i++)
+                            {
+                                var assigned = model.ActivityOverTime[i];
+                                var repaired = repairedData.FirstOrDefault(d => d.Label == assigned.Label) ?? new ChartDataPoint { Value = 0 };
+
+                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(assigned.Label);
+                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(assigned.Value.ToString()).AlignRight();
+                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(repaired.Value.ToString()).AlignRight();
+                            }
+                        });
+                    });
+
+                    // ------------------ FOOTER ------------------
+                    page.Footer().AlignCenter().Text(text =>
+                    {
+                        text.Span("Page ").FontSize(10);
+                        text.CurrentPageNumber().FontSize(10);
+                        text.Span(" of ").FontSize(10);
+                        text.TotalPages().FontSize(10);
+                    });
+                });
+            });
+
+            return document.GeneratePdf();
+        }
+
+
         [HttpGet]
         public async Task<IActionResult> Reports()
         {
@@ -914,15 +1030,51 @@ namespace Code_Vanta_Systems.Controllers
 
         // ACTION STUB FOR DOWNLOADABLE REPORT (MIME type corrected)
         [HttpGet]
-        public IActionResult ExportReportsToPdf()
+        public async Task<IActionResult> ExportReportsToPdf()
         {
-            var content = "Maintenance Performance Report generated on " + DateTime.Now.ToString("yyyy-MM-dd HH:mm") + ". Note: This is a text placeholder, not a functional PDF.";
-            var fileName = $"Maintenance_Report_{DateTime.Now:yyyyMMdd}.pdf";
+            var currentUserId = _userManager.GetUserId(User);
 
-            // CORRECTED MIME TYPE
-            var mimeType = "application/pdf";
+            // Fetch all report data exactly as done in the Reports() method
+            var totalAssigned = await _context.FridgeFaults.CountAsync(ff => ff.AssignedTechnicianId == currentUserId);
+            var totalRepaired = await _context.FridgeFaults.CountAsync(ff => ff.AssignedTechnicianId == currentUserId && (ff.Status == FaultStatus.Repaired || ff.Status == FaultStatus.Resolved));
+            var totalServiceRecords = await _context.ServiceRecords.CountAsync(sr => sr.TechnicianUserId == currentUserId);
+            var totalScheduled = await _context.MaintenanceSchedules.CountAsync(ms => ms.TechnicianId == currentUserId && ms.Status != "Completed");
+            var totalAllocatedUnits = await _context.FridgeUnits.CountAsync(u => u.TechnicianUserId == currentUserId && u.IsRented);
 
-            return File(System.Text.Encoding.UTF8.GetBytes(content), mimeType, fileName);
+            // --- Generate Chart Data Series 1 (Assigned) ---
+            var assignedFaultsDates = await _context.FridgeFaults.Where(f => f.AssignedTechnicianId == currentUserId).Select(f => f.DateReported).ToListAsync();
+            var assignedGroupedData = assignedFaultsDates.Where(d => d.Year == DateTime.Now.Year).GroupBy(d => d.Month).Select(g => new { Key = g.Key, Count = g.Count() }).ToList();
+
+            // FIX CS1061: Use 'Key' for lookup
+            var activityOverTimeAssigned = Enumerable.Range(1, 12).Select(m => new ChartDataPoint { Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"), Value = assignedGroupedData.FirstOrDefault(g => g.Key == m)?.Count ?? 0 }).ToList();
+
+            // --- Generate Chart Data Series 2 (Repaired) ---
+            var repairedFaultsDates = await _context.FridgeFaults.Where(f => f.AssignedTechnicianId == currentUserId && (f.Status == FaultStatus.Repaired || f.Status == FaultStatus.Resolved)).Select(f => f.ResolutionDate.HasValue ? f.ResolutionDate.Value : DateTime.MinValue).ToListAsync();
+            var repairedGroupedData = repairedFaultsDates.Where(d => d.Year == DateTime.Now.Year).GroupBy(d => d.Month).Select(g => new { Key = g.Key, Count = g.Count() }).ToList();
+
+            // FIX CS1061: Use 'Key' for lookup
+            var activityOverTimeRepaired = Enumerable.Range(1, 12).Select(m => new ChartDataPoint { Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"), Value = repairedGroupedData.FirstOrDefault(g => g.Key == m)?.Count ?? 0 }).ToList();
+
+
+            var viewModel = new MaintenanceReportsViewModel
+            {
+                TotalAssignedFaults = totalAssigned,
+                TotalRepairedFaults = totalRepaired,
+                TotalScheduledMaintenance = totalScheduled,
+                TotalAllocatedUnits = totalAllocatedUnits,
+                TotalServiceRecords = totalServiceRecords,
+                ActivityOverTime = activityOverTimeAssigned,
+                ActivityOverTimeRepaired = activityOverTimeRepaired
+            };
+
+            // 3. Generate the PDF
+            var pdfBytes = CreatePerformanceReportPdf(viewModel, activityOverTimeRepaired);
+
+            var fileName = $"Performance_Report_{_userManager.GetUserName(User)}_{DateTime.Now:yyyyMMdd}.pdf";
+
+            // 4. Return the file
+            return File(pdfBytes, "application/pdf", fileName);
         }
+
     }
 }

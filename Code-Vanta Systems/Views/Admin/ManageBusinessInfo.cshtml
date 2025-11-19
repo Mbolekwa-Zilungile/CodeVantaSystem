@@ -1,0 +1,56 @@
+﻿@model Code_Vanta_Systems.Models.Company
+@* NOTE: Ensure Code_Vanta_Systems.Models is referenced in _ViewImports.cshtml *@
+
+@{
+    ViewData["Title"] = "Manage Business Information";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; // Ensure correct layout path
+}
+
+<div class="container py-4">
+    <h2 class="mb-4 text-info"><i class="bi bi-gear-wide me-2"></i> @ViewData["Title"]</h2>
+    <p class="text-muted">Update the official contact, address, and identifying information for the company. This data is used on quotations, purchase orders, and other official documents.</p>
+
+    <div class="card shadow-lg">
+        <div class="card-body">
+            <form asp-action="ManageBusinessInfo" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                @* Hidden field for ID (required for update vs. insert logic) *@
+                <input type="hidden" asp-for="Id" />
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Name" class="form-label fw-bold">Company Name</label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Email" class="form-label fw-bold">Contact Email</label>
+                        <input asp-for="Email" class="form-control" type="email" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Phone" class="form-label fw-bold">Contact Phone</label>
+                        <input asp-for="Phone" class="form-control" />
+                        <span asp-validation-for="Phone" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Address" class="form-label fw-bold">Physical Address</label>
+                    <textarea asp-for="Address" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+
+                <div class="border-top pt-3 text-end">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-save me-2"></i> Save Information
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

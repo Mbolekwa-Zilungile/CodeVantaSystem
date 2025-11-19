@@ -1,0 +1,39 @@
+﻿@* File: Views/Admin/ViewReports.cshtml *@
+
+@{
+    ViewData["Title"] = "System Reports Overview";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4 text-info"><i class="bi bi-file-bar-chart-fill me-2"></i> @ViewData["Title"]</h2>
+    <p class="text-muted">Select a category below to view detailed historical data and performance metrics.</p>
+
+    <div class="row">
+
+        @* Example Link 1: Link to Inventory Report (We previously created this in AdminController) *@
+        <div class="col-md-4 mb-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title text-primary"><i class="bi bi-box-seam me-2"></i> Inventory Stock</h5>
+                    <p class="card-text">View current stock levels and unit allocation details across all models.</p>
+                    <a asp-action="CurrentStock" asp-controller="Admin" class="btn btn-outline-primary">View Inventory Report</a>
+                </div>
+            </div>
+        </div>
+
+        @* Example Link 2: Link to Employee Management (Example of existing report/data)*@
+        <div class="col-md-4 mb-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title text-success"><i class="bi bi-people-fill me-2"></i> Employee Performance</h5>
+                    <p class="card-text">Review staff status, roles, and access permissions.</p>
+                    <a asp-action="Employees" asp-controller="Admin" class="btn btn-outline-success">View Employee Data</a>
+                </div>
+            </div>
+        </div>
+
+        @* Add more links here for Financial, Customer, or Maintenance reports as they are developed. *@
+
+    </div>
+</div>
