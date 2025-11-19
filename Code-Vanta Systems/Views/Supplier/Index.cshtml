@@ -72,7 +72,7 @@
                             <div class="col">
                                 <div class="text-xs fw-bold text-uppercase mb-2">Quotations</div>
                                 <div class="h4 mb-0 fw-bold">
-                                    <i class="bi bi-envelope-check me-2"></i> 3
+                                    <i class="bi bi-envelope-check me-2"></i>@ViewBag.QuotationCount
                                 </div>
                             </div>
                         </div>
@@ -88,9 +88,9 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col">
-                                <div class="text-xs fw-bold text-uppercase mb-2">Approved Orders</div>
+                                <div class="text-xs fw-bold text-uppercase mb-2">Purchase Orders</div>
                                 <div class="h4 mb-0 fw-bold">
-                                    <i class="bi bi-bag-check me-2"></i> 2
+                                    <i class="bi bi-bag-check me-2"></i>@ViewBag.PurchaseOrderCount
                                 </div>
                             </div>
                         </div>
@@ -101,14 +101,14 @@
 
         <!-- Card 4: Pending Deliveries -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <a href="@Url.Action("DeliveredPurchaseOrders", "Supplier")" class="text-decoration-none">
+            <a href="@Url.Action("ShippedPurchaseOrders", "Supplier")" class="text-decoration-none">
                 <div class="card shadow h-100 py-2 bg-danger text-white metric-card">
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col">
                                 <div class="text-xs fw-bold text-uppercase mb-2">Pending Deliveries</div>
                                 <div class="h4 mb-0 fw-bold">
-                                    <i class="bi bi-truck me-2"></i> 5
+                                    <i class="bi bi-truck me-2"></i> @ViewBag.PurchaseShippedCount
                                 </div>
                             </div>
                         </div>

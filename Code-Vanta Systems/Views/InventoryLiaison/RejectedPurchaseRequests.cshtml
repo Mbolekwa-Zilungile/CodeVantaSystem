@@ -50,6 +50,21 @@
         </a>
     </div>
 
+    <div class="col mb-4">
+        <!-- Approved -->
+        <a href="@Url.Action("ApprovedPurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-2">Approved</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-cart3 me-2"></i>@ViewBag.ApprovedRequestsCount
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+
 </div>
 
 
