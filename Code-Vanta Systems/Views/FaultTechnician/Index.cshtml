@@ -34,13 +34,12 @@
 <table class="table table-striped table-hover table-bordered">
     <thead>
         <tr>
-            <th>#</th>
-            <th>Fault ID</th>
+          
             <th>Unit Serial</th> @* FIX: Changed to Unit Serial *@
             <th>Customer</th> @* FIX: Added Customer context *@
             <th>Date Reported</th>
-            <th>Severity</th>
             <th>Status</th>
+            
             <th>Actions</th>
         </tr>
     </thead>
@@ -50,42 +49,21 @@
             foreach (var fault in Model)
             {
                 <tr>
-                    <td>@counter</td>
-                    <td>@fault.Id</td>
+                    
                     @* FIX: Use FridgeUnit.SerialNumber and FridgeUnitId for details link *@
                     <td>
                         <a asp-action="Details" asp-route-id="@fault.Id">@fault.FridgeUnit.SerialNumber</a>
                     </td>
-                    <td>@fault.FridgeUnit.Customer?.BusinessName</td> @* FIX: Use FridgeUnit for Customer *@
+                    <td>@fault.FridgeUnit.Customer?.ContactName</td> @* FIX: Use FridgeUnit for Customer *@
                     <td>@fault.DateReported.ToString("yyyy-MM-dd")</td>
-                    <td>@fault.Severity.ToString()</td>
+                   
                     <td>
-                        <form asp-action="UpdateStatus" method="post" class="d-flex align-items-center">
-                            <input type="hidden" name="id" value="@fault.Id" />
-                            <select name="newStatus" class="form-select form-select-sm me-2">
-                                @foreach (var s in Enum.GetValues(typeof(FaultStatus)).Cast<FaultStatus>())
-                                {
-                                    // Prevent quick update to final states (Repaired/Scrapped/Resolved)
-                                    // Using Repaired as the final state for technician.
-                                    if (s != FaultStatus.Repaired && s != FaultStatus.Scrapped && s != FaultStatus.Resolved)
-                                    {
-                                        <option value="@s" selected="@(fault.Status == s)">@s</option>
-                                    }
-                                    // If the current status IS a final state, display it as disabled
-                                    else if (fault.Status == s)
-                                    {
-                                        <option value="@fault.Status" selected disabled>@fault.Status</option>
-                                    }
-                                }
-                    </select>
+                        
+                     @fault.Status
+                   
+                                    
 
-                    <button type="submit" class="btn btn-sm btn-success"
-                            @(fault.Status == FaultStatus.Repaired ||
-                                                        fault.Status == FaultStatus.Scrapped ||
-                                                        fault.Status == FaultStatus.Resolved ? "disabled" : "")>
-                        Update
-                    </button>
-                </form>
+              
             </td>
             <td>
                 <a asp-action="Details" asp-route-id="@fault.Id" class="btn btn-sm btn-info">Details</a>

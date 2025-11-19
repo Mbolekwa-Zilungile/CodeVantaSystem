@@ -768,7 +768,7 @@ namespace Code_Vanta_Systems.Controllers
                 .ToList();
 
             var activityOverTime = Enumerable.Range(1, 12)
-                .Select(m => new ChartDataPoint
+                .Select(m => new ViewModels.ChartDataPoint
                 {
                     Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"),
                     Value = groupedData

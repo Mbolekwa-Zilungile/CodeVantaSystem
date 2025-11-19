@@ -438,7 +438,7 @@ namespace Code_Vanta_Systems.Controllers
 
             // Fill 12 months, even if no data (for consistent chart)
             var faultsOverTime = Enumerable.Range(1, 12)
-                .Select(m => new ChartDataPoint
+                .Select(m => new ViewModels.ChartDataPoint
                 {
                     Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"),
                     Value = groupedData
@@ -455,7 +455,7 @@ namespace Code_Vanta_Systems.Controllers
                TotalRequested = totalPendingRequests,
                TotalPending = totalPending,
                TotalAllocated = totalFridgesAllocated,
-               FaultsOverTime = faultsOverTime
+               
            };
 
             return View(viewModel);

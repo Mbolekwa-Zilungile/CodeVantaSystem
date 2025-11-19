@@ -1,166 +1,409 @@
-﻿@model Code_Vanta_Systems.ViewModels.Customer.CustomerDashboardViewModel
-
+﻿@model Code_Vanta_Systems.ViewModels.TechnicianDashboardViewModel
 @{
     Layout = "~/Views/Shared/_TechnicianDashboard.cshtml";
-    ViewData["Title"] = "Fault Technician Dashboard";
+    ViewData["Title"] = "Technician Dashboard";
 }
 
-<style>
-    /* Make the chart container responsive */
-    .chart-container {
-        position: relative;
-        height: 350px; /* you can adjust */
-        width: 100%;
-    }
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2">Technician Dashboard</h1>
+            <p class="text-muted">Overview of your assigned faults and performance metrics</p>
+        </div>
+        <div class="text-end">
+            <small class="text-muted">Last updated: @DateTime.Now.ToString("MMM dd, yyyy HH:mm")</small>
+        </div>
+    </div>
 
-    /* Card enhancements */
-    .card {
-        background-color: #fff;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-4">
+            <div class="card border-start border-primary border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-2">Total Assigned</h6>
+                            <h4 class="mb-0 fw-bold text-primary">@Model.TotalAssignedFaults</h4>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-clipboard-check text-primary fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-4">
+            <div class="card border-start border-warning border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-2">Pending</h6>
+                            <h4 class="mb-0 fw-bold text-warning">@Model.TotalPendingFaults</h4>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-clock text-warning fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    /* Title customization */
-    .card-header h5 {
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-4">
+            <div class="card border-start border-success border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-2">Completed</h6>
+                            <h4 class="mb-0 fw-bold text-success">@Model.TotalCompletedFaults</h4>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-check-circle text-success fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    /* Chart tooltip theme override (optional) */
-    .chartjs-tooltip {
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        border-radius: 5px;
-        padding: 6px 10px;
-        font-size: 13px;
-    }
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-4">
+            <div class="card border-start border-danger border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-2">Scrapped Units</h6>
+                            <h4 class="mb-0 fw-bold text-danger">@Model.TotalScrappedUnits</h4>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-trash text-danger fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    .monthly-report-btn {
-        border-radius: 25px;
-        font-weight: 500;
-        padding: 10px 20px;
-        background-color: #17a2b8;
-        border: none;
-        transition: background-color 0.3s ease, transform 0.2s ease;
-    }
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-4">
+            <div class="card border-start border-info border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-2">Replacements</h6>
+                            <h4 class="mb-0 fw-bold text-info">@Model.ReplacementRequests</h4>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-arrow-repeat text-info fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        .monthly-report-btn:hover {
-            background-color: #117a8b;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-
-</style>
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Welcome, @User.Identity.Name! 👍</h2>
-
-    <a asp-controller="Reports" asp-action="Monthly"
-       class="btn btn-info text-white shadow-sm monthly-report-btn">
-        📄 Monthly Report
-    </a>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Logged Faults</h5>
-                <p class="card-text display-6">@Model.TotalLogged</p>
+        <div class="col-xl-2 col-md-4 col-sm-6 mb-4">
+            <div class="card border-start border-secondary border-4 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-2">Avg Resolution</h6>
+                            <h4 class="mb-0 fw-bold text-secondary">@Model.AverageResolutionTimeHours.ToString("0.0")h</h4>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-speedometer2 text-secondary fs-2"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Total Pending</h5>
-                <p class="card-text display-6">@Model.TotalPending</p>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Monthly Trends -->
+        <div class="col-xl-8 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="card-title mb-0">Fault Trends - @DateTime.Now.Year</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyTrendsChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Distribution -->
+        <div class="col-xl-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="card-title mb-0">Fault Status Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusDistributionChart" height="300"></canvas>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-warning mb-3">
-            <div class="card-body">
-                <h5 class="card-title">New Requested</h5>
-                <p class="card-text display-6">@Model.TotalRequested</p>
+
+    <!-- Second Charts Row -->
+    <div class="row mb-4">
+        <!-- Severity Distribution -->
+        <div class="col-xl-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="card-title mb-0">Fault Severity Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="severityDistributionChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="col-xl-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="card-title mb-0">Performance Metrics</h6>
+                </div>
+                <div class="card-body">
+                    @foreach (var metric in Model.PerformanceMetrics)
+                    {
+                        <div class="d-flex align-items-center justify-content-between mb-3 p-3 bg-light rounded">
+                            <div>
+                                <h6 class="mb-1">@metric.Metric</h6>
+                                <span class="text-muted small">@metric.TrendValue</span>
+                            </div>
+                            <div class="text-end">
+                                <div class="h5 mb-1 @GetTrendColor(metric.Trend)">@metric.Value</div>
+                                <span class="badge @GetTrendBadgeClass(metric.Trend)">
+                                    <i class="bi bi-arrow-@(metric.Trend)-circle me-1"></i>@metric.Trend.ToUpper()
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Business Insights -->
+        <div class="col-xl-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="card-title mb-0">Business Insights</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted">Top Issue Type</h6>
+                        <h4 class="text-primary">@Model.TopIssueType</h4>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">Monthly Completion Trend</h6>
+                        <div class="d-flex align-items-center">
+                            <h4 class="me-2 @GetTrendColor(Model.CurrentMonthCompleted > Model.PreviousMonthCompleted ? "up" : "down")">
+                                @Model.CurrentMonthCompleted
+                            </h4>
+                            <span class="badge @GetTrendBadgeClass(Model.CurrentMonthCompleted > Model.PreviousMonthCompleted ? "up" : "down")">
+                                vs @Model.PreviousMonthCompleted last month
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="text-muted">Overall Completion Rate</h6>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar @(Model.CompletionRate >= 80 ? "bg-success" : Model.CompletionRate >= 60 ? "bg-warning" : "bg-danger")"
+                                 role="progressbar" style="width: @Model.CompletionRate%;"
+                                 aria-valuenow="@Model.CompletionRate" aria-valuemin="0" aria-valuemax="100">
+                                @Model.CompletionRate.ToString("0.0")%
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow-sm border-0 rounded-4">
-            <div class="card-header bg-primary text-white text-center rounded-top-4">
-                <h5 class="mb-0">Faults Over Time</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container p-2">
-                    <canvas id="faultsOverTimeChart"></canvas>
+    <!-- Recent Faults -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">Recent Assigned Faults</h6>
+                    <a asp-action="Index" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fault ID</th>
+                                    <th>Serial Number</th>
+                                    <th>Customer</th>
+                                    <th>Status</th>
+                                    <th>Severity</th>
+                                    <th>Days Open</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var fault in Model.RecentFaults)
+                                {
+                                    <tr>
+                                        <td>@fault.Id</td>
+                                        <td>@fault.SerialNumber</td>
+                                        <td>@fault.Customer</td>
+                                        <td><span class="badge @GetStatusBadgeClass(fault.Status)">@fault.Status</span></td>
+                                        <td><span class="badge @GetSeverityBadgeClass(fault.Severity)">@fault.Severity</span></td>
+                                        <td>
+                                            <span class="@(fault.DaysOpen > 7 ? "text-danger fw-bold" : "text-muted")">
+                                                @fault.DaysOpen days
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a asp-action="Details" asp-route-id="@fault.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Common chart options
-        const chartOptions = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        font: { size: 14 },
-                        color: '#333'
-                    }
-                },
-                tooltip: {
-                    enabled: true,
-                    backgroundColor: 'rgba(0,0,0,0.8)',
-                    titleFont: { size: 14, weight: 'bold' },
-                    bodyFont: { size: 12 }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: { color: '#333', font: { size: 12 } },
-                    grid: { display: true, color: 'rgba(0,0,0,0.1)' }
-                },
-                y: {
-                    beginAtZero: true,
-                    ticks: { color: '#333', font: { size: 12 }, stepSize: 1 },
-                    grid: { color: 'rgba(0,0,0,0.1)' }
-                }
-            }
-        };
-        const backgroundColors = ['#1f77b4','#2ca02c','#ff7f0e','#d62728','#17becf','#7f7f7f','#9467bd','#e377c2'];
-
-        // faults Over Time Over Time (Line Chart)
-        var ctx1 = document.getElementById('faultsOverTimeChart').getContext('2d');
-        var faultsOverTimeChart = new Chart(ctx1, {
+        // Monthly Trends Chart (Bar + Line)
+        const monthlyCtx = document.getElementById('monthlyTrendsChart').getContext('2d');
+        const monthlyChart = new Chart(monthlyCtx, {
             type: 'bar',
             data: {
-                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FaultsOverTime.Select(d => d.Label))),
+                labels: @Html.Raw(Json.Serialize(Model.FaultsOverTime.Select(f => f.Label))),
+                datasets: [
+                    {
+                        label: 'Total Faults',
+                        data: @Html.Raw(Json.Serialize(Model.FaultsOverTime.Select(f => f.Value))),
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Completed',
+                        data: @Html.Raw(Json.Serialize(Model.MonthlyPerformance.Select(f => f.Value))),
+                        type: 'line',
+                        borderColor: '#10b981',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Monthly Fault Trends & Completions'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Status Distribution Chart (Pie)
+        const statusCtx = document.getElementById('statusDistributionChart').getContext('2d');
+        const statusChart = new Chart(statusCtx, {
+            type: 'pie',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.StatusDistribution.Select(f => f.Label))),
                 datasets: [{
-                    label: 'Reported Faults',
-                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FaultsOverTime.Select(d => d.Value))),
-                    backgroundColor: backgroundColors,
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: true
+                    data: @Html.Raw(Json.Serialize(Model.StatusDistribution.Select(f => f.Value))),
+                    backgroundColor: @Html.Raw(Json.Serialize(Model.StatusDistribution.Select(f => f.Color))),
+                    borderWidth: 1
                 }]
             },
-            options: chartOptions
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Severity Distribution Chart (Doughnut)
+        const severityCtx = document.getElementById('severityDistributionChart').getContext('2d');
+        const severityChart = new Chart(severityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.SeverityDistribution.Select(f => f.Label))),
+                datasets: [{
+                    data: @Html.Raw(Json.Serialize(Model.SeverityDistribution.Select(f => f.Value))),
+                    backgroundColor: @Html.Raw(Json.Serialize(Model.SeverityDistribution.Select(f => f.Color))),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
         });
     </script>
+}
+
+@functions {
+    public string GetTrendColor(string trend)
+    {
+        return trend switch
+        {
+            "up" => "text-success",
+            "down" => "text-danger",
+            _ => "text-warning"
+        };
+    }
+
+    public string GetTrendBadgeClass(string trend)
+    {
+        return trend switch
+        {
+            "up" => "bg-success",
+            "down" => "bg-danger",
+            _ => "bg-warning"
+        };
+    }
+
+    public string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Open" => "bg-danger",
+            "InProgress" => "bg-warning",
+            "Repaired" => "bg-success",
+            "Scrapped" => "bg-secondary",
+            _ => "bg-info"
+        };
+    }
+
+    public string GetSeverityBadgeClass(string severity)
+    {
+        return severity switch
+        {
+            "Low" => "bg-success",
+            "Medium" => "bg-warning",
+            "High" => "bg-danger",
+            "Critical" => "bg-dark",
+            _ => "bg-info"
+        };
+    }
 }

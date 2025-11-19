@@ -1,0 +1,50 @@
+﻿@model Code_Vanta_Systems.ViewModels.FaultTechnician.ReplacementBookingViewModel
+@{
+    Layout = "~/Views/Shared/_Dashboard.cshtml";
+    ViewData["Title"] = "Request Replacement Fridge";
+}
+
+<h2 class="text-center mb-4">Request Replacement Fridge</h2>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-arrow-repeat me-2"></i>Replacement Request for Scrapped Unit</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <h6 class="alert-heading">Replacement Details</h6>
+            <hr>
+            <p class="mb-1"><strong>Scrapped Unit Serial Number:</strong> <span class="text-danger">@Model.ScrappedUnitSerial</span></p>
+            <p class="mb-1"><strong>Customer:</strong> @Model.CustomerName</p>
+            <p class="mb-0"><strong>Location:</strong> @Model.LocationName</p>
+        </div>
+
+        <form asp-action="BookReplacement" method="post">
+            <input type="hidden" asp-for="FaultId" />
+            <input type="hidden" asp-for="CustomerId" />
+            <input type="hidden" asp-for="LocationId" />
+            <input type="hidden" asp-for="CustomerName" />
+            <input type="hidden" asp-for="LocationName" />
+            <input type="hidden" asp-for="ScrappedUnitSerial" />
+
+            <div class="mb-4">
+                <label asp-for="Notes" class="form-label">Replacement Requirements & Notes</label>
+                <textarea asp-for="Notes" class="form-control" rows="4"
+                          placeholder="Specify any special requirements for the replacement fridge (capacity, features, etc.) or additional information..."></textarea>
+                <div class="form-text">This information will help procurement select the appropriate replacement fridge.</div>
+                <span asp-validation-for="Notes" class="text-danger"></span>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a asp-action="Details" asp-route-id="@Model.FaultId" class="btn btn-secondary me-md-2">Cancel</a>
+                <button type="submit" class="btn btn-success">Submit Replacement Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
