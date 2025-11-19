@@ -1,7 +1,5 @@
 ﻿using Code_Vanta_Systems.Data;
 using Code_Vanta_Systems.Models;
-using Code_Vanta_Systems.Models.Enums;
-using Code_Vanta_Systems.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,19 +14,17 @@ namespace Code_Vanta_Systems.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _environment;
 
         public AdminFaultsController(
             ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            RoleManager<IdentityRole> roleManager, IWebHostEnvironment environment)
+            RoleManager<IdentityRole> roleManager)
         {
             _context = context;
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
-            _environment = environment;
         }
 
         // Get All Logged Faults
@@ -188,140 +184,6 @@ namespace Code_Vanta_Systems.Controllers
             }
 
             return RedirectToAction(nameof(Index));
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetFridges()
-        {
-            var fridges = await _context.Fridges
-                .Where(f => !f.IsDeleted)
-                .ToListAsync();
-
-            return View("GetFridges", fridges);  // ✅ Return the view
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> EditFridge(int id)
-        {
-            var fridge = await _context.Fridges.FindAsync(id);
-            if (fridge == null) return NotFound();
-
-            var vm = new CreateFridgeViewModel
-            {
-                Id = fridge.Id,
-                Model = fridge.Model,
-                SerialNumber = fridge.SerialNumber,
-                Category = fridge.Category,
-                SupplierId = fridge.SupplierId,
-                LocationId = fridge.LocationId,
-                RentalPricePerMonth = fridge.RentalPricePerMonth,
-                StockQuantity = fridge.StockQuantity,
-                Description = fridge.Description,
-                ImageUrl = fridge.ImageUrl
-            };
-
-            PopulateDropdowns(vm);
-
-            return View(vm);
-        }
-
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditFridge(CreateFridgeViewModel vm)
-        {
-
-            PopulateDropdowns(vm);
-
-            if (!ModelState.IsValid)
-            {
-                Console.WriteLine("ModelState invalid.");
-                return View(vm);
-            }
-
-            var fridge = await _context.Fridges.FindAsync(vm.Id);
-            if (fridge == null) return NotFound();
-
-            fridge.Model = vm.Model;
-            fridge.SerialNumber = vm.SerialNumber;
-            fridge.Category = vm.Category;
-            fridge.Status = vm.Status;
-            fridge.SupplierId = vm.SupplierId;
-            fridge.LocationId = vm.LocationId;
-            fridge.RentalPricePerMonth = vm.RentalPricePerMonth;
-            fridge.StockQuantity = vm.StockQuantity;
-            fridge.Description = vm.Description;
-
-
-            if (vm.ImageFile != null && vm.ImageFile.Length > 0)
-            {
-                string uploadsFolder = Path.Combine(_environment.WebRootPath, "images", "fridges");
-                Directory.CreateDirectory(uploadsFolder);
-
-                string uniqueFileName = Guid.NewGuid() + Path.GetExtension(vm.ImageFile.FileName);
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                await using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    await vm.ImageFile.CopyToAsync(fileStream);
-                }
-
-
-                if (!string.IsNullOrEmpty(fridge.ImageUrl) && fridge.ImageUrl != "/images/fridges/placeholder.png")
-                {
-                    var oldImagePath = Path.Combine(_environment.WebRootPath, fridge.ImageUrl.TrimStart('/').Replace("/", "\\"));
-                    if (System.IO.File.Exists(oldImagePath))
-                        System.IO.File.Delete(oldImagePath);
-                }
-
-                fridge.ImageUrl = "/images/fridges/" + uniqueFileName;
-            }
-
-            try
-            {
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Fridge updated successfully!";
-            
-                return RedirectToAction("GetFridges");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error updating fridge: " + ex.Message);
-                ModelState.AddModelError("", "Unable to update fridge. Check server logs.");
-                return View(vm);
-            }
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteFridge(int id)
-        {
-            var fridge = await _context.Fridges.FirstOrDefaultAsync(f => f.Id == id);
-
-            if (fridge == null)
-            {
-                TempData["ErrorMessage"] = "Fridge not found.";
-                return RedirectToAction("GetFridges");
-            }
-
-            // Soft delete
-            fridge.IsDeleted = true;
-            fridge.DeletedAt = DateTime.Now;
-
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Fridge deleted successfully!";
-            return RedirectToAction("GetFridges");
-        }
-        private void PopulateDropdowns(CreateFridgeViewModel vm)
-        {
-            vm.Suppliers = _context.Suppliers
-                .Select(s => new CreateFridgeViewModel.SupplierDropdownViewModel { Id = s.Id, Name = s.Name })
-                .ToList();
-
-            vm.Locations = _context.Locations
-                .Select(l => new CreateFridgeViewModel.LocationDropdownViewModel { Id = l.Id, Name = l.Description })
-                .ToList();
         }
     }
 }

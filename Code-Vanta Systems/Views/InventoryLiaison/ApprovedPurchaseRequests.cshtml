@@ -70,6 +70,19 @@
         </a>
     </div>
 
+    <div class="col mb-4">
+        <!-- Complete -->
+        <a href="@Url.Action("CompletedPurchaseRequests", "InventoryLiaison")" class="text-decoration-none">
+            <div class="card shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs fw-bold text-uppercase mb-2">Complete</div>
+                    <div class="h4 mb-0 fw-bold">
+                        <i class="bi bi-cart3 me-2"></i>@ViewBag.CompletedCount
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
 </div>
 
 

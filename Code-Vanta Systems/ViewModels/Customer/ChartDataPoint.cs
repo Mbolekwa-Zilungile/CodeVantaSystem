@@ -1,4 +1,4 @@
-﻿namespace Code_Vanta_Systems.ViewModels
+﻿namespace Code_Vanta_Systems.ViewModels.Customer
 {
     public class ChartDataPoint
     {

@@ -37,6 +37,7 @@
 
 <div class="container-fluid py-4">
 
+    <!-- Header and Welcome Message -->
     <div class="row mb-4">
         <div class="col-12">
             <h1 class="fw-bolder text-dark mb-1">Administration Dashboard</h1>
@@ -44,8 +45,10 @@
         </div>
     </div>
 
+    <!-- Main Metric Cards Row -->
     <div class="row g-4 mb-5">
 
+        <!-- Active Customers -->
         <div class="col-xl-3 col-md-6">
             <div class="card metric-card bg-primary text-white shadow-lg">
                 <div class="card-body d-flex justify-content-between align-items-start">
@@ -59,6 +62,7 @@
             </div>
         </div>
 
+        <!-- Inactive Customers -->
         <div class="col-xl-3 col-md-6">
             <div class="card metric-card bg-warning text-dark shadow-lg">
                 <div class="card-body d-flex justify-content-between align-items-start">
@@ -72,6 +76,7 @@
             </div>
         </div>
 
+        <!-- Employees (Active Only) -->
         <div class="col-xl-3 col-md-6">
             <div class="card metric-card bg-info text-white shadow-lg">
                 <div class="card-body d-flex justify-content-between align-items-start">
@@ -85,6 +90,7 @@
             </div>
         </div>
 
+        <!-- Total System Users -->
         <div class="col-xl-3 col-md-6">
             <div class="card metric-card bg-secondary text-white shadow-lg">
                 <div class="card-body d-flex justify-content-between align-items-start">
@@ -100,8 +106,10 @@
 
     </div>
 
+    <!-- System Status & Reports and Quick Access Sections -->
     <div class="row g-4">
-        <div class="col-lg-12">
+        <!-- System Status & Reports Card -->
+        <div class="col-lg-6">
             <div class="card shadow-lg border-0 h-100">
                 <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-bar-chart-fill me-2"></i> System Status & Inventory Summary</div>
                 <div class="card-body">
@@ -128,6 +136,19 @@
             </div>
         </div>
 
+        <!-- Role-Based Access Points Card -->
+        <div class="col-lg-6">
+            <div class="card shadow-lg border-0 h-100">
+                <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-person-rolodex me-2"></i> Quick Access Role Portals</div>
+                <div class="card-body d-flex flex-wrap gap-3 align-content-start">
+                    <a asp-controller="CustomerLiaison" asp-action="Index" class="btn btn-lg btn-outline-primary shadow-sm"><i class="bi bi-headset me-2"></i> Customer Liaison</a>
+                    <a asp-controller="InventoryLiaison" asp-action="Index" class="btn btn-lg btn-outline-info shadow-sm"><i class="bi bi-archive-fill me-2"></i> Inventory Liaison</a>
+                    <a asp-controller="FaultTechnician" asp-action="Index" class="btn btn-lg btn-outline-danger shadow-sm"><i class="bi bi-exclamation-triangle-fill me-2"></i> Fault Technician</a>
+                    <a asp-controller="MaintenanceTechnician" asp-action="Index" class="btn btn-lg btn-outline-success shadow-sm"><i class="bi bi-wrench-adjustable-fill me-2"></i> Maintenance Technician</a>
+                    <a asp-controller="PurchasingManager" asp-action="Index" class="btn btn-lg btn-outline-warning shadow-sm"><i class="bi bi-cart-fill me-2"></i> Purchasing Manager</a>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>

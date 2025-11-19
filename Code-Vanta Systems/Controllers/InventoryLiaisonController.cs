@@ -282,29 +282,7 @@ namespace Code_Vanta_Systems.Controllers
             return View(SubmitedRequests);
         }
 
-        public async Task<IActionResult> ApprovedPurchaseRequests()
-        {
-            var purchaseRequests = await _context.PurchaseRequests
-               .Include(pr => pr.RequestedBy)
-               .Include(pr => pr.RequestedItems)
-               .Where(pr => pr.Status == RequestStatus.Approved)
-               .OrderByDescending(pr => pr.RequestDate)
-               .ToListAsync();
 
-            ViewBag.PendingCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Pending);
-            ViewBag.SubmitedCount = ViewBag.RejectedRequests = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Submitted);
-
-            ViewBag.RejectedRequests = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Rejected);
-
-            ViewBag.ApprovedRequestsCount = await _context.PurchaseRequests
-                .CountAsync(s => s.Status == RequestStatus.Approved);
-            ViewBag.CompletedRequestsCount = await _context.PurchaseRequests
-               .CountAsync(s => s.Status == RequestStatus.Completed);
-            return View(purchaseRequests);
-        }
 
 
         [HttpGet]
@@ -1130,7 +1108,7 @@ namespace Code_Vanta_Systems.Controllers
                 .Select(f => new PendingFridgeEditViewModel
                 {
                     Id = f.Id,
-                    SerialNumber = f.Model,
+                    SerialNumber = f.SerialNumber,
                     Category = f.Category,
                     Condition = f.Condition,
                     RentalPricePerMonth = f.RentalPricePerMonth

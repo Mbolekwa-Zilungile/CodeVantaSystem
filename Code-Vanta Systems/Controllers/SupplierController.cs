@@ -60,23 +60,6 @@ namespace Code_Vanta_Systems.Controllers
                .OrderByDescending(r => r.RequestDate)
                .ToListAsync();
 
-                var quotationCount = await context.Quotations
-            .Where(q => q.SupplierId == supplier.Id)
-            .CountAsync();
-
-                // Count purchase orders for this supplier
-                var purchaseOrderCount = await context.PurchaseOrders
-                    .Where(po => po.SupplierId == supplier.Id)
-                    .CountAsync();
-
-                var purchaseShippedCount = await context.PurchaseOrders
-    .Where(po => po.SupplierId == supplier.Id && po.Status == OrderStatus.Shipped)
-    .CountAsync();
-
-                // Put counts in ViewBag
-                ViewBag.QuotationCount = quotationCount;
-                ViewBag.PurchaseOrderCount = purchaseOrderCount;
-                ViewBag.PurchaseShippedCount = purchaseShippedCount;
                 ViewBag.RFQCount = rfqs.Count;
                 // Fetch the latest 5 notifications for the logged-in supplier
                 var notifications = await context.Notifications

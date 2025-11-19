@@ -68,21 +68,6 @@ namespace Code_Vanta_Systems.Controllers
             }
 
             // --- 2. Calculate Customer Counts ---
-            // --- 2. Calculate System Status Metrics (NEW) ---
-
-            // A. Open Fault Tickets (Open or Reported, not resolved/cancelled)
-            var openFaultsCount = await context.FridgeFaults
-                .CountAsync(f => f.Status == FaultStatus.Open || f.Status == FaultStatus.Reported);
-
-            // B. Pending Maintenance Jobs (Scheduled or In Progress)
-            var pendingMaintenanceCount = await context.MaintenanceSchedules
-                .CountAsync(ms => ms.Status != "Completed" && ms.Status != "Cancelled");
-
-            // C. Total Fridges in Inventory (Count all non-deleted Fridge Models' Stock)
-            var totalFridgesInInventory = await context.Fridges
-                .Where(f => !f.IsDeleted)
-                .SumAsync(f => f.StockQuantity);
-
             var allCustomers = await context.Customers.ToListAsync();
             int totalCustomers = allCustomers.Count;
             int activeCustomers = allCustomers.Count(c => c.IsActive);
@@ -99,10 +84,6 @@ namespace Code_Vanta_Systems.Controllers
                 InactiveCustomersCount = inactiveCustomers,
                 TotalCustomers = totalCustomers,
                 TotalSystemUsers = totalUsers,
-                // NEW Metrics for System Status section:
-                OpenFaultsCount = openFaultsCount,
-                PendingMaintenanceCount = pendingMaintenanceCount,
-                TotalFridgesInInventory = totalFridgesInInventory,
 
                 // You might want to add TotalEmployees or InactiveEmployeeCount to the ViewModel
             };
@@ -545,62 +526,6 @@ namespace Code_Vanta_Systems.Controllers
                     Text = r.Name
                 })
                 .ToListAsync();
-        }
-
-        #endregion
-
-        #region Business Info Management
-
-        [HttpGet]
-        public async Task<IActionResult> ManageBusinessInfo()
-        {
-            // Fetch the single Company record (assuming only one exists)
-            var company = await context.Company.FirstOrDefaultAsync();
-
-            // Map to a ViewModel or use the Company model directly if it fits
-            if (company == null || company.Id == 0) // <-- CORRECTED CODE
-            {
-                // If no record exists, initialize a new model for creation
-                company = new Company();
-            }
-
-            ViewData["Title"] = "Manage Business Information";
-            return View(company);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ManageBusinessInfo(Company model)
-        {
-            if (!ModelState.IsValid)
-            {
-                ViewData["Title"] = "Manage Business Information";
-                return View(model);
-            }
-
-            // Check if the record already exists (usually based on Id)
-            var existingCompany = await context.Company.FindAsync(model.Id);
-
-            if (existingCompany != null)
-            {
-                // Update existing record
-                existingCompany.Name = model.Name;
-                existingCompany.Email = model.Email;
-                existingCompany.Phone = model.Phone;
-                existingCompany.Address = model.Address;
-
-                context.Update(existingCompany);
-                TempData["SuccessMessage"] = "Business information updated successfully.";
-            }
-            else
-            {
-                // Create new record (First time setup)
-                context.Company.Add(model);
-                TempData["SuccessMessage"] = "Business information saved successfully.";
-            }
-
-            await context.SaveChangesAsync();
-            return RedirectToAction(nameof(ManageBusinessInfo));
         }
 
         #endregion
@@ -1343,19 +1268,5 @@ namespace Code_Vanta_Systems.Controllers
             return RedirectToAction(nameof(MaintenanceOversight));
         }
 
-        #region Reporting
-
-        [HttpGet]
-        public IActionResult ViewReports()
-        {
-            // You can add logic here to calculate summary report data,
-            // or simply use this as a view to link to other detailed reports (e.g., Inventory, Financials, Employee Performance).
-
-            // For now, it serves as the landing page stub.
-            ViewData["Title"] = "System Reports Overview";
-            return View(); // MVC will look for Views/Admin/ViewReports.cshtml
-        }
-
-        #endregion
     }
 }

@@ -3,12 +3,6 @@
 @{
     ViewData["Title"] = "Open Fault Reports";
     Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
-
-    // Store the current user's ID for comparison inside the loop
-    // This assumes you have access to the User object or its ID in the view/layout context
-    // We'll use a placeholder variable, assuming the logged-in user's ID is available.
-    // In a real application, you would pass this from the controller via ViewBag or fetch it via userManager in the view.
-    var currentTechnicianId = Context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 }
 
 <div class="container py-4">
@@ -24,28 +18,20 @@
                     <th style="width:15%">Unit S/N</th>
                     <th style="width:10%">Severity</th>
                     <th style="width:10%">Status</th>
-                    <th style="width:25%">Description</th>
-                    <th style="width:15%">Reported By</th>
+                    <th style="width:30%">Description</th>
+                    <th style="width:10%">Reported By</th>
                     <th style="width:10%">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var fault in Model)
                 {
-                    // Check if the fault was reported by the current logged-in technician
-                    var isSelfReported = fault.ReportedByUserId == currentTechnicianId;
-
-                    // Determine the display string for the 'Reported By' column
-                    var reportedByDisplay = isSelfReported ?
-                    "Self (Internal Discovery)" :
-                    fault.ReportedBy?.FullName ?? "Customer";
-
                     <tr>
                         <td>@fault.DateReported.ToString("yyyy-MM-dd HH:mm")</td>
                         <td>
                             @* CRITICAL FIX: Use FridgeUnitId for linking to details *@
                             <a asp-action="FridgeDetails" asp-route-id="@fault.FridgeUnitId" class="text-primary">
-                                @fault.FridgeUnit.SerialNumber @* FridgeUnit navigation property is available because it's included in the controller query *@
+                                @fault.FridgeUnit.SerialNumber @* Assuming FridgeUnit navigation property is available *@
                             </a>
                         </td>
                         <td>
@@ -57,20 +43,10 @@
                             <span class="badge bg-secondary">@fault.Status</span>
                         </td>
                         <td>@fault.FaultDescription</td>
-
+                        <td>@fault.ReportedBy.FullName</td>
                         <td>
-                            @if (isSelfReported)
-                            {
-                                <strong class="text-success">@reportedByDisplay</strong>
-                            }
-                            else
-                            {
-                                @reportedByDisplay
-                            }
-                        </td>
-
-                        <td>
-                            <a asp-action="FaultDetails" asp-route-id="@fault.Id" class="btn btn-sm btn-outline-primary" title="View Fault Details and Repair History">
+                            @* CRITICAL FIX: Use FridgeUnitId for linking to details *@
+                            <a asp-action="FridgeDetails" asp-route-id="@fault.FridgeUnitId" class="btn btn-sm btn-outline-primary">
                                 View
                             </a>
                         </td>

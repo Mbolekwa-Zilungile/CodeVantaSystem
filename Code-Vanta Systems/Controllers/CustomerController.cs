@@ -438,7 +438,7 @@ namespace Code_Vanta_Systems.Controllers
 
             // Fill 12 months, even if no data (for consistent chart)
             var faultsOverTime = Enumerable.Range(1, 12)
-                .Select(m => new ChartDataPoint
+                .Select(m => new ViewModels.ChartDataPoint
                 {
                     Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"),
                     Value = groupedData
@@ -455,7 +455,7 @@ namespace Code_Vanta_Systems.Controllers
                TotalRequested = totalPendingRequests,
                TotalPending = totalPending,
                TotalAllocated = totalFridgesAllocated,
-               FaultsOverTime = faultsOverTime
+               
            };
 
             return View(viewModel);
@@ -1026,7 +1026,7 @@ namespace Code_Vanta_Systems.Controllers
 
     #endregion
 
-        #region Mock Payment Page
+    #region Mock Payment Page
     [HttpGet]
         public IActionResult Payment(string rentalIds)
         {
@@ -1223,8 +1223,6 @@ namespace Code_Vanta_Systems.Controllers
             var schedules = await _context.MaintenanceSchedules
                 .Include(ms => ms.FridgeUnit) // Include unit for context
                     .ThenInclude(u => u.Fridge)
-                // FIX: Include the Technician
-                .Include(ms => ms.Technician)
                 .Where(ms => allocatedUnitIds.Contains(ms.FridgeUnitId) &&
                              ms.Status != "Completed" &&
                              ms.ScheduledDate >= DateTime.Today)

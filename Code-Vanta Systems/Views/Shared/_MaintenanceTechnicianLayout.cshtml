@@ -4,14 +4,15 @@
 @inject UserManager<ApplicationUser> UserManager
 
 @{
-    // Determine current page for active highlighting in the sidebar
-    string currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    // Get current controller and action for sidebar link highlighting
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
 
-    // Define Color Variables
-    const string PrimaryColor = "#009688"; // Teal/Success Color
-    const string SecondaryColor = "#2C3E50"; // Dark Sidebar Base
-    const string BgColor = "#F8F9FA"; // Light Grey Background
+    // Adopted Admin Palette
+    const string PrimaryColor = "#009688"; // ACCENT: Teal (Highlight)
+    const string SecondaryColor = "#2C3E50"; // PRIMARY BASE: Deep Navy (Sidebar/Navbar)
+    const string SecondaryAccent = "#FFC107"; // Secondary Accent color (e.g., brand text)
+    const string BgColor = "#F8F9FA";
 }
 
 <!DOCTYPE html>
@@ -25,245 +26,174 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        /* -----------------------------------------------------
-                    GLOBAL STYLE
-                ----------------------------------------------------- */
+                body {
+                        background-color: @BgColor;
+                        font-family: 'Poppins', sans-serif;
 
-        body {
-            background-color: @BgColor;
-            font-family: 'Poppins', sans-serif;
-            letter-spacing: 0.2px;
         }
 
-        /* -----------------------------------------------------
-                    SIDEBAR
-                ----------------------------------------------------- */
+                #sidebar {
+                        height: 100vh;
+                        width: 280px; /* Wider sidebar */
+                        position: fixed;
+                        top: 66px; /* Adjusted for navbar height */
+                        left: 0;
+                        background-color: @SecondaryColor;
+                        color: #fff;
+                        padding-top: 20px;
+                        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
+                        transition: all 0.3s ease;
+                        z-index: 1020;
+                        display: flex;
+                        flex-direction: column;
+                        overflow-y: auto;
 
-        #sidebar {
-            height: 100vh;
-            width: 270px;
-            position: fixed;
-            top: 66px; /* Offset by Navbar height */
-            left: 0;
-            background: linear-gradient(180deg, #2C3E50, #1f2c38);
-            backdrop-filter: blur(12px);
-            color: #fff;
-            padding: 25px 0;
-            box-shadow: 6px 0 20px rgba(0,0,0,0.35);
-            transition: width 0.25s ease-in-out;
-            overflow-y: auto; /* Enable vertical scrolling if content overflows */
-            overflow-x: hidden;
-            z-index: 1030;
         }
 
-        /* Sidebar link base */
-        .sidebar-link {
-            padding: 12px 18px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            color: #c9d4dd;
-            font-weight: 500;
-            font-size: 0.95rem;
-            border-radius: 8px;
-            margin: 2px 12px;
-            transition: all 0.25s ease;
-            text-decoration: none; /* Ensure links look clean */
+                    #sidebar .sidebar-link {
+                            padding: 12px 15px;
+                            display: flex;
+                            align-items: center;
+                            font-size: 1.0rem;
+                            color: #C0C0C0; /* Light text */
+                            text-decoration: none;
+                            font-weight: 500;
+                            transition: background-color 0.2s, color 0.2s;
+
         }
 
-            /* Hover + Active */
-            .sidebar-link:hover,
-            .sidebar-link.active {
-                background: @PrimaryColor;
-                color: white;
-                transform: translateX(4px);
-                box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-            }
+                        #sidebar .sidebar-link:hover,
+                        #sidebar .sidebar-link.active {
+                                background-color: @PrimaryColor; /* Teal highlight */
+                                color: #fff;
+                                border-radius: 8px;
+                                padding-left: 20px;
+                                transform: translateX(2px);
 
-            /* Sidebar Icons */
-            .sidebar-link i {
-                font-size: 1.2rem;
-                opacity: 0.85;
-            }
-
-        /* Sidebar Section Titles */
-        .nav-title {
-            color: #aab9c4;
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding-left: 24px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            opacity: 0.8;
         }
 
-        /* Footer inside sidebar */
-        #sidebar small {
-            font-size: 0.8rem;
-            opacity: 0.35;
+                        #sidebar .sidebar-link i {
+                                margin-right: 12px;
+                                font-size: 1.2rem;
+
         }
 
-        /* -----------------------------------------------------
-                    NAVBAR
-                ----------------------------------------------------- */
+                #main-content {
+                        margin-left: 280px; /* Adjusted margin */
+                        padding-top: 86px; /* Adjusted padding for fixed navbar */
+                        transition: margin-left 0.3s ease;
+                        width: calc(100% - 280px);
 
-        #top-navbar {
-            height: 66px;
-            background-color: #1f2c38 !important;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
-            z-index: 1050; /* Ensure it stays above content and sidebar */
-            position: fixed;
-            width: 100%;
-            top: 0;
         }
 
-        .navbar-brand {
-            font-weight: 700;
-            color: #e9e9e9 !important;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+                #top-navbar {
+                        height: 66px; /* Slightly taller navbar */
+                        position: fixed;
+                        top: 0;
+                        width: 100%;
+                        z-index: 1030;
+                        background-color: @SecondaryColor !important;
+                        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+
         }
 
-            .navbar-brand i {
-                font-size: 1.4rem;
-            }
+                .nav-title {
+                        color: #A0A0A0;
+                        font-weight: 700;
+                        letter-spacing: 1px;
+                        font-size: 0.8rem;
 
-        /* Dropdowns styling */
-        .dropdown-menu {
-            border-radius: 10px;
-            padding: 8px 0;
         }
 
-        .dropdown-item {
-            padding: 10px 16px;
-            transition: all .2s ease;
-        }
-
-            .dropdown-item:hover {
-                background-color: @PrimaryColor;
-                color: white;
-            }
-
-        /* -----------------------------------------------------
-                    MAIN CONTENT
-                ----------------------------------------------------- */
-
-        #main-content {
-            margin-left: 270px; /* Offset by sidebar width */
-            padding-top: 85px; /* Offset by navbar height */
-            transition: all .25s ease;
-        }
-
-        main {
-            animation: fadeIn 0.4s ease;
-        }
-
-        /* Smooth fade animation for content loading */
-        @@keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
 
     </style>
-
 </head>
-
 <body>
-
     <nav id="top-navbar" class="navbar navbar-expand-lg navbar-dark shadow">
         <div class="container-fluid">
-
-            <a class="navbar-brand" asp-controller="MaintenanceTechnician" asp-action="Index">
-                <i class="bi bi-tools" style="color:@PrimaryColor"></i>
-                FMS Maintenance Portal
+            <a class="navbar-brand fw-bold fs-5" asp-controller="MaintenanceTechnician" asp-action="Index">
+                <i class="bi bi-tools me-2" style="color: @PrimaryColor;"></i>FMS Maintenance Portal
             </a>
-
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                </ul>
 
-                <ul class="navbar-nav me-auto"></ul>
-
+                @* START OF USER DROPDOWN SECTION (FINAL FIX) *@
                 @if (SignInManager.IsSignedIn(User))
                 {
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-white" href="#" data-bs-toggle="dropdown">
-                                <i class="bi bi-person-circle me-2" style="color:@PrimaryColor;"></i>
-                                @User.Identity.Name
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-lg">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="EmployeeProfile" asp-action="Index">
-                                        Profile
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider" /></li>
-                                <li>
-                                    <form method="post" asp-controller="Account" asp-action="Logout">
-                                        <button type="submit" class="dropdown-item text-danger">
-                                            Logout <i class="bi bi-box-arrow-right ms-2"></i>
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
+                    <div class="d-flex">
+                        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                            <li class="nav-item dropdown d-flex align-items-center">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#"
+                                   id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle me-2" style="font-size: 1.4rem; color: @PrimaryColor;"></i> @User.Identity.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="navbarDropdown">
+                                    <li><a class="dropdown-item" asp-controller="EmployeeProfile" asp-action="Index">Profile</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" asp-controller="Account" asp-action="Logout">
+                                            <button type="submit" class="dropdown-item text-danger">Logout <i class="bi bi-box-arrow-right ms-2"></i></button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
                 }
+                @* END OF USER DROPDOWN SECTION *@
             </div>
         </div>
     </nav>
 
     <div id="sidebar">
-
-        <h6 class="nav-title mt-2 mb-3">Core Tasks</h6>
+        <h6 class="nav-title px-4 mt-2 mb-3">Core Tasks</h6>
 
         <a class="sidebar-link @(currentAction == "Index" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="Index">
+                 asp-controller="MaintenanceTechnician" asp-action="Index">
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
 
         <a class="sidebar-link @(currentAction == "MaintenanceSchedules" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="MaintenanceSchedules">
+                 asp-controller="MaintenanceTechnician" asp-action="MaintenanceSchedules">
             <i class="bi bi-calendar-check"></i> My Schedules
         </a>
 
-        <a class="sidebar-link @(currentAction == "FaultReports" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="FaultReports">
-            <i class="bi bi-exclamation-triangle"></i> My Faults
-        </a>
-
-        <h6 class="nav-title mt-4 mb-3">Asset Oversight</h6>
+        <h6 class="nav-title px-4 mt-4 mb-3">Asset Oversight (Units)</h6>
 
         <a class="sidebar-link @(currentAction == "AllocatedFridges" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="AllocatedFridges">
-            <i class="bi bi-box-seam-fill"></i> My Units
+                 asp-controller="MaintenanceTechnician" asp-action="AllocatedFridges">
+            <i class="bi bi-box-seam-fill"></i> My Allocated Units
         </a>
 
         <a class="sidebar-link @(currentAction == "AllFridges" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="AllFridges">
-            <i class="bi bi-list-columns-reverse"></i> All Units
+                 asp-controller="MaintenanceTechnician" asp-action="AllFridges">
+            <i class="bi bi-list-columns-reverse"></i> All Fridge Units
         </a>
 
-        <h6 class="nav-title mt-4 mb-3">Reporting</h6>
+        <a class="sidebar-link @(currentAction == "FaultReports" ? "active" : "")"
+                 asp-controller="MaintenanceTechnician" asp-action="FaultReports">
+            <i class="bi bi-exclamation-triangle"></i> My Faults
+        </a>
+
+        <a class="sidebar-link @(currentAction == "ViewSpareParts" ? "active" : "")"
+                 asp-controller="MaintenanceTechnician" asp-action="ViewSpareParts">
+            <i class="bi bi-gear-wide-connected"></i> Spare Parts Inventory
+        </a>
+
+        <h6 class="nav-title px-4 mt-4 mb-3">Reporting</h6>
 
         <a class="sidebar-link @(currentAction == "Reports" ? "active" : "")"
-           asp-controller="MaintenanceTechnician" asp-action="Reports">
+                 asp-controller="MaintenanceTechnician" asp-action="Reports">
             <i class="bi bi-bar-chart-line"></i> Performance Reports
         </a>
 
+
         <div class="px-3 py-2 mt-auto">
-            <small>FMS Maintenance Tech v1.0</small>
+            <small class="text-white opacity-50">FMS Maintenance Tech v1.0</small>
         </div>
     </div>
 
@@ -273,8 +203,13 @@
         </main>
     </div>
 
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
-
 </html>

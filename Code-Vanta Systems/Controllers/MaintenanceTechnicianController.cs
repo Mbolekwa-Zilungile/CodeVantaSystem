@@ -8,9 +8,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using QuestPDF.Fluent;
-using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -677,85 +674,7 @@ namespace Code_Vanta_Systems.Controllers
             return View(viewModel);
         }
 
-        public async Task<IActionResult> RescheduleSchedule(int id)
-        {
-            var currentUserId = _userManager.GetUserId(User);
-            var schedule = await _context.MaintenanceSchedules
-                // Fetch the schedule and ensure it's assigned to the current technician and not completed/cancelled
-                .FirstOrDefaultAsync(ms => ms.Id == id && ms.TechnicianId == currentUserId && ms.Status == "Scheduled");
-
-            if (schedule == null)
-            {
-                TempData["ErrorMessage"] = "Schedule not found or not eligible for rescheduling.";
-                return RedirectToAction(nameof(MaintenanceSchedules));
-            }
-
-            // Map the existing schedule data to the CreateScheduleViewModel
-            var viewModel = new CreateScheduleViewModel
-            {
-                ScheduleId = schedule.Id, // NEW: Used to identify the schedule being updated
-                FridgeUnitId = schedule.FridgeUnitId,
-                ScheduledDate = schedule.ScheduledDate.Date.AddHours(9), // Default to 9 AM, ready for user modification
-                Description = schedule.Description,
-                IsReschedule = true // Flag to indicate this is an update, not a new schedule
-            };
-
-            await PopulateCreateScheduleViewModel(viewModel);
-
-            // Set the selected unit ID so the dropdown is pre-selected
-            if (viewModel.AvailableFridges.Any(f => f.Value == schedule.FridgeUnitId.ToString()))
-            {
-                viewModel.AvailableFridges.First(f => f.Value == schedule.FridgeUnitId.ToString()).Selected = true;
-            }
-
-            ViewData["Title"] = $"Reschedule Maintenance Visit #{schedule.Id}";
-            return View("CreateSchedule", viewModel); // Reuse the CreateSchedule view
-        }
-
-        // POST Method for Rescheduling an existing Schedule
-        // POST: MaintenanceTechnician/RescheduleSchedule
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RescheduleSchedule(CreateScheduleViewModel viewModel)
-        {
-            // 1. Mandatory check for ScheduleId and FridgeUnitId
-            if (!viewModel.ScheduleId.HasValue || !viewModel.FridgeUnitId.HasValue)
-            {
-                ModelState.AddModelError("", "Missing schedule or unit information.");
-            }
-
-            if (ModelState.IsValid)
-            {
-                var currentUserId = _userManager.GetUserId(User);
-                var schedule = await _context.MaintenanceSchedules
-                    .FirstOrDefaultAsync(ms => ms.Id == viewModel.ScheduleId.Value && ms.TechnicianId == currentUserId);
-
-                if (schedule == null)
-                {
-                    TempData["ErrorMessage"] = "Schedule not found or you are not authorized to update it.";
-                    return RedirectToAction(nameof(MaintenanceSchedules));
-                }
-
-                // 2. Update the schedule details
-                schedule.FridgeUnitId = viewModel.FridgeUnitId.Value;
-                schedule.ScheduledDate = viewModel.ScheduledDate;
-                schedule.Description = viewModel.Description;
-                schedule.Status = "Scheduled"; // Reset status just in case
-
-                _context.MaintenanceSchedules.Update(schedule);
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] = $"Maintenance schedule #{schedule.Id} successfully **rescheduled** for {viewModel.ScheduledDate:dd MMM yyyy @ HH:mm}.";
-
-                return RedirectToAction(nameof(MaintenanceSchedules)); // Redirect back to the schedule list
-            }
-
-            // 3. Re-populate context and dropdowns on failure
-            await PopulateCreateScheduleViewModel(viewModel);
-            viewModel.IsReschedule = true; // Maintain the context flag
-
-            return View("CreateSchedule", viewModel);
-        }
+        // Inside MaintenanceTechnicianController.cs
 
         // POST: MaintenanceTechnician/CancelSchedule/5
         [HttpPost]
@@ -816,119 +735,6 @@ namespace Code_Vanta_Systems.Controllers
         // REPORTS
         //=========================================================
 
-        private byte[] CreatePerformanceReportPdf(MaintenanceReportsViewModel model, List<ChartDataPoint> repairedData)
-        {
-            // Ensure QuestPDF registration is done once (optional, but safer)
-            QuestPDF.Settings.License = LicenseType.Community;
-
-            var document = QuestPDF.Fluent.Document.Create(container =>
-            {
-                container.Page(page =>
-                {
-                    page.Margin(20);
-
-                    // ------------------ HEADER ------------------
-                    page.Header().Row(row =>
-                    {
-                        row.ConstantColumn(150).Text("CODE VANTA SYSTEMS").Bold().FontSize(12).FontColor(Colors.BlueGrey.Darken2);
-                        row.RelativeColumn().Text("MAINTENANCE TECHNICIAN PERFORMANCE REPORT")
-                            .Bold().FontSize(18).FontColor(Colors.Red.Medium).AlignRight();
-                    });
-
-                    // ------------------ CONTENT ------------------
-                    page.Content().Column(col =>
-                    {
-                        col.Spacing(20);
-
-                        // --- 1. Technician Details ---
-                        // FIX: Use Container() before PaddingBottom
-                        col.Item().Container().PaddingBottom(5).Text($"Report for: {_userManager.GetUserAsync(User).Result?.FullName ?? "N/A"}")
-                            .FontSize(14).SemiBold();
-
-                        // FIX: Use Container() before PaddingBottom
-                        col.Item().Container().PaddingBottom(5).Text($"Date Generated: {DateTime.Now:dd MMMM yyyy HH:mm}")
-                            .FontSize(10).FontColor(Colors.Grey.Medium);
-
-                        col.Item().LineHorizontal(1);
-
-                        // --- 2. Key Performance Indicators (KPIs) ---
-                        col.Item().Container().PaddingBottom(5).Text("Key Metrics Summary")
-    .Bold().FontSize(14);
-
-                        col.Item().Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.RelativeColumn();
-                                columns.RelativeColumn();
-                            });
-
-                            // Row 1
-                            table.Cell().Background(Colors.BlueGrey.Lighten5).Padding(5).Text("Total Faults Assigned").SemiBold();
-                            table.Cell().Background(Colors.BlueGrey.Lighten5).Padding(5).Text(model.TotalAssignedFaults.ToString()).AlignRight();
-
-                            // Row 2
-                            table.Cell().Padding(5).Text("Total Faults Repaired/Resolved").SemiBold();
-                            table.Cell().Padding(5).Text(model.TotalRepairedFaults.ToString()).AlignRight();
-
-                            // Row 3
-                            table.Cell().Background(Colors.BlueGrey.Lighten5).Padding(5).Text("Total Allocated Units (Oversight)").SemiBold();
-                            table.Cell().Background(Colors.BlueGrey.Lighten5).Padding(5).Text(model.TotalAllocatedUnits.ToString()).AlignRight();
-
-                            // Row 4
-                            table.Cell().Padding(5).Text("Total Service Records Created").SemiBold();
-                            table.Cell().Padding(5).Text(model.TotalServiceRecords.ToString()).AlignRight();
-
-                        });
-
-                        // --- 3. Workload Trends (Tabular Data) ---
-                        // FIX: Use Container() before PaddingTop/PaddingBottom
-                        col.Item().Container().PaddingTop(15).PaddingBottom(5).Text("Monthly Workload Trends (Current Year)")
-                            .Bold().FontSize(14);
-
-                        col.Item().Table(table =>
-                        {
-                            table.ColumnsDefinition(columns =>
-                            {
-                                columns.ConstantColumn(80);
-                                columns.RelativeColumn();
-                                columns.RelativeColumn();
-                            });
-
-                            table.Header(header =>
-                            {
-                                header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Month").Bold();
-                                header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Faults Assigned").Bold().AlignRight();
-                                header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Faults Repaired").Bold().AlignRight();
-                            });
-
-                            for (int i = 0; i < model.ActivityOverTime.Count; i++)
-                            {
-                                var assigned = model.ActivityOverTime[i];
-                                var repaired = repairedData.FirstOrDefault(d => d.Label == assigned.Label) ?? new ChartDataPoint { Value = 0 };
-
-                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(assigned.Label);
-                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(assigned.Value.ToString()).AlignRight();
-                                table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).Padding(5).Text(repaired.Value.ToString()).AlignRight();
-                            }
-                        });
-                    });
-
-                    // ------------------ FOOTER ------------------
-                    page.Footer().AlignCenter().Text(text =>
-                    {
-                        text.Span("Page ").FontSize(10);
-                        text.CurrentPageNumber().FontSize(10);
-                        text.Span(" of ").FontSize(10);
-                        text.TotalPages().FontSize(10);
-                    });
-                });
-            });
-
-            return document.GeneratePdf();
-        }
-
-
         [HttpGet]
         public async Task<IActionResult> Reports()
         {
@@ -942,27 +748,16 @@ namespace Code_Vanta_Systems.Controllers
                 .CountAsync(ff => ff.AssignedTechnicianId == currentUserId &&
                                    (ff.Status == FaultStatus.Repaired || ff.Status == FaultStatus.Resolved));
 
-            // NEW METRIC: Total Service Records created by this technician
-            var totalServiceRecords = await _context.ServiceRecords
-                .CountAsync(sr => sr.TechnicianUserId == currentUserId);
-
             var totalScheduled = await _context.MaintenanceSchedules
                 .CountAsync(ms => ms.TechnicianId == currentUserId && ms.Status != "Completed");
 
-            // NEW METRIC: Total Allocated Units 
-            var totalAllocatedUnits = await _context.FridgeUnits
-                .CountAsync(u => u.TechnicianUserId == currentUserId && u.IsRented);
-
-
-            // 2. Fetch data for the charts (Fault activity over time)
-
-            // Series 1: Faults Reported/Assigned (Incoming Workload)
-            var assignedFaultsDates = await _context.FridgeFaults
+            // 2. Fetch data for a chart (Fault activity over time)
+            var faultsDates = await _context.FridgeFaults
                 .Where(f => f.AssignedTechnicianId == currentUserId)
                 .Select(f => f.DateReported)
                 .ToListAsync();
 
-            var assignedGroupedData = assignedFaultsDates
+            var groupedData = faultsDates
                 .Where(d => d.Year == DateTime.Now.Year)
                 .GroupBy(d => d.Month)
                 .Select(g => new
@@ -972,109 +767,42 @@ namespace Code_Vanta_Systems.Controllers
                 })
                 .ToList();
 
-            // Series 2: Faults Repaired/Resolved (Outgoing Workload)
-            var repairedFaultsDates = await _context.FridgeFaults
-                .Where(f => f.AssignedTechnicianId == currentUserId && (f.Status == FaultStatus.Repaired || f.Status == FaultStatus.Resolved))
-                .Select(f => f.ResolutionDate.HasValue ? f.ResolutionDate.Value : DateTime.MinValue) // Use ResolutionDate
-                .ToListAsync();
-
-            var repairedGroupedData = repairedFaultsDates
-                .Where(d => d.Year == DateTime.Now.Year)
-                .GroupBy(d => d.Month)
-                .Select(g => new
+            var activityOverTime = Enumerable.Range(1, 12)
+                .Select(m => new ViewModels.ChartDataPoint
                 {
-                    Month = g.Key,
-                    Count = g.Count()
+                    Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"),
+                    Value = groupedData
+                        .Where(g => g.Month == m)
+                        .Select(g => g.Count)
+                        .FirstOrDefault()
                 })
                 .ToList();
-
 
             // 3. Build the ViewModel
-            var activityOverTimeAssigned = Enumerable.Range(1, 12)
-                .Select(m => new ChartDataPoint
-                {
-                    Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"),
-                    Value = assignedGroupedData.FirstOrDefault(g => g.Month == m)?.Count ?? 0
-                })
-                .ToList();
-
-            var activityOverTimeRepaired = Enumerable.Range(1, 12)
-                .Select(m => new ChartDataPoint
-                {
-                    Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"),
-                    Value = repairedGroupedData.FirstOrDefault(g => g.Month == m)?.Count ?? 0
-                })
-                .ToList();
-
             var viewModel = new MaintenanceReportsViewModel
             {
                 TotalAssignedFaults = totalAssigned,
                 TotalRepairedFaults = totalRepaired,
                 TotalScheduledMaintenance = totalScheduled,
-                TotalAllocatedUnits = totalAllocatedUnits,
-                TotalServiceRecords = totalServiceRecords,
-                // Pass Series 1 as the main list
-                ActivityOverTime = activityOverTimeAssigned,
-                // Pass Series 2 as a separate property (assuming ViewModel update)
-                ActivityOverTimeRepaired = activityOverTimeRepaired
+                ActivityOverTime = activityOverTime
             };
-
-            // Pass Series 2 data via ViewBag for the chart (fallback/guarantee)
-            ViewBag.ActivityOverTimeRepaired = activityOverTimeRepaired;
-
 
             ViewData["Title"] = "Performance Reports";
             return View(viewModel);
         }
 
 
-        // ACTION STUB FOR DOWNLOADABLE REPORT (MIME type corrected)
+        // ACTION STUB FOR DOWNLOADABLE REPORT (Resolves routing error)
         [HttpGet]
-        public async Task<IActionResult> ExportReportsToPdf()
+        public IActionResult ExportReportsToPdf()
         {
-            var currentUserId = _userManager.GetUserId(User);
+            var content = "Maintenance Performance Report generated on " + DateTime.Now.ToString("yyyy-MM-dd HH:mm") + ". Note: This is a text placeholder, not a functional PDF.";
+            // Keep the .pdf extension but change the MIME type to text/plain
+            var fileName = $"Maintenance_Report_{DateTime.Now:yyyyMMdd}.pdf";
+            var mimeType = "text/plain";
 
-            // Fetch all report data exactly as done in the Reports() method
-            var totalAssigned = await _context.FridgeFaults.CountAsync(ff => ff.AssignedTechnicianId == currentUserId);
-            var totalRepaired = await _context.FridgeFaults.CountAsync(ff => ff.AssignedTechnicianId == currentUserId && (ff.Status == FaultStatus.Repaired || ff.Status == FaultStatus.Resolved));
-            var totalServiceRecords = await _context.ServiceRecords.CountAsync(sr => sr.TechnicianUserId == currentUserId);
-            var totalScheduled = await _context.MaintenanceSchedules.CountAsync(ms => ms.TechnicianId == currentUserId && ms.Status != "Completed");
-            var totalAllocatedUnits = await _context.FridgeUnits.CountAsync(u => u.TechnicianUserId == currentUserId && u.IsRented);
-
-            // --- Generate Chart Data Series 1 (Assigned) ---
-            var assignedFaultsDates = await _context.FridgeFaults.Where(f => f.AssignedTechnicianId == currentUserId).Select(f => f.DateReported).ToListAsync();
-            var assignedGroupedData = assignedFaultsDates.Where(d => d.Year == DateTime.Now.Year).GroupBy(d => d.Month).Select(g => new { Key = g.Key, Count = g.Count() }).ToList();
-
-            // FIX CS1061: Use 'Key' for lookup
-            var activityOverTimeAssigned = Enumerable.Range(1, 12).Select(m => new ChartDataPoint { Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"), Value = assignedGroupedData.FirstOrDefault(g => g.Key == m)?.Count ?? 0 }).ToList();
-
-            // --- Generate Chart Data Series 2 (Repaired) ---
-            var repairedFaultsDates = await _context.FridgeFaults.Where(f => f.AssignedTechnicianId == currentUserId && (f.Status == FaultStatus.Repaired || f.Status == FaultStatus.Resolved)).Select(f => f.ResolutionDate.HasValue ? f.ResolutionDate.Value : DateTime.MinValue).ToListAsync();
-            var repairedGroupedData = repairedFaultsDates.Where(d => d.Year == DateTime.Now.Year).GroupBy(d => d.Month).Select(g => new { Key = g.Key, Count = g.Count() }).ToList();
-
-            // FIX CS1061: Use 'Key' for lookup
-            var activityOverTimeRepaired = Enumerable.Range(1, 12).Select(m => new ChartDataPoint { Label = new DateTime(DateTime.Now.Year, m, 1).ToString("MMM"), Value = repairedGroupedData.FirstOrDefault(g => g.Key == m)?.Count ?? 0 }).ToList();
-
-
-            var viewModel = new MaintenanceReportsViewModel
-            {
-                TotalAssignedFaults = totalAssigned,
-                TotalRepairedFaults = totalRepaired,
-                TotalScheduledMaintenance = totalScheduled,
-                TotalAllocatedUnits = totalAllocatedUnits,
-                TotalServiceRecords = totalServiceRecords,
-                ActivityOverTime = activityOverTimeAssigned,
-                ActivityOverTimeRepaired = activityOverTimeRepaired
-            };
-
-            // 3. Generate the PDF
-            var pdfBytes = CreatePerformanceReportPdf(viewModel, activityOverTimeRepaired);
-
-            var fileName = $"Performance_Report_{_userManager.GetUserName(User)}_{DateTime.Now:yyyyMMdd}.pdf";
-
-            // 4. Return the file
-            return File(pdfBytes, "application/pdf", fileName);
+            // ✅ FIX: Use the correct MIME type when returning the file.
+            return File(System.Text.Encoding.UTF8.GetBytes(content), mimeType, fileName);
         }
-
     }
 }

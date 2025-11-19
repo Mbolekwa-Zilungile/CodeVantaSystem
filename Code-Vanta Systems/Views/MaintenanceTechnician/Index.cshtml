@@ -1,159 +1,90 @@
-﻿@using Microsoft.AspNetCore.Identity
-@using Code_Vanta_Systems.Models
-@inject SignInManager<ApplicationUser> SignInManager
-@inject UserManager<ApplicationUser> UserManager
-
+﻿
 @{
     Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml";
     ViewData["Title"] = "Dashboard";
 
+    // Safely retrieve the count, defaulting to 0 if not set
     int allocatedFridgesCount = ViewBag.AllocatedFridgesCount ?? 0;
     int openFaultsCount = ViewBag.OpenFaultsCount ?? 0;
     int scheduledMaintenanceCount = ViewBag.ScheduledMaintenanceCount ?? 0;
 }
 
-<style>
-    /* Custom Styles for Dashboard */
-    .dashboard-title {
-        font-weight: 700;
-        color: #2c3e50; /* Matches SecondaryColor from Layout */
-    }
-
-    .dashboard-card {
-        transition: transform .2s ease, box-shadow .2s ease;
-        cursor: pointer;
-    }
-
-        .dashboard-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-        }
-
-    .dashboard-icon {
-        font-size: 2.8rem;
-        opacity: 0.85;
-    }
-
-    .quick-action-btn {
-        min-width: 250px;
-        transition: all .25s ease;
-    }
-
-        .quick-action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-        }
-</style>
-
 <div class="container-fluid">
+    <h1 class="mb-4 text-success"><i class="bi bi-gear-fill"></i> Maintenance Technician Dashboard</h1>
 
-    <h1 class="mb-4 dashboard-title">
-        <i class="bi bi-gear-fill me-2 text-primary"></i>
-        Maintenance Technician Dashboard
-    </h1>
+    <div class="alert alert-info" role="alert">
+        Welcome to your maintenance portal. You are allocated **@allocatedFridgesCount** customer fridges.
+        @if (allocatedFridgesCount > 0)
+        {
+            <a asp-action="AllocatedFridges" class="alert-link">View your fridges.</a>
+        }
+    </div>
 
-    <div class="alert alert-info shadow-sm border-0 rounded-3 p-3">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-person-badge-fill fs-3 me-3 text-primary"></i>
-            <div>
-                <strong>Welcome back!</strong>
-                You are currently responsible for
-                <strong class="text-dark">@allocatedFridgesCount</strong> customer units.
-                @if (allocatedFridgesCount > 0)
-                {
-                    <a asp-action="AllocatedFridges" class="alert-link ms-1">View your fridges</a>
-                }
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title text-info">Allocated Fridges</h5>
+                            <p class="card-text fs-2 fw-bold">@allocatedFridgesCount</p>
+                        </div>
+                        <i class="bi bi-box display-4 text-info"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a asp-action="AllocatedFridges" class="text-info small stretched-link">View Details <i class="bi bi-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-danger h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title text-danger">Open Faults</h5>
+                            <p class="card-text fs-2 fw-bold">@openFaultsCount</p>
+                        </div>
+                        <i class="bi bi-exclamation-octagon display-4 text-danger"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a asp-action="FaultReports" class="text-danger small stretched-link">View Reports <i class="bi bi-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title text-success">Upcoming Visits</h5>
+                            <p class="card-text fs-2 fw-bold">@scheduledMaintenanceCount</p>
+                        </div>
+                        <i class="bi bi-calendar-check display-4 text-success"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a asp-action="MaintenanceSchedules" class="text-success small stretched-link">View Schedules <i class="bi bi-arrow-right"></i></a>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4 mt-3">
-
-        <div class="col">
-            <div class="card dashboard-card shadow-sm border-start border-4 border-info rounded-4 h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-info fw-bold">Allocated Fridges</h6>
-                            <div class="fs-1 fw-bold">@allocatedFridgesCount</div>
-                        </div>
-                        <i class="bi bi-box-seam dashboard-icon text-info"></i>
-                    </div>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a asp-action="AllocatedFridges" class="small text-info fw-semibold stretched-link">
-                        View Details <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col">
-            <div class="card dashboard-card shadow-sm border-start border-4 border-danger rounded-4 h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-danger fw-bold">Open Faults</h6>
-                            <div class="fs-1 fw-bold">@openFaultsCount</div>
-                        </div>
-                        <i class="bi bi-exclamation-octagon-fill dashboard-icon text-danger"></i>
-                    </div>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a asp-action="FaultReports" class="small text-danger fw-semibold stretched-link">
-                        View Reports <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col">
-            <div class="card dashboard-card shadow-sm border-start border-4 border-success rounded-4 h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-success fw-bold">Upcoming Visits</h6>
-                            <div class="fs-1 fw-bold">@scheduledMaintenanceCount</div>
-                        </div>
-                        <i class="bi bi-calendar-check dashboard-icon text-success"></i>
-                    </div>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a asp-action="MaintenanceSchedules" class="small text-success fw-semibold stretched-link">
-                        View Schedule <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="card shadow-lg border-0 rounded-4 mt-5">
-        <div class="card-header bg-dark text-white fw-bold rounded-top-4 py-3">
-            <i class="bi bi-lightning-charge-fill me-2"></i> Quick Actions
-        </div>
-
-        <div class="card-body d-flex flex-wrap gap-3">
-
-            <a asp-action="CreateFaultReport"
-               class="btn btn-lg btn-outline-danger quick-action-btn shadow-sm rounded-3">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                Report New Fault
+    <div class="card shadow-lg border-0 h-100 mt-4">
+        <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-lightning-charge me-2"></i> Quick Actions</div>
+        <div class="card-body d-flex flex-wrap gap-3 align-content-start">
+            <a asp-action="CreateFaultReport" class="btn btn-lg btn-outline-danger shadow-sm">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Report New Fault
             </a>
-
-            <a asp-action="CreateSchedule"
-               class="btn btn-lg btn-outline-success quick-action-btn shadow-sm rounded-3">
-                <i class="bi bi-calendar-plus me-2"></i>
-                Schedule New Visit
+            <a asp-action="CreateSchedule" class="btn btn-lg btn-outline-success shadow-sm">
+                <i class="bi bi-calendar-plus me-2"></i> Schedule New Visit
             </a>
-
-            <a asp-action="AllocatedFridges"
-               class="btn btn-lg btn-outline-info quick-action-btn shadow-sm rounded-3">
-                <i class="bi bi-box me-2"></i>
-                View My Fridges
+            <a asp-action="AllocatedFridges" class="btn btn-lg btn-outline-info shadow-sm">
+                <i class="bi bi-box me-2"></i> View My Fridges
             </a>
-
         </div>
     </div>
-
 </div>
