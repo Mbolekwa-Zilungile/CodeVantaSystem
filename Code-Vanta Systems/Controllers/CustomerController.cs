@@ -1026,7 +1026,7 @@ namespace Code_Vanta_Systems.Controllers
 
     #endregion
 
-    #region Mock Payment Page
+        #region Mock Payment Page
     [HttpGet]
         public IActionResult Payment(string rentalIds)
         {
@@ -1223,6 +1223,8 @@ namespace Code_Vanta_Systems.Controllers
             var schedules = await _context.MaintenanceSchedules
                 .Include(ms => ms.FridgeUnit) // Include unit for context
                     .ThenInclude(u => u.Fridge)
+                // FIX: Include the Technician
+                .Include(ms => ms.Technician)
                 .Where(ms => allocatedUnitIds.Contains(ms.FridgeUnitId) &&
                              ms.Status != "Completed" &&
                              ms.ScheduledDate >= DateTime.Today)

@@ -1,0 +1,116 @@
+﻿@model Code_Vanta_Systems.Models.FridgeFault
+@using Code_Vanta_Systems.Models
+
+@{
+    ViewData["Title"] = $"Fault Report: {Model.Id}";
+    Layout = "~/Views/Shared/_MaintenanceTechnicianLayout.cshtml"; // Ensure this path is correct
+    var serviceRecords = ViewBag.ServiceRecords as List<ServiceRecord>;
+    var unitId = (int)ViewBag.UnitId;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-danger"><i class="bi bi-gear-fill me-2"></i> @ViewData["Title"]</h2>
+        <a asp-action="FridgeDetails" asp-route-id="@unitId" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Unit @unitId
+        </a>
+    </div>
+
+    @* --- FAULT SUMMARY CARD --- *@
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5>Fault Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Unit Serial Number:</dt>
+                        <dd class="col-sm-8">
+                            <a asp-action="FridgeDetails" asp-route-id="@unitId">
+                                @Model.FridgeUnit.SerialNumber
+                            </a>
+                        </dd>
+                        <dt class="col-sm-4">Reported By:</dt>
+                        <dd class="col-sm-8">@Model.ReportedBy.FullName</dd>
+                        <dt class="col-sm-4">Date Reported:</dt>
+                        <dd class="col-sm-8">@Model.DateReported.ToString("yyyy-MM-dd HH:mm")</dd>
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-secondary">@Model.Status</span>
+                        </dd>
+                        <dt class="col-sm-4">Severity:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge @(Model.Severity.ToString() == "High" ? "bg-danger" : Model.Severity.ToString() == "Medium" ? "bg-warning text-dark" : "bg-info")">
+                                @Model.Severity
+                            </span>
+                        </dd>
+                        <dt class="col-sm-4">Resolution Date:</dt>
+                        <dd class="col-sm-8">@(Model.ResolutionDate?.ToString("yyyy-MM-dd") ?? "N/A")</dd>
+                        <dt class="col-sm-12 mt-3">Fault Description:</dt>
+                        <dd class="col-sm-12">@Model.FaultDescription</dd>
+                    </dl>
+                </div>
+                <div class="card-footer d-flex justify-content-end">
+                    @* Button to resolve the fault by creating a new Service Record *@
+                    @if (Model.Status != Code_Vanta_Systems.Models.Enums.FaultStatus.Repaired)
+                    {
+                        <a asp-action="CreateServiceRecord" asp-route-unitId="@unitId" asp-route-faultId="@Model.Id" class="btn btn-success">
+                            <i class="bi bi-tools me-2"></i> Resolve & Create Service Record
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* --- CUSTOMER/UNIT INFO --- *@
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5>Customer & Unit Location</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Customer:</dt>
+                        <dd class="col-sm-6">@Model.FridgeUnit.Customer?.BusinessName</dd>
+                        <dt class="col-sm-6">Address:</dt>
+                        <dd class="col-sm-6">@Model.FridgeUnit.Customer?.PhysicalAddress</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+
+    @* --- SERVICE HISTORY FOR THIS FAULT --- *@
+    <h3 class="mb-3">Service Records Linked to this Fault</h3>
+    @if (serviceRecords != null && serviceRecords.Any())
+    {
+        <table class="table table-bordered table-striped">
+            <thead class="table-info">
+                <tr>
+                    <th>Service Date</th>
+                    <th>Technician</th>
+                    <th>Maintenance Type</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var record in serviceRecords)
+                {
+                    <tr>
+                        <td>@record.DateOfService.ToString("yyyy-MM-dd")</td>
+                        <td>@(record.Technician?.FullName ?? "N/A")</td>
+                        <td>@record.MaintenanceTypeId</td> @* Assuming MaintenanceTypeId is a descriptive field *@
+                        <td>@record.ServiceDetails</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-warning">No service records have been explicitly linked to this fault yet.</div>
+    }
+</div>
